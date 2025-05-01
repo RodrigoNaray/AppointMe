@@ -17,7 +17,7 @@ AppointMe is a full-stack web application designed to simplify appointment and s
 ## 🚀 Key Features (MVP)
 
 *   **📱 Responsive Interface (Mobile-First):** Optimized design for a smooth experience on phones and tablets, with a polished desktop view.
-*   **💄 Service Management:** Administrators can Create, Read, Update, and Delete (CRUD) services, specifying details like name, description, duration, and price.
+*   **⚙️ Service Management:** Administrators can Create, Read, Update, and Delete (CRUD) services, specifying details like name, description, duration, and price.
 *   **🗓️ Availability Management:**
     *   Define a weekly base working schedule.
     *   Block specific days or hours (e.g., for vacations or personal appointments).
