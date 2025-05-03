@@ -2,9 +2,6 @@
   "name": "agenda-web",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "author": "",
   "license": "ISC",
   "description": "",
@@ -12,8 +9,32 @@
   "workspaces": [
     "backend",
     "frontend"
-  ],
+  ],  "scripts": {
+
+    "dev": "concurrently \"npm:dev:backend\" \"npm:dev:frontend\"", 
+    "dev:backend": "npm run dev -w backend", 
+    "dev:frontend": "npm run dev -w frontend", 
+
+    
+    "build": "npm run build -ws", 
+    "build:backend": "npm run build -w backend",
+    "build:frontend": "npm run build -w frontend",
+
+    "lint": "npm run lint -ws --if-present", 
+    "lint:fix": "npm run lint -- --fix -ws --if-present",
+    "format": "prettier --write .", 
+
+    
+    "prisma:migrate": "npm run prisma:migrate -w backend",
+    "prisma:studio": "npm run prisma:studio -w backend",
+
+    
+    "install:all": "npm install" 
+    
+  },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    
+    "concurrently": "^8.2.2", 
+    "prettier": "^3.0.0"
   }
 }
