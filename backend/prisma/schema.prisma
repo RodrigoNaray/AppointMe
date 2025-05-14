@@ -1,15 +1,81 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Este es tu archivo de esquema de Prisma,
+// aprende más sobre él en la documentación: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+// Define cómo se genera el cliente Prisma que usarás en tu código backend.
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  output   = "../node_modules/.prisma/client" // Especifica la ruta de salida
 }
 
+// Define la fuente de datos, en este caso, PostgreSQL.
+// La URL de conexión se toma de la variable de entorno DATABASE_URL.
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// Modelo para el Administrador (el profesional que usa la app)
+model AdminUser {
+  id            String    @id @default(cuid()) // Clave primaria, generada automáticamente
+  email         String    @unique             // Email único para el login
+  passwordHash  String?                       // Hash de la contraseña (opcional si solo usa Google Login)
+  googleId      String?   @unique             // ID de Google para el login social (opcional y único)
+
+  // Configuraciones específicas del administrador
+  schedule      Json?     // Horario base semanal, almacenado como JSON. Ejemplo:
+                          // { "monday": { "start": "09:00", "end": "18:00", "isActive": true }, ... }
+  minBookingNoticeMinutes Int? @default(60)   // Antelación mínima para reservas, en minutos. Por defecto 1 hora.
+
+  createdAt     DateTime  @default(now())     // Fecha y hora de creación del registro
+  updatedAt     DateTime  @updatedAt          // Fecha y hora de la última actualización
+}
+
+// Modelo para los Servicios ofrecidos
+model Service {
+  id            String    @id @default(cuid())
+  name          String                        // Nombre del servicio (ej. "Maquillaje Social")
+  description   String?                       // Descripción opcional del servicio
+  durationMinutes Int                         // Duración del servicio en minutos (ej. 60)
+  price         Float                         // Precio del servicio
+  isActive      Boolean   @default(true)      // Para poder "desactivar" un servicio sin borrarlo
+
+  // Relación: Un servicio puede tener muchas reservas
+  bookings      Booking[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// Modelo para las Reservas hechas por los clientes
+model Booking {
+  id            String    @id @default(cuid())
+  bookingTime   DateTime                      // Fecha y hora exactas de inicio de la reserva
+
+  // Datos del cliente que realiza la reserva
+  clientName    String
+  clientEmail   String
+  clientPhone   String
+
+  // Relación: Una reserva pertenece a un servicio específico
+  serviceId     String
+  service       Service   @relation(fields: [serviceId], references: [id])
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Índice en bookingTime para optimizar consultas por fecha/hora
+  @@index([bookingTime])
+}
+
+// Modelo para los Bloqueos de Disponibilidad definidos por el administrador
+model AvailabilityBlock {
+  id            String    @id @default(cuid())
+  startTime     DateTime                      // Fecha y hora de inicio del bloqueo
+  endTime       DateTime                      // Fecha y hora de fin del bloqueo
+  reason        String?                       // Motivo opcional del bloqueo (ej. "Vacaciones")
+
+  createdAt     DateTime  @default(now())
+
+  // Índice en startTime y endTime para optimizar consultas de rango
+  @@index([startTime, endTime])
 }
