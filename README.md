@@ -119,10 +119,6 @@ Online Payment Gateway Integration.
 Review and Rating System.
 ... and much more!
 
-🤝 Contributing
-
-Contributions are welcome! If you wish to contribute, please open an issue first to discuss the proposed changes.
-
 📄 License
 This project is licensed under the MIT License. See the LICENSE file for details.
 
