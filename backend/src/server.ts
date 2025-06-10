@@ -1,7 +1,8 @@
 // Importar los módulos necesarios
-import express, { Express, Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response, NextFunction, Router } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import catalogRoutes from './modules/catalog/catalog.routes';
 // Importa aquí tus futuros routers
 // import authRoutes from './modules/auth/auth.routes';
 // import servicesRoutes from './modules/services/services.routes';
@@ -33,10 +34,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rutas de la API
 // Ruta de prueba inicial
-app.get('/api', (req: Request, res: Response) => {
+app.get('/', (req: Request, res: Response) => {
   res.json({ message: '¡Bienvenido a la API de AppointMe!' });
 });
 
+app.use('/catalog', catalogRoutes)
 // Aquí montarás tus routers modulares más adelante:
 // app.use('/api/auth', authRoutes);
 // app.use('/api/admin/services', servicesRoutes); // Asumiendo que son rutas de admin
@@ -54,7 +56,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 
 // Iniciar el servidor
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);
+  console.log(`[server]: 🚀 Servidor backend corriendo en http://localhost:${PORT}`);
   // Aquí podrías añadir la conexión a la base de datos si no la manejas en otro lado
 });
 
