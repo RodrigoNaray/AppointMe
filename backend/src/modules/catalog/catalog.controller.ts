@@ -1,23 +1,29 @@
 import { Request, Response } from "express"
 import catalogServices from "./catalog.services";
-import CreateServiceDto from "./catalog.types.js";
+import { CreateServiceDto } from "./catalog.types";
+import { ConflictError } from "../../utils/error";
+import logger from "../../utils/logger";
+
+
 
 const createElement = async (req: Request, res: Response) => {
   try{
-    const serviceData: CreateServiceDto = req.body
+    const serviceData: CreateServiceDto = req.body;
     const service = await catalogServices.createElement(serviceData);
 
-    res.status(201).json(service)
+    res.status(201).json(service);
   } catch (error){
-    console.error('Error al crear elemento: ', error);
     
-    let errorMessage = 'Ocurrio un error al crear el elemento.';
-    let statusCode = 500;
-
-    res.status(statusCode).json({ message: "Error al crear elmento.", error: errorMessage})
+    if (error instanceof ConflictError) {
+      logger.warn(error.message);
+      return res.status(409).json({ message: error.message}); // 409 Conflict
+    }
+    
+    logger.error(error, 'Ocurrio un error inesperado al crear el servicio.');
+    return res.status(500).json({ message: "Error interno del servidor." });
   }
-}
+};
 
 export default{
   createElement
-}
+};

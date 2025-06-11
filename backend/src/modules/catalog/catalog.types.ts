@@ -1,5 +1,5 @@
 
-interface CreateServiceDto {
+export interface CreateServiceDto {
   name: string;
   description?: string;
   durationMinutes: number;
@@ -7,4 +7,3 @@ interface CreateServiceDto {
   isActive?: boolean;
 }
 
-export default CreateServiceDto
