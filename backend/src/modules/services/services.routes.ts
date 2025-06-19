@@ -1,8 +1,8 @@
 import { Router } from "express";
-import servicesController from "./services.controller";
+import * as servicesController from "./services.controller";
 
 const servicesRoutes: Router = Router();
 
-servicesRoutes.post('/', servicesController.createElement)
+servicesRoutes.post('/', servicesController.create)
 
 export default servicesRoutes;

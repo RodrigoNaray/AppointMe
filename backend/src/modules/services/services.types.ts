@@ -1,4 +1,3 @@
-
 export interface CreateServiceDto {
   name: string;
   description?: string;
@@ -7,3 +6,10 @@ export interface CreateServiceDto {
   isActive?: boolean;
 }
 
+export interface UpdateServiceDto {
+  name?: string;
+  description?: string;
+  durationMinutes?: number;
+  price?: number;
+  isActive?: boolean;
+}
