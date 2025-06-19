@@ -4,7 +4,7 @@
 // Define cómo se genera el cliente Prisma que usarás en tu código backend.
 generator client {
   provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client" // Especifica la ruta de salida
+  output   = "../../node_modules/.prisma/client" // Especifica la ruta de salida
 }
 
 // Define la fuente de datos, en este caso, PostgreSQL.

@@ -1,10 +1,11 @@
 // Importar los módulos necesarios
-import express, { Express, Request, Response, NextFunction, Router } from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import catalogRoutes from './modules/catalog/catalog.routes';
+import authRoutes from './modules/auth/auth.routes';
 // Importa aquí tus futuros routers
-// import authRoutes from './modules/auth/auth.routes';
+
 // import servicesRoutes from './modules/services/services.routes';
 // import availabilityRoutes from './modules/availability/availability.routes';
 // import bookingsRoutes from './modules/bookings/bookings.routes';
@@ -38,9 +39,10 @@ app.get('/', (req: Request, res: Response) => {
   res.json({ message: '¡Bienvenido a la API de AppointMe!' });
 });
 
-app.use('/catalog', catalogRoutes)
+app.use('/api/catalog', catalogRoutes);
+app.use('/api/auth', authRoutes);
 // Aquí montarás tus routers modulares más adelante:
-// app.use('/api/auth', authRoutes);
+
 // app.use('/api/admin/services', servicesRoutes); // Asumiendo que son rutas de admin
 // app.use('/api/availability', availabilityRoutes);
 // app.use('/api/bookings', bookingsRoutes);

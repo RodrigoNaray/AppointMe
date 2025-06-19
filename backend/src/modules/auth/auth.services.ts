@@ -1,11 +1,33 @@
+import { AdminUser } from '@prisma/client';
 import prisma from '../../config/prisma';
 import bcrypt from 'bcrypt';
 import { RegisterAdminDto, LoginAdminDto} from "./auth.types";
 import logger from '../../utils/logger';
 import { ConflictError } from "../../utils/error";
+import jwt from 'jsonwebtoken';
+import { JwtPayload } from './auth.types';
 
+type userWithoutPassword = Omit<AdminUser, 'passwordHash'>;
 
-export const registerUser = async (userData: RegisterAdminDto) => {
+export const generateToken = (user: userWithoutPassword) => {
+  const payload: JwtPayload = {
+    sub: user.id,
+    email: user.email,
+    role: 'admin'
+  };
+
+  if(!process.env.JWT_SECRET) {
+    logger.error({JWT_SECRET: process.env.JWT_SECRET}, 'JWT_SECRET no esta definida en las variables de entorno')
+    throw new Error('JWT_SECRET no esta definida en las variables de entorno');
+
+  };
+
+  const token = jwt.sign(payload, process.env.JWT_SECRET, {expiresIn: '1h'});
+
+  return token;
+}
+
+export const registerUser = async (userData: RegisterAdminDto): Promise<userWithoutPassword> => {
   
   const existingUser = await prisma.adminUser.findUnique({
     where: {email: userData.email}
@@ -31,7 +53,7 @@ export const registerUser = async (userData: RegisterAdminDto) => {
   return userWithoutPassword;
 };
 
-export const validateUser = async (loginData: LoginAdminDto) => {
+export const validateUser = async (loginData: LoginAdminDto): Promise<userWithoutPassword | null> => {
 
   const user = await prisma.adminUser.findUnique({
     where: {email: loginData.email},
