@@ -1,6 +1,6 @@
 import { Request, Response } from "express"
-import catalogServices from "./catalog.services";
-import { CreateServiceDto } from "./catalog.types";
+import servicesServices from "./services.services";
+import { CreateServiceDto } from "./services.types";
 import { ConflictError } from "../../utils/error";
 import logger from "../../utils/logger";
 
@@ -9,7 +9,7 @@ import logger from "../../utils/logger";
 const createElement = async (req: Request, res: Response) => {
   try{
     const serviceData: CreateServiceDto = req.body;
-    const service = await catalogServices.createElement(serviceData);
+    const service = await servicesServices.createElement(serviceData);
 
     res.status(201).json(service);
   } catch (error){

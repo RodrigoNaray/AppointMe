@@ -1,7 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import catalogRoutes from './modules/catalog/catalog.routes';
+import catalogRoutes from './modules/services/services.routes';
 import authRoutes from './modules/auth/auth.routes';
 import passport from 'passport';
 import jwtStrategy from './config/passport';
