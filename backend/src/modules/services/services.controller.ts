@@ -61,6 +61,7 @@ export const update = async (req: Request<{ id: string }, {}, UpdateServiceDto>,
 export const remove = async (req: Request<{ id: string }>, res: Response) => {
   try {
     await service.deleteService(req.params.id);
+    logger.info({ serviceId: req.params.id }, "Servicio eliminado correctamente");
     res.status(204).send(); 
   } catch (error) {
     if (error instanceof NotFoundError) {

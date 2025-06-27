@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import catalogRoutes from './modules/services/services.routes';
 import authRoutes from './modules/auth/auth.routes';
+import cookieParser from 'cookie-parser';
 import passport from 'passport';
 import jwtStrategy from './config/passport';
 
@@ -21,9 +22,10 @@ const PORT: string | number = process.env.PORT || 5000;
 // Configura las opciones de CORS según tus necesidades (ej. origin específico)
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173', 
-  // credentials: true, // Si necesitas enviar cookies o cabeceras de autorización
+  credentials: true, // Si necesitas enviar cookies o cabeceras de autorización
 }));
 
+app.use(cookieParser(process.env.JWT_SECRET));
 
 app.use(express.json());
 
@@ -36,7 +38,7 @@ app.get('/', (req: Request, res: Response) => {
   res.json({ message: '¡Bienvenido a la API de AppointMe!' });
 });
 
-app.use('/api/catalog', catalogRoutes);
+app.use('/api/services', catalogRoutes);
 app.use('/api/auth', authRoutes);
 // Aquí montarás tus routers modulares más adelante:
 

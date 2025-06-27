@@ -6,6 +6,7 @@ import logger from '../../utils/logger';
 import { ConflictError } from "../../utils/error";
 import jwt from 'jsonwebtoken';
 import { JwtPayload } from './auth.types';
+import { JWT_SECRET, JWT_EXPIRATION } from '../../config/auth.config';
 
 type userWithoutPassword = Omit<AdminUser, 'passwordHash'>;
 
@@ -22,7 +23,7 @@ export const generateToken = (user: userWithoutPassword) => {
 
   };
 
-  const token = jwt.sign(payload, process.env.JWT_SECRET, {expiresIn: '1h'});
+  const token = jwt.sign(payload, JWT_SECRET, {expiresIn: JWT_EXPIRATION});
 
   return token;
 }

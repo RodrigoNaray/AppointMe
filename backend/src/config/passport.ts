@@ -1,6 +1,7 @@
 import { Strategy as JwtStrategy, ExtractJwt, StrategyOptions } from "passport-jwt";
 import prisma from "./prisma";
 import logger from "../utils/logger";
+import { JWT_SECRET, ACCESS_TOKEN_COOKIE_NAME } from './auth.config';
 
 
 if (!process.env.JWT_SECRET) {
@@ -8,10 +9,22 @@ if (!process.env.JWT_SECRET) {
   throw new Error('FATAL ERROR: JWT_SECRET no está definida.');
 }
 
-const opts: StrategyOptions = {
-  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: process.env.JWT_SECRET,
+const cookieExtractor = (req: Request): string | null => {
+  let token = null;
+  
+  const reqWithCookies = req as Request & { signedCookies: { [key: string]: string } };
+
+  if (reqWithCookies && reqWithCookies.signedCookies) {
+    token = reqWithCookies.signedCookies['accessToken'];
+  }
+  return token;
 };
+
+const opts: StrategyOptions = {
+  jwtFromRequest: cookieExtractor,
+  secretOrKey: JWT_SECRET,
+};
+
 
 const strategy = new JwtStrategy(opts, async (payload, done) => {
   try{
