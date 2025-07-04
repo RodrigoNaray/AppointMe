@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkUserStatus = async () => {
       try {
-        const response = await apiClient.get<{ user: User }>('/auth/profile');
+        const response = await apiClient.get<{ user: User }>('api/auth/profile');
         setUser(response.data.user); 
       } catch (error) {
         setUser(null);
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await apiClient.post('api/auth/login', data);
       
-      const response = await apiClient.get<{ user: User }>('/auth/profile');
+      const response = await apiClient.get<{ user: User }>('api/auth/profile');
       setUser(response.data.user);
       
     } catch (error) {

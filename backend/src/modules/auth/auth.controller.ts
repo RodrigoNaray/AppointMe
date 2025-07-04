@@ -34,3 +34,6 @@ export const logoutController = async ( req: Request, res: Response) => {
   res.status(200).json({ message: 'Sesión cerrada exitosamente' });
 };
 
+export const getProfileController = async ( req: Request, res: Response) => {
+    res.status(200).json({ user: req.user });
+};
