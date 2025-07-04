@@ -1,29 +1,26 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import AdminLayout from './layouts/AdminLayout';
-import PublicLayout from './layouts/PublicLayout';
 import HomePage from './pages/HomePage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/admin/DashboardPage';
+import PublicLayout from './layouts/PublicLayout';
+import AdminLayout from './layouts/AdminLayout';
 
 const router = createBrowserRouter([
   {
     path: '/',
     element: <PublicLayout />,
     children: [
-      {
-        index: true, // Esto hace que sea la ruta por defecto para '/'
-        element: <HomePage />,
-      },
+      { index: true, element: <HomePage /> },
+      { path: 'login', element: <LoginPage /> },
     ],
   },
   {
     path: '/admin',
     element: <AdminLayout />,
     children: [
-      {
-        index: true,
-        element: <AdminDashboardPage />,
-      },
-      // Aquí añadiremos más rutas de admin como /admin/services
+      { index: true, element: <DashboardPage /> },
+      // Aquí añadiremos la página de servicios más adelante
+      // { path: 'services', element: <ServicesPage /> },
     ],
   },
 ]);

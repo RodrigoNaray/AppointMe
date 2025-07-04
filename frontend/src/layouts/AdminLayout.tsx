@@ -1,24 +1,19 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 
 export default function AdminLayout() {
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Barra lateral de navegación del admin */}
-      <aside className="w-64 bg-gray-800 text-white p-4">
-        <h2 className="text-xl font-bold mb-4">AppointMe Admin</h2>
+    <div className="flex h-screen">
+      <aside className="w-64 bg-gray-800 text-white p-5">
+        <h2 className="text-2xl font-semibold mb-6">Admin Panel</h2>
         <nav>
           <ul>
-            <li>Dashboard</li>
-            <li>Servicios</li>
-            <li>Disponibilidad</li>
-            <li>Reservas</li>
+            <li className="mb-2"><Link to="/admin">Dashboard</Link></li>
+            <li className="mb-2"><Link to="/admin/services">Servicios</Link></li>
           </ul>
         </nav>
       </aside>
-
-      {/* Contenido principal de la página */}
-      <main className="flex-1 p-8">
-        <Outlet /> {/* Aquí se renderizará el componente de la página actual */}
+      <main className="flex-1 p-10 bg-gray-100">
+        <Outlet /> {/* Aquí se renderizarán las páginas de admin */}
       </main>
     </div>
   );

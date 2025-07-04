@@ -1,31 +1,9 @@
 import { Request, Response } from 'express';
 import { RegisterAdminDto, LoginAdminDto } from './auth.types';
 import * as authServices from './auth.services';
-import { ConflictError } from '../../utils/error';
 import logger from '../../utils/logger';
 import { cookieOptions, ACCESS_TOKEN_COOKIE_NAME } from '../../config/auth.config';
 
-
-
-export const registerController = async ( req: Request<{},{}, RegisterAdminDto>, res: Response) => {
-  try{
-
-    const user = await authServices.registerUser(req.body);
-    
-    logger.info({ userId: user.id }, 'Nuevo usuario administrador registrado');
-    res.status(201).json({message: 'Usuario registrado exitosamente', user });
-
-  }catch(error){
-
-    if (error instanceof ConflictError){
-      logger.warn(error.message);
-      return res.status(409).json({message: error.message});
-    };
-
-    logger.error(error, 'Error en el registro de usuario');
-    res.status(500).json({ message: 'Error interno del servidor' });
-  };
-};
 
 export const loginController = async ( req: Request<{},{},LoginAdminDto>, res: Response) => {
   try{
@@ -48,5 +26,11 @@ export const loginController = async ( req: Request<{},{},LoginAdminDto>, res: R
     logger.error(error, 'Error en el inicio de sesión');
     res.status(500).json({ message: 'Error interno del servidor' });
   };
+};
+
+export const logoutController = async ( req: Request, res: Response) => {
+
+  res.clearCookie('accessToken');
+  res.status(200).json({ message: 'Sesión cerrada exitosamente' });
 };
 
