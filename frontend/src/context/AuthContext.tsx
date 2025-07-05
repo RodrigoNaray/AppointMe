@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         setUser(null);
       } finally {
+        await new Promise(resolve => setTimeout(resolve, 1500));
         setIsLoading(false);
       }
     };

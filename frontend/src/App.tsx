@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/admin/DashboardPage';
 import PublicLayout from './layouts/PublicLayout';
 import AdminLayout from './layouts/AdminLayout';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const router = createBrowserRouter([
   {
@@ -14,15 +15,20 @@ const router = createBrowserRouter([
       { path: 'login', element: <LoginPage /> },
     ],
   },
-  {
-    path: '/admin',
-    element: <AdminLayout />,
+  {  
+    element: <ProtectedRoute />,
     children: [
-      { index: true, element: <DashboardPage /> },
-      // Aquí añadiremos la página de servicios más adelante
-      // { path: 'services', element: <ServicesPage /> },
+    {
+      path: '/admin',
+      element: <AdminLayout />,
+      children: [
+        { index: true, element: <DashboardPage /> },
+        // Aquí añadiremos la página de servicios más adelante
+        // { path: 'services', element: <ServicesPage /> },
+      ],
+    },
     ],
-  },
+  }
 ]);
 
 function App() {

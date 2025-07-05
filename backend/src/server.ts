@@ -25,12 +25,12 @@ app.use(cors({
   credentials: true, // Si necesitas enviar cookies o cabeceras de autorización
 }));
 
-app.use(cookieParser(process.env.JWT_SECRET));
 
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
+app.use(cookieParser(process.env.JWT_SECRET));
 app.use(passport.initialize());
 passport.use(jwtStrategy);
 
