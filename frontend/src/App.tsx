@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/admin/DashboardPage';
+import ServicesPage from './pages/admin/ServicesPage';
 import PublicLayout from './layouts/PublicLayout';
 import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -23,8 +24,7 @@ const router = createBrowserRouter([
       element: <AdminLayout />,
       children: [
         { index: true, element: <DashboardPage /> },
-        // Aquí añadiremos la página de servicios más adelante
-        // { path: 'services', element: <ServicesPage /> },
+        { path: 'services', element: <ServicesPage /> },
       ],
     },
     ],
