@@ -1,4 +1,3 @@
-// frontend/src/pages/admin/ServicesPage.tsx
 import { useEffect, useState, useCallback } from 'react';
 import apiClient from '../../api/client';
 import { Service, CreateServiceDto, UpdateServiceDto } from '../../types/service';
@@ -17,7 +16,7 @@ export default function ServicesPage() {
   const fetchServices = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.get<Service[]>('/services');
+      const response = await apiClient.get<Service[]>('api/services');
       setServices(response.data);
     } catch (err) {
       setError('No se pudieron cargar los servicios.');
@@ -46,10 +45,10 @@ export default function ServicesPage() {
     try {
       if (editingService) {
         // Modo Edición
-        await apiClient.put(`/services/${editingService.id}`, data);
+        await apiClient.put(`api/services/update/${editingService.id}`, data);
       } else {
         // Modo Creación
-        await apiClient.post('/services', data);
+        await apiClient.post('api/services/', data);
       }
       setIsModalOpen(false);
       fetchServices(); // Refrescamos la tabla
@@ -63,7 +62,7 @@ export default function ServicesPage() {
     // Pedimos confirmación antes de una acción destructiva
     if (window.confirm("¿Estás seguro de que quieres eliminar este servicio?")) {
       try {
-        await apiClient.delete(`/services/${serviceId}`);
+        await apiClient.delete(`api/services/remove/${serviceId}`);
         fetchServices(); // Refrescamos la tabla
       } catch (err) {
         console.error("Error al eliminar el servicio:", err);
@@ -91,9 +90,12 @@ export default function ServicesPage() {
               <tr key={service.id}>
                 {/* ... (los <td> de name, durationMinutes, price se mantienen igual) ... */}
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-right">
-                  {/* 5. Conectamos los botones a las nuevas funciones */}
-                  <button onClick={() => handleOpenEditModal(service)} className="text-indigo-600 hover:text-indigo-900">Editar</button>
-                  <button onClick={() => handleDeleteService(service.id)} className="text-red-600 hover:text-red-900 ml-4">Borrar</button>
+                  <td className="px-5 py-3">{service.name}</td>
+                  <td className="px-5 py-3">{service.description}</td>
+                  <td className="px-5 py-3">{service.durationMinutes}</td>
+                  <td className="px-5 py-3">{service.price}</td>
+                  <td className="px-5 py-3"><button onClick={() => handleOpenEditModal(service)} className="text-indigo-600 hover:text-indigo-900">Editar</button></td>
+                  <td className="px-5 py-3"><button onClick={() => handleDeleteService(service.id)} className="text-red-600 hover:text-red-900 ml-4">Borrar</button></td>
                 </td>
               </tr>
             ))}
