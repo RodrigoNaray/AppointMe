@@ -6,6 +6,7 @@ import ServicesPage from './pages/admin/services/ServicesPage';
 import PublicLayout from './layouts/PublicLayout';
 import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
+import NotFoundPage from './pages/NotFoundPage';
 
 const router = createBrowserRouter([
   {
@@ -28,6 +29,10 @@ const router = createBrowserRouter([
       ],
     },
     ],
+  },
+  {
+    path: '*',
+    element: <NotFoundPage />
   }
 ]);
 
