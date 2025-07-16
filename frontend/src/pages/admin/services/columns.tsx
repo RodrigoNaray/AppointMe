@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+
 export type ServiceColumnActionsProps = {
   onEdit: (service: Service) => void;
   onDelete: (id: string) => void;
@@ -67,7 +68,6 @@ export const createServiceColumns = ({ onEdit, onDelete }: ServiceColumnActionsP
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => onEdit(service)}>
                 Editar Servicio
               </DropdownMenuItem>

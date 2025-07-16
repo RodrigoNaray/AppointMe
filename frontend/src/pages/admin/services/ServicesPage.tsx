@@ -7,6 +7,8 @@ import { DataTable } from '@/components/shared/DataTable';
 import { createServiceColumns } from './columns';
 import Modal from '@/components/Modal';
 import ServiceForm from '@/components/ServiceForm';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
@@ -74,13 +76,13 @@ export default function ServicesPage() {
   if (isLoading) return <p>Cargando servicios...</p>;
 
   return (
-    <div className='w-full'>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Gestión de Servicios</h1>
-        <button onClick={handleOpenCreateModal} className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900">
-          + Añadir Servicio
-        </button>
-      </div>
+  <div>
+    <div className="flex justify-between items-center mb-6">
+      <h1 className="text-3xl font-bold">Gestión de Servicios</h1>
+      <Button onClick={handleOpenCreateModal}>
+        <PlusCircle className="mr-2 h-4 w-4" /> Añadir Servicio
+      </Button>
+    </div>
 
       <DataTable columns={columns} data={services} />
 
