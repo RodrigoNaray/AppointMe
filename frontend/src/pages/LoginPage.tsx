@@ -1,64 +1,70 @@
 import { useState, FormEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button"; 
+import { Input } from "@/components/ui/input";   
+import { Label } from "@/components/ui/label";   
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const { login } = useAuth(); // Usamos nuestro hook para obtener la función login
-  const navigate = useNavigate(); // Hook para redirigir al usuario
+  const { login } = useAuth(); 
+  const navigate = useNavigate(); 
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault(); // Previene que el formulario recargue la página
-    setError(null); // Limpia errores anteriores
+    e.preventDefault(); 
+    setError(null); 
 
     try {
-      // Llama a la función login de nuestro contexto
       await login({ email, password });
-      // Si el login es exitoso (no lanza error), redirigimos al dashboard
       navigate('/admin');
     } catch (err) {
-      // Si el contexto lanza un error, lo atrapamos y mostramos un mensaje
       setError('El email o la contraseña son incorrectos.');
     }
   };
 
-  return (
-    <div className="flex items-center justify-center py-12">
-      <form onSubmit={handleSubmit} className="p-8 bg-white rounded-lg shadow-md w-full max-w-sm">
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Iniciar Sesión</h2>
-
-        {/* Muestra el mensaje de error si existe */}
-        {error && <p className="mb-4 text-center text-red-600 bg-red-100 p-3 rounded-lg">{error}</p>}
-
-        <div className="mb-4">
-          <label htmlFor="email" className="block text-gray-700 mb-2 font-semibold">Email</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-            required
-          />
-        </div>
-        <div className="mb-6">
-          <label htmlFor="password" className="block text-gray-700 mb-2 font-semibold">Contraseña</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-            required
-          />
-        </div>
-        <button type="submit" className="w-full bg-gray-800 text-white py-2 rounded-lg hover:bg-gray-900 transition-colors font-bold">
-          Ingresar
-        </button>
-      </form>
+   return (
+    <div className="flex items-center justify-center min-h-[80vh]">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
+          <CardDescription>
+            Ingresa tus credenciales para acceder al panel de administración.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <p className="text-center text-sm text-red-600">{error}</p>}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="admin@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full">
+              Ingresar
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
