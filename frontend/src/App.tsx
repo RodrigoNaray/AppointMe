@@ -11,6 +11,8 @@ import ServicesListPage from './pages/ServicesListPage';
 import ContactPage from './pages/ContactPage';
 import AvailabilityPage from './pages/admin/AvailabilityPage';
 import BookingsPage from './pages/admin/bookings/BookingsPage';
+import ProfilePage from './pages/admin/ProfilePage';
+import SettingsPage from './pages/admin/SettingsPage';
 
 const router = createBrowserRouter([
   {
@@ -33,7 +35,9 @@ const router = createBrowserRouter([
         { index: true, element: <DashboardPage /> },
         { path: 'services', element: <ServicesPage /> },
         { path: 'availability', element: <AvailabilityPage /> }, 
-        { path: 'bookings', element: <BookingsPage /> }, 
+        { path: 'bookings', element: <BookingsPage /> },
+        { path: 'profile', element: <ProfilePage /> },
+        { path: 'settings', element: <SettingsPage /> },  
       ],
     },
     ],

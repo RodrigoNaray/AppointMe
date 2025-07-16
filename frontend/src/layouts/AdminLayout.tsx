@@ -2,7 +2,7 @@ import { Link, Outlet } from 'react-router-dom';
 import { Menu, Package2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { UserNav } from '@/components/shared/UserNav';
+import { AdminNav } from '@/components/shared/AdminNav';
 
 export default function AdminLayout() {
   const navLinks = [
@@ -78,7 +78,7 @@ export default function AdminLayout() {
           </div>
 
 
-          <UserNav />
+          <AdminNav />
         </header>
 
 

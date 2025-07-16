@@ -10,8 +10,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Link } from "react-router-dom";
 
-export function UserNav() {
+export function AdminNav() {
   const { user, logout } = useAuth();
 
   return (
@@ -37,12 +38,16 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            Perfil
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            Ajustes
-          </DropdownMenuItem>
+          <Link to="/admin/profile">
+            <DropdownMenuItem>
+              Perfil
+            </DropdownMenuItem>
+          </Link>
+          <Link to="/admin/settings">
+            <DropdownMenuItem>
+              Ajustes
+            </DropdownMenuItem>
+          </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>
