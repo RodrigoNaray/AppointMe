@@ -1,4 +1,3 @@
-// frontend/src/layouts/AdminLayout.tsx
 import { Link, Outlet } from 'react-router-dom';
 import { Menu, Package2 } from "lucide-react"
 import { Button } from "@/components/ui/button"

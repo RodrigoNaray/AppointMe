@@ -1,76 +1,96 @@
-
-import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
-import { Menu, X, Package2 } from 'lucide-react'; 
+import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Menu, Package2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export default function PublicLayout() {
-
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+  
   const navLinks = [
-    { label: 'Servicios', to: '/services' }, 
-    { label: 'Contacto', to: '/contact' },
+    { to: "/services", label: "Servicios" },
+    { to: "/contact", label: "Contacto" },
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 text-gray-800">
+    
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container h-14 flex items-center justify-between">
-          
-          <NavLink to="/" className="flex items-center gap-2 font-bold text-lg">
-            <Package2 className="h-6 w-6" />
-            <span>AppointMe</span>
-          </NavLink>
-
-          
-          <nav className="hidden md:flex gap-6 items-center">
-            {navLinks.map((link) => (
-              <NavLink key={link.label} to={link.to} className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-                {link.label}
-              </NavLink>
-            ))}
-            <NavLink to="/login" className="bg-gray-800 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-900">
-              Admin Login
-            </NavLink>
-          </nav>
-
-          
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2"
-            aria-label="Toggle menu"
-          >
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+      
+      <div className="hidden border-r bg-muted/40 md:block">
+        <div className="flex h-full max-h-screen flex-col gap-2">
+          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+            <Link to="/" className="flex items-center gap-2 font-semibold">
+              <Package2 className="h-6 w-6" />
+              <span>AppointMe</span>
+            </Link>
+          </div>
+          <div className="flex-1">
+            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+              {navLinks.map(link => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                >
+                  {link.label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
         </div>
+      </div>
+
+      
+      <div className="flex flex-col">
+        <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
+          
+          
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 md:hidden" 
+              >
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="flex flex-col">
+              <nav className="grid gap-2 text-lg font-medium">
+                <Link
+                  to="/"
+                  className="flex items-center gap-2 text-lg font-semibold mb-4"
+                >
+                  <Package2 className="h-6 w-6" />
+                  <span>AppointMe</span>
+                </Link>
+                {navLinks.map(link => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
+          
+          
+          <div className="w-full flex-1"></div>
+          
+          
+          <Link to="/login">
+            <Button>Admin Login</Button>
+          </Link>
+        </header>
 
         
-        {isMenuOpen && (
-          <nav className="md:hidden flex flex-col items-center gap-4 py-4 border-t">
-            {navLinks.map((link) => (
-              <NavLink key={link.label} to={link.to} onClick={() => setIsMenuOpen(false)} className="font-medium">
-                {link.label}
-              </NavLink>
-            ))}
-            <NavLink to="/login" onClick={() => setIsMenuOpen(false)} className="bg-gray-800 text-white px-6 py-2 rounded-md font-medium hover:bg-gray-900 w-11/12 text-center">
-              Admin Login
-            </NavLink>
-          </nav>
-        )}
-      </header>
-
-      
-      <main className="flex-grow container mx-auto p-4 md:p-8">
-        <Outlet /> 
-      </main>
-
-      
-      <footer className="bg-white border-t">
-        <div className="container mx-auto py-6 px-4 text-center text-sm text-gray-500">
-          <p>&copy; {new Date().getFullYear()} AppointMe. Todos los derechos reservados.</p>
-        </div>
-      </footer>
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+          <Outlet /> 
+        </main>
+      </div>
     </div>
   );
 }
