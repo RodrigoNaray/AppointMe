@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import apiClient from '@/api/client';
 import { Service, CreateServiceDto, UpdateServiceDto } from '@/types/service';
-import { DataTable } from '@/components/shared/data-table';
+import { DataTable } from '@/components/shared/DataTable';
 import { createServiceColumns } from './columns';
 import Modal from '@/components/Modal';
 import ServiceForm from '@/components/ServiceForm';
