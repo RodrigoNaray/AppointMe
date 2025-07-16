@@ -7,6 +7,8 @@ import PublicLayout from './layouts/PublicLayout';
 import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import NotFoundPage from './pages/NotFoundPage';
+import ServicesListPage from './pages/ServicesListPage';
+import ContactPage from './pages/ContactPage';
 
 const router = createBrowserRouter([
   {
@@ -15,6 +17,8 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: 'login', element: <LoginPage /> },
+      { path: 'services', element: <ServicesListPage /> },
+      { path: 'contact', element: <ContactPage /> },
     ],
   },
   {  
