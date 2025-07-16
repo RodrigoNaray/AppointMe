@@ -9,6 +9,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import NotFoundPage from './pages/NotFoundPage';
 import ServicesListPage from './pages/ServicesListPage';
 import ContactPage from './pages/ContactPage';
+import AvailabilityPage from './pages/admin/AvailabilityPage';
+import BookingsPage from './pages/admin/bookings/BookingsPage';
 
 const router = createBrowserRouter([
   {
@@ -30,6 +32,8 @@ const router = createBrowserRouter([
       children: [
         { index: true, element: <DashboardPage /> },
         { path: 'services', element: <ServicesPage /> },
+        { path: 'availability', element: <AvailabilityPage /> }, 
+        { path: 'bookings', element: <BookingsPage /> }, 
       ],
     },
     ],
