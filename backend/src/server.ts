@@ -6,6 +6,8 @@ import authRoutes from './modules/auth/auth.routes';
 import cookieParser from 'cookie-parser';
 import passport from 'passport';
 import jwtStrategy from './config/passport';
+import availabilityRouter from './modules/availability/availability.routes';
+import { isAuthenticated } from './middlewares/isAuthenticated';
 
 
 dotenv.config();
@@ -28,12 +30,10 @@ app.use(cookieParser(process.env.JWT_SECRET));
 app.use(passport.initialize());
 passport.use(jwtStrategy);
 
-app.get('/', (req: Request, res: Response) => {
-  res.json({ message: '¡Bienvenido a la API de AppointMe!' });
-});
-
+//---  ROUTES ---//
 app.use('/api/services', catalogRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin/availability', isAuthenticated, availabilityRouter);
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
