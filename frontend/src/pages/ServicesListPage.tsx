@@ -15,7 +15,7 @@ export default function ServicesListPage() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await apiClient.get<Service[]>('api/services');
+        const response = await apiClient.get<Service[]>('services');
         
         setServices(response.data.filter(s => s.isActive));
       } catch (err) {

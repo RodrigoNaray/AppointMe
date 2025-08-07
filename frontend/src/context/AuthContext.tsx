@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkUserStatus = async () => {
       try {
-        const response = await apiClient.get<{ user: User }>('api/auth/profile');
+        const response = await apiClient.get<{ user: User }>('auth/profile');
         setUser(response.data.user); 
       } catch (error) {
         setUser(null);
@@ -41,9 +41,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (data: LoginDto) => {
     try {
-      await apiClient.post('api/auth/login', data);
+      await apiClient.post('auth/login', data);
       
-      const response = await apiClient.get<{ user: User }>('api/auth/profile');
+      const response = await apiClient.get<{ user: User }>('auth/profile');
       setUser(response.data.user);
       
     } catch (error) {
@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await apiClient.post('api/auth/logout');
+      await apiClient.post('auth/logout');
     } finally {
       setUser(null);
     }

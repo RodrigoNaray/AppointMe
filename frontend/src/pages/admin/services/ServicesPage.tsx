@@ -19,7 +19,7 @@ export default function ServicesPage() {
   const fetchServices = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.get<Service[]>('api/services');
+      const response = await apiClient.get<Service[]>('services');
       setServices(response.data);
     } catch (err) {
       console.error('No se pudieron cargar los servicios.', err);
@@ -45,9 +45,9 @@ export default function ServicesPage() {
   const handleFormSubmit = async (data: CreateServiceDto | UpdateServiceDto) => {
     try {
       if (editingService) {
-        await apiClient.put(`api/services/update/${editingService.id}`, data);
+        await apiClient.put(`services/update/${editingService.id}`, data);
       } else {
-        await apiClient.post('api/services', data);
+        await apiClient.post('services', data);
       }
       setIsModalOpen(false);
       fetchServices();
@@ -59,7 +59,7 @@ export default function ServicesPage() {
   const handleDeleteService = async (serviceId: string) => {
     if (window.confirm("¿Estás seguro de que quieres eliminar este servicio?")) {
       try {
-        await apiClient.delete(`api/services/remove/${serviceId}`);
+        await apiClient.delete(`services/remove/${serviceId}`);
         fetchServices();
       } catch (err) {
         console.error("Error al eliminar el servicio:", err);
