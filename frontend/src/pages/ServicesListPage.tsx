@@ -37,7 +37,7 @@ export default function ServicesListPage() {
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold tracking-tight">Nuestros Servicios</h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Elige el servicio perfecto para ti y agenda tu cita en pocos clics.
+          Elige el servicio perfecto para ti y agenda tu cita en pocos clicks.
         </p>
       </div>
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
