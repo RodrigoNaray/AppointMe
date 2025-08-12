@@ -28,3 +28,39 @@ export const updateScheduleController = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
+
+
+export const getBlocksController = async (req: Request, res: Response) => {
+  try {
+    const blocks = await service.getBlocks();
+    res.status(200).json(blocks);
+  } catch (error) {
+    logger.error(error, "Error al obtener los bloqueos de tiempo");
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+export const createBlockController = async (req: Request, res: Response) => {
+  try {
+    const { startTime, endTime, reason } = req.body;
+    const newBlock = await service.createBlock({
+      startTime: new Date(startTime),
+      endTime: new Date(endTime),
+      reason,
+    });
+    res.status(201).json(newBlock);
+  } catch (error) {
+    logger.error(error, "Error al crear el bloqueo de tiempo");
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+export const deleteBlockController = async (req: Request, res: Response) => {
+  try {
+    await service.deleteBlock(req.params.id);
+    res.status(204).send();
+  } catch (error) {
+    logger.error(error, "Error al eliminar el bloqueo de tiempo");
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};

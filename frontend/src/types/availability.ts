@@ -7,3 +7,11 @@ export interface DaySchedule {
 export interface WeeklySchedule {
   [key: string]: DaySchedule;
 }
+
+export interface AvailabilityBlock {
+  id: string;
+  startTime: string; // Las fechas llegan como strings en formato ISO
+  endTime: string;
+  reason: string | null;
+  createdAt: string;
+}

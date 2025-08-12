@@ -1,9 +1,14 @@
 import { Router } from 'express';
-import * as controller from './availability.controller';
+import * as availabilityController from './availability.controller';
 
-const router = Router();
 
-router.get('/schedule', controller.getScheduleController);
-router.put('/schedule', controller.updateScheduleController);
+const availabilityRouter = Router();
 
-export default router;
+availabilityRouter.get('/schedule', availabilityController.getScheduleController);
+availabilityRouter.put('/schedule', availabilityController.updateScheduleController);
+
+availabilityRouter.get('/blocks', availabilityController.getBlocksController);
+availabilityRouter.post('/blocks', availabilityController.createBlockController);
+availabilityRouter.delete('/blocks/:id',availabilityController.deleteBlockController);
+
+export default availabilityRouter;

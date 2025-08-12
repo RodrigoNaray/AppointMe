@@ -1,13 +1,29 @@
+// frontend/src/pages/admin/AvailabilityPage.tsx
 "use client"
 
 import { useState, useEffect, useCallback } from "react";
 import apiClient from "@/api/client";
-import { WeeklySchedule, DaySchedule } from "@/types/availability";
+import { WeeklySchedule, DaySchedule, AvailabilityBlock } from "@/types/availability";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import Modal from "@/components/Modal";
+import BlockForm from "@/components/BlockForm";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const daysOfWeek = [
   { id: 'monday', label: 'Lunes' },
@@ -23,37 +39,37 @@ const defaultDaySchedule: DaySchedule = { start: '09:00', end: '18:00', isActive
 
 export default function AvailabilityPage() {
   const [schedule, setSchedule] = useState<WeeklySchedule>({});
+  const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  
-  const fetchSchedule = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.get<WeeklySchedule>('/admin/availability/schedule');
-      setSchedule(response.data);
+      const [scheduleResponse, blocksResponse] = await Promise.all([
+        apiClient.get<WeeklySchedule>('/admin/availability/schedule'),
+        apiClient.get<AvailabilityBlock[]>('/admin/availability/blocks')
+      ]);
+      setSchedule(scheduleResponse.data);
+      setBlocks(blocksResponse.data);
     } catch (error) {
-      console.error("Error al cargar el horario", error);
+      console.error("Error al cargar los datos de disponibilidad", error);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchSchedule();
-  }, [fetchSchedule]);
-
+    fetchData();
+  }, [fetchData]);
 
   const handleScheduleChange = (dayId: string, field: keyof DaySchedule, value: string | boolean) => {
     setSchedule(prev => ({
       ...prev,
-      [dayId]: {
-        ...prev[dayId] || defaultDaySchedule,
-        [field]: value
-      }
+      [dayId]: { ...prev[dayId] || defaultDaySchedule, [field]: value }
     }));
   };
 
-  
   const handleSaveChanges = async () => {
     try {
       await apiClient.put('/admin/availability/schedule', schedule);
@@ -64,7 +80,33 @@ export default function AvailabilityPage() {
     }
   };
 
-  if (isLoading) return <p>Cargando horario...</p>;
+  const handleCreateBlock = async (data: { startTime: string; endTime: string; reason: string }) => {
+    try {
+      const newBlock = {
+        startTime: new Date(data.startTime).toISOString(),
+        endTime: new Date(data.endTime).toISOString(),
+        reason: data.reason,
+      };
+      await apiClient.post('/admin/availability/blocks', newBlock);
+      setIsModalOpen(false);
+      fetchData(); 
+    } catch (error) {
+      console.error("Error al crear el bloqueo", error);
+      alert("Hubo un error al crear el bloqueo.");
+    }
+  };
+
+  const handleDeleteBlock = async (blockId: string) => {
+    try {
+      await apiClient.delete(`/admin/availability/blocks/${blockId}`);
+      fetchData(); 
+    } catch (error) {
+      console.error("Error al eliminar el bloqueo", error);
+      alert("Hubo un error al eliminar el bloqueo.");
+    }
+  };
+
+  if (isLoading) return <p>Cargando disponibilidad...</p>;
 
   return (
     <div className="grid gap-6">
@@ -79,29 +121,12 @@ export default function AvailabilityPage() {
               const daySchedule = schedule[day.id] || defaultDaySchedule;
               return (
                 <div key={day.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50">
-                  <Checkbox
-                    id={`check-${day.id}`}
-                    checked={daySchedule.isActive}
-                    onCheckedChange={(checked) => handleScheduleChange(day.id, 'isActive', !!checked)}
-                    className="h-5 w-5"
-                  />
-                  <Label htmlFor={`check-${day.id}`} className="w-24 text-sm font-medium">
-                    {day.label}
-                  </Label>
+                  <Checkbox id={`check-${day.id}`} checked={daySchedule.isActive} onCheckedChange={(checked) => handleScheduleChange(day.id, 'isActive', !!checked)} className="h-5 w-5" />
+                  <Label htmlFor={`check-${day.id}`} className="w-24 text-sm font-medium">{day.label}</Label>
                   <div className="flex items-center gap-2 flex-grow">
-                    <Input
-                      type="time"
-                      value={daySchedule.start}
-                      onChange={(e) => handleScheduleChange(day.id, 'start', e.target.value)}
-                      disabled={!daySchedule.isActive}
-                    />
+                    <Input type="time" value={daySchedule.start} onChange={(e) => handleScheduleChange(day.id, 'start', e.target.value)} disabled={!daySchedule.isActive} />
                     <span>-</span>
-                    <Input
-                      type="time"
-                      value={daySchedule.end}
-                      onChange={(e) => handleScheduleChange(day.id, 'end', e.target.value)}
-                      disabled={!daySchedule.isActive}
-                    />
+                    <Input type="time" value={daySchedule.end} onChange={(e) => handleScheduleChange(day.id, 'end', e.target.value)} disabled={!daySchedule.isActive} />
                   </div>
                 </div>
               )
@@ -112,16 +137,53 @@ export default function AvailabilityPage() {
           </div>
         </CardContent>
       </Card>
-       <Card>
+
+      <Card>
         <CardHeader>
           <CardTitle>Bloqueos de Tiempo</CardTitle>
           <CardDescription>Añade bloqueos específicos para vacaciones, citas personales o cualquier momento en que no estarás disponible.</CardDescription>
         </CardHeader>
         <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">No hay bloqueos de tiempo programados.</p>
-            <Button variant="outline">Añadir Bloqueo</Button>
+            <div className="space-y-2">
+              {blocks.length > 0 ? (
+                blocks.map(block => (
+                  <div key={block.id} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
+                    <div>
+                      <p className="font-medium">{block.reason || 'Bloqueo sin motivo'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(block.startTime), "d 'de' MMMM, HH:mm", { locale: es })} - {format(new Date(block.endTime), "HH:mm'hs'", { locale: es })}
+                      </p>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">Eliminar</Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta acción no se puede deshacer. Esto eliminará permanentemente el bloqueo de tiempo.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteBlock(block.id)}>Continuar</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground mb-4">No hay bloqueos de tiempo programados.</p>
+              )}
+            </div>
+            <Button variant="outline" className="mt-4" onClick={() => setIsModalOpen(true)}>Añadir Bloqueo</Button>
         </CardContent>
       </Card>
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Añadir Nuevo Bloqueo">
+        <BlockForm onCancel={() => setIsModalOpen(false)} onSubmit={handleCreateBlock} />
+      </Modal>
     </div>
   );
 }
