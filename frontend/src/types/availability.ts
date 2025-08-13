@@ -15,3 +15,10 @@ export interface AvailabilityBlock {
   reason: string | null;
   createdAt: string;
 }
+
+export interface CalendarEvent {
+  title: string;
+  start: Date;
+  end: Date;
+  type: "booking" | "block" | "working_hours";
+}
