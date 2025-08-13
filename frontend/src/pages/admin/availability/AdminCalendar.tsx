@@ -141,24 +141,34 @@ export function AdminCalendar() {
     const weekDays = getWeekDays();
     return (
       <div className="grid grid-cols-7 border-t border-l">
+        {/* Encabezados de días de la semana */}
         {weekDays.map((day) => (
           <div
-            key={day.toString()}
-            className="p-2 border-b border-r min-h-[150px]"
+            key={`header-${day.toString()}`}
+            className="p-3 text-center font-semibold border-b border-r bg-muted/50"
           >
-            <div className="text-center font-semibold text-sm mb-2">
-              <p>{format(day, "EEE", { locale: es })}</p>
-              <p>{format(day, "d")}</p>
-            </div>
-            <div className="space-y-1">
-              {events
-                .filter((e) => isSameDay(new Date(e.start), day))
-                .map((event) => (
-                  <EventCard key={event.start.toString()} event={event} />
-                ))}
-            </div>
+            <p className="text-sm">{format(day, "EEE", { locale: es })}</p>
+            <p className="text-lg">{format(day, "d")}</p>
           </div>
         ))}
+        {/* Celdas de contenido de cada día */}
+        {weekDays.map((day) => {
+          const dayEvents = events.filter((e) =>
+            isSameDay(new Date(e.start), day)
+          );
+          return (
+            <div
+              key={day.toString()}
+              className="p-3 border-b border-r min-h-[582px]"
+            >
+              <div className="space-y-1">
+                {dayEvents.map((event) => (
+                  <EventCard key={event.start.toString()} event={event} />
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -175,7 +185,7 @@ export function AdminCalendar() {
         {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((day) => (
           <div
             key={day}
-            className="p-2 text-center font-semibold border-b border-r bg-muted/50"
+            className="p-3 text-center font-semibold border-b border-r bg-muted/50"
           >
             {day}
           </div>
@@ -193,7 +203,7 @@ export function AdminCalendar() {
           return (
             <div
               key={day.toString()}
-              className="p-2 border-b border-r min-h-[120px]"
+              className="p-3 border-b border-r min-h-[120px]"
             >
               <div className="font-bold text-sm">{format(day, "d")}</div>
               <div className="space-y-1 mt-1">
