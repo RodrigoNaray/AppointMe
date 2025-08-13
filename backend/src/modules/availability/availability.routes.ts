@@ -11,4 +11,6 @@ availabilityRouter.get('/blocks', availabilityController.getBlocksController);
 availabilityRouter.post('/blocks', availabilityController.createBlockController);
 availabilityRouter.delete('/blocks/:id',availabilityController.deleteBlockController);
 
+availabilityRouter.get('/calendar', availabilityController.getCalendarEventsController);
+
 export default availabilityRouter;

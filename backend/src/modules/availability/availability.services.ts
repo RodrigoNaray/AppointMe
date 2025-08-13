@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../config/prisma';
-import { UpdateScheduleDto, WeeklySchedule } from './availability.types';
+import { UpdateScheduleDto, WeeklySchedule, CalendarEvent } from './availability.types';
+import { startOfMonth, endOfMonth, eachDayOfInterval, format } from 'date-fns';
 import logger from '../../utils/logger';
 
 export const getSchedule = async (userId: string): Promise<WeeklySchedule> => {
@@ -50,4 +51,63 @@ export const deleteBlock = async (blockId: string) => {
     where: { id: blockId },
   });
   logger.info({ blockId }, "Bloqueo de tiempo eliminado");
+};
+
+
+export const getCalendarEvents = async (userId: string, month: Date): Promise<CalendarEvent[]> => {
+  const startOfMonthDate = startOfMonth(month);
+  const endOfMonthDate = endOfMonth(month);
+
+  const [user, bookings, blocks] = await Promise.all([
+    prisma.adminUser.findUnique({ where: { id: userId }, select: { schedule: true } }),
+    prisma.booking.findMany({ where: { bookingTime: { gte: startOfMonthDate, lte: endOfMonthDate } }, include: { service: true } }),
+    prisma.availabilityBlock.findMany({ where: { startTime: { lte: endOfMonthDate }, endTime: { gte: startOfMonthDate } } })
+  ]);
+
+
+  const events: CalendarEvent[] = [];
+  const schedule = (user?.schedule || {}) as unknown as WeeklySchedule;
+
+  const daysInMonth = eachDayOfInterval({ start: startOfMonthDate, end: endOfMonthDate });
+  daysInMonth.forEach(day => {
+    const dayOfWeek = format(day, 'eeee').toLowerCase(); 
+    const daySchedule = schedule[dayOfWeek];
+    
+    if (daySchedule?.isActive) {
+      const startDateTime = new Date(day);
+      const [startHour, startMinute] = daySchedule.start.split(':').map(Number);
+      startDateTime.setHours(startHour, startMinute, 0, 0);
+
+      const endDateTime = new Date(day);
+      const [endHour, endMinute] = daySchedule.end.split(':').map(Number);
+      endDateTime.setHours(endHour, endMinute, 0, 0);
+
+      events.push({
+        title: 'Horario de Trabajo',
+        start: startDateTime,
+        end: endDateTime,
+        type: 'working_hours',
+      });
+    }
+  });
+
+  bookings.forEach(booking => {
+    events.push({
+      title: `${booking.service.name} - ${booking.clientName}`,
+      start: booking.bookingTime,
+      end: new Date(booking.bookingTime.getTime() + booking.service.durationMinutes * 60000),
+      type: 'booking',
+    });
+  });
+
+  blocks.forEach(block => {
+    events.push({
+      title: block.reason || 'Tiempo Bloqueado',
+      start: block.startTime,
+      end: block.endTime,
+      type: 'block',
+    });
+  });
+
+  return events;
 };

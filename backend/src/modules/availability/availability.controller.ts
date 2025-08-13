@@ -64,3 +64,21 @@ export const deleteBlockController = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
+
+export const getCalendarEventsController = async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const { month } = req.query;
+
+  if (!month || typeof month !== 'string') {
+    return res.status(400).json({ message: 'El parámetro "month" es requerido.' });
+  }
+
+  try {
+    const monthDate = new Date(month + 'T00:00:00');
+    const events = await service.getCalendarEvents(userId, monthDate);
+    res.status(200).json(events);
+  } catch (error) {
+    logger.error(error, "Error al generar los eventos del calendario");
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};

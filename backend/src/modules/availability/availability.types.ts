@@ -9,3 +9,10 @@ export interface WeeklySchedule {
 }
 
 export type UpdateScheduleDto = WeeklySchedule;
+
+export interface CalendarEvent {
+  title: string;
+  start: Date;
+  end: Date;
+  type: 'booking' | 'block' | 'working_hours';
+}
