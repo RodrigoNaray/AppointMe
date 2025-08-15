@@ -5,9 +5,11 @@ import catalogRoutes from './modules/services/services.routes';
 import authRoutes from './modules/auth/auth.routes';
 import cookieParser from 'cookie-parser';
 import passport from 'passport';
-import jwtStrategy from './config/passport';
+import adminJwtStrategy from './config/passportAdmin'; 
+import { clientJwtStrategy } from './config/passportClient';
 import availabilityRouter from './modules/availability/availability.routes';
-import { isAuthenticated } from './middlewares/isAuthenticated';
+import clientAuthRoutes from './modules/clientAuth/clientAuth.routes';
+import { isAdminAuthenticated } from './middlewares/isAdminAuthenticated';
 
 
 dotenv.config();
@@ -26,14 +28,19 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
+//-- COOKIE PARSER --//
 app.use(cookieParser(process.env.JWT_SECRET));
+
+//-- PASSPORT --//
 app.use(passport.initialize());
-passport.use(jwtStrategy);
+passport.use('jwt-admin', adminJwtStrategy); 
+passport.use('jwt-client', clientJwtStrategy);
 
 //---  ROUTES ---//
 app.use('/api/services', catalogRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/admin/availability', isAuthenticated, availabilityRouter);
+app.use('/api/admin/availability', isAdminAuthenticated, availabilityRouter);
+app.use('/api/auth/client', clientAuthRoutes);
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);

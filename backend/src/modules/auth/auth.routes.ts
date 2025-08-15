@@ -1,11 +1,11 @@
 import { Router } from "express";
 import * as authController from './auth.controller';
-import { isAuthenticated } from "../../middlewares/isAuthenticated";
+import { isAdminAuthenticated } from "../../middlewares/isAdminAuthenticated";
 
 const router: Router = Router();
 
 router.post('/login', authController.loginController);
 router.post('/logout', authController.logoutController);
-router.get('/profile', isAuthenticated ,authController.getProfileController)
+router.get('/profile', isAdminAuthenticated ,authController.getProfileController)
 
 export default router;

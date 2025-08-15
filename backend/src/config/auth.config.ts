@@ -1,6 +1,7 @@
 import { CookieOptions } from "express";
 
-export const ACCESS_TOKEN_COOKIE_NAME = 'accessToken';
+export const ACCESS_ADMIN_TOKEN_COOKIE_NAME = 'adminToken';
+export const ACCESS_CLIENT_TOKEN_COOKIE_NAME = 'clientToken';
 export const JWT_EXPIRATION = '8h';
 
 export const cookieOptions: CookieOptions = {

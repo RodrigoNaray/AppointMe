@@ -1,6 +1,6 @@
 import { Router } from "express";
 import * as servicesController from "./services.controller";
-import { isAuthenticated } from "../../middlewares/isAuthenticated";
+import { isAdminAuthenticated } from "../../middlewares/isAdminAuthenticated";
 
 const servicesRoutes: Router = Router();
 
@@ -9,8 +9,8 @@ servicesRoutes.get('/' , servicesController.findAll)
 servicesRoutes.get('/:id' ,servicesController.findOne)
 
 //-- PRIVATE ROUTES
-servicesRoutes.post('/' ,isAuthenticated , servicesController.create)
-servicesRoutes.put('/update/:id' ,isAuthenticated ,servicesController.update)
-servicesRoutes.delete('/remove/:id' ,isAuthenticated , servicesController.remove)
+servicesRoutes.post('/' ,isAdminAuthenticated , servicesController.create)
+servicesRoutes.put('/update/:id' ,isAdminAuthenticated ,servicesController.update)
+servicesRoutes.delete('/remove/:id' ,isAdminAuthenticated , servicesController.remove)
 
 export default servicesRoutes;

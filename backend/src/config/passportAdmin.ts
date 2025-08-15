@@ -1,7 +1,7 @@
-import { Strategy as JwtStrategy, ExtractJwt, StrategyOptions } from "passport-jwt";
+import { Strategy as JwtStrategy, StrategyOptions } from "passport-jwt";
 import prisma from "./prisma";
 import logger from "../utils/logger";
-import { JWT_SECRET, ACCESS_TOKEN_COOKIE_NAME } from './auth.config';
+import { JWT_SECRET, ACCESS_ADMIN_TOKEN_COOKIE_NAME } from './auth.config';
 
 
 if (!process.env.JWT_SECRET) {
@@ -15,7 +15,7 @@ const cookieExtractor = (req: Request): string | null => {
   const reqWithCookies = req as Request & { signedCookies: { [key: string]: string } };
 
   if (reqWithCookies && reqWithCookies.signedCookies) {
-    token = reqWithCookies.signedCookies['accessToken'];
+    token = reqWithCookies.signedCookies[ACCESS_ADMIN_TOKEN_COOKIE_NAME];
   }
   return token;
 };
@@ -26,7 +26,7 @@ const opts: StrategyOptions = {
 };
 
 
-const strategy = new JwtStrategy(opts, async (payload, done) => {
+const adminJwtStrategy = new JwtStrategy(opts, async (payload, done) => {
   try{
     const user = await prisma.adminUser.findUnique({
       where: { id: payload.sub},
@@ -44,4 +44,4 @@ const strategy = new JwtStrategy(opts, async (payload, done) => {
   }
 });
 
-export default strategy;
+export default adminJwtStrategy;

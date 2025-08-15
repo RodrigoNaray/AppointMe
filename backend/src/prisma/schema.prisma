@@ -30,6 +30,22 @@ model AdminUser {
   updatedAt     DateTime  @updatedAt          // Fecha y hora de la última actualización
 }
 
+// Modelo para los Clientes que reservan
+model Client {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  phone        String?
+  passwordHash String?   // Opcional para el login con Google
+  googleId     String?   @unique
+
+  // Relación: Un cliente puede tener muchas reservas
+  bookings     Booking[]
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
 // Modelo para los Servicios ofrecidos
 model Service {
   id            String    @id @default(cuid())
@@ -51,10 +67,9 @@ model Booking {
   id            String    @id @default(cuid())
   bookingTime   DateTime                      // Fecha y hora exactas de inicio de la reserva
 
-  // Datos del cliente que realiza la reserva
-  clientName    String
-  clientEmail   String
-  clientPhone   String
+  // Y los reemplazamos con una relación
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id])
 
   // Relación: Una reserva pertenece a un servicio específico
   serviceId     String
