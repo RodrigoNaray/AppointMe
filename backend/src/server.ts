@@ -7,9 +7,10 @@ import cookieParser from 'cookie-parser';
 import passport from 'passport';
 import adminJwtStrategy from './config/passportAdmin'; 
 import { clientJwtStrategy } from './config/passportClient';
-import availabilityRouter from './modules/availability/availability.routes';
+import availabilityRouter from './modules/availability/availability.admin.routes';
 import clientAuthRoutes from './modules/clientAuth/clientAuth.routes';
 import { isAdminAuthenticated } from './middlewares/isAdminAuthenticated';
+import availabilityPublicRoutes from './modules/availability/availability.public.routes';
 
 
 dotenv.config();
@@ -37,10 +38,12 @@ passport.use('jwt-admin', adminJwtStrategy);
 passport.use('jwt-client', clientJwtStrategy);
 
 //---  ROUTES ---//
-app.use('/api/services', catalogRoutes);
-app.use('/api/auth', authRoutes);
 app.use('/api/admin/availability', isAdminAuthenticated, availabilityRouter);
+app.use('/api/availability', availabilityPublicRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/auth/client', clientAuthRoutes);
+app.use('/api/services', catalogRoutes);
+
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);

@@ -26,6 +26,10 @@ model AdminUser {
                           // { "monday": { "start": "09:00", "end": "18:00", "isActive": true }, ... }
   minBookingNoticeMinutes Int? @default(60)   // Antelación mínima para reservas, en minutos. Por defecto 1 hora.
 
+  services          Service[]
+  bookings          Booking[]
+  availabilityBlocks AvailabilityBlock[]
+
   createdAt     DateTime  @default(now())     // Fecha y hora de creación del registro
   updatedAt     DateTime  @updatedAt          // Fecha y hora de la última actualización
 }
@@ -49,48 +53,54 @@ model Client {
 // Modelo para los Servicios ofrecidos
 model Service {
   id            String    @id @default(cuid())
-  name          String                        // Nombre del servicio (ej. "Maquillaje Social")
-  description   String?                       // Descripción opcional del servicio
-  durationMinutes Int                         // Duración del servicio en minutos (ej. 60)
-  price         Float                         // Precio del servicio
-  isActive      Boolean   @default(true)      // Para poder "desactivar" un servicio sin borrarlo
+  name          String    @unique // <-- AÑADIDO: El nombre del servicio debe ser único
+  description   String?
+  durationMinutes Int
+  price         Float
+  isActive      Boolean   @default(true)
 
-  // Relación: Un servicio puede tener muchas reservas
-  bookings      Booking[]
+  adminId     String
+  admin       AdminUser @relation(fields: [adminId], references: [id])
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 // Modelo para las Reservas hechas por los clientes
 model Booking {
-  id            String    @id @default(cuid())
-  bookingTime   DateTime                      // Fecha y hora exactas de inicio de la reserva
+  id          String   @id @default(cuid())
+  bookingTime DateTime
 
-  // Y los reemplazamos con una relación
+  adminId     String
+  admin       AdminUser @relation(fields: [adminId], references: [id])
+
   clientId    String
   client      Client   @relation(fields: [clientId], references: [id])
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id])
 
-  // Relación: Una reserva pertenece a un servicio específico
-  serviceId     String
-  service       Service   @relation(fields: [serviceId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Índice en bookingTime para optimizar consultas por fecha/hora
   @@index([bookingTime])
+  @@unique([bookingTime, serviceId, clientId, adminId]) 
 }
 
 // Modelo para los Bloqueos de Disponibilidad definidos por el administrador
 model AvailabilityBlock {
-  id            String    @id @default(cuid())
-  startTime     DateTime                      // Fecha y hora de inicio del bloqueo
-  endTime       DateTime                      // Fecha y hora de fin del bloqueo
-  reason        String?                       // Motivo opcional del bloqueo (ej. "Vacaciones")
+  id        String   @id @default(cuid())
+  startTime DateTime
+  endTime   DateTime
+  reason    String?
 
-  createdAt     DateTime  @default(now())
+  adminId   String
+  admin     AdminUser @relation(fields: [adminId], references: [id])
 
-  // Índice en startTime y endTime para optimizar consultas de rango
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([startTime, endTime])
+  @@unique([startTime, endTime, adminId]) 
 }
+

@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../config/prisma';
-import { UpdateScheduleDto, WeeklySchedule, CalendarEvent } from './availability.types';
+import { UpdateScheduleDto, WeeklySchedule, CalendarEvent } from './availability.admin.types';
 import { startOfMonth, endOfMonth, eachDayOfInterval, format } from 'date-fns';
 import logger from '../../utils/logger';
 
@@ -34,12 +34,13 @@ export const getBlocks = async () => {
   });
 };
 
-export const createBlock = async (data: { startTime: Date; endTime: Date; reason?: string }) => {
+export const createBlock = async (data: { startTime: Date; endTime: Date; reason?: string; adminId: string }) => {
   const newBlock = await prisma.availabilityBlock.create({
     data: {
       startTime: data.startTime,
       endTime: data.endTime,
       reason: data.reason,
+      adminId: data.adminId
     },
   });
   logger.info({ blockId: newBlock.id }, "Nuevo bloqueo de tiempo creado");
@@ -60,7 +61,16 @@ export const getCalendarEvents = async (userId: string, month: Date): Promise<Ca
 
   const [user, bookings, blocks] = await Promise.all([
     prisma.adminUser.findUnique({ where: { id: userId }, select: { schedule: true } }),
-    prisma.booking.findMany({ where: { bookingTime: { gte: startOfMonthDate, lte: endOfMonthDate } }, include: { service: true } }),
+          prisma.booking.findMany({ 
+        where: { 
+          adminId: userId,
+          bookingTime: { gte: startOfMonthDate, lte: endOfMonthDate } 
+        }, 
+        include: { 
+          service: true,
+          client: true 
+        } 
+      }),
     prisma.availabilityBlock.findMany({ where: { startTime: { lte: endOfMonthDate }, endTime: { gte: startOfMonthDate } } })
   ]);
 
@@ -93,7 +103,7 @@ export const getCalendarEvents = async (userId: string, month: Date): Promise<Ca
 
   bookings.forEach(booking => {
     events.push({
-      title: `${booking.service.name} - ${booking.clientName}`,
+      title: `${booking.service.name} - ${booking.client.name}`,
       start: booking.bookingTime,
       end: new Date(booking.bookingTime.getTime() + booking.service.durationMinutes * 60000),
       type: 'booking',

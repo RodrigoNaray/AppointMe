@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import * as service from './availability.services';
-import { UpdateScheduleDto } from './availability.types';
+import * as service from './availability.admin.services';
+import { UpdateScheduleDto } from './availability.admin.types';
 import logger from '../../utils/logger';
 
 export const getScheduleController = async (req: Request, res: Response) => {
@@ -43,10 +43,13 @@ export const getBlocksController = async (req: Request, res: Response) => {
 export const createBlockController = async (req: Request, res: Response) => {
   try {
     const { startTime, endTime, reason } = req.body;
+    const adminId = req.user!.id;
+    
     const newBlock = await service.createBlock({
       startTime: new Date(startTime),
       endTime: new Date(endTime),
       reason,
+      adminId,
     });
     res.status(201).json(newBlock);
   } catch (error) {
