@@ -1,8 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
-import { addMinutes, setHours, setMinutes } from 'date-fns';
 
-// Inicializamos el cliente de Prisma
 const prisma = new PrismaClient();
 
 async function main() {
@@ -64,7 +62,7 @@ async function main() {
       description: 'Corte de cabello personalizado seguido de un peinado profesional.',
       durationMinutes: 60,
       price: 1500,
-      adminId: admin.id, // Asociamos el servicio al admin
+      adminId: admin.id,
     },
   });
 
@@ -82,13 +80,17 @@ async function main() {
   console.log(`💄 Servicios creados/actualizados: "${service1.name}", "${service2.name}"`);
 
   // --- 4. Crear Bloqueos de Disponibilidad (asociados al admin) ---
-  const today = new Date();
-  const blockStart = setMinutes(setHours(today, 14), 0); // Hoy a las 14:00
-  const blockEnd = setMinutes(setHours(today, 16), 0); // Hoy a las 16:00
+  // CORRECCIÓN: Usamos una fecha fija y métodos UTC para consistencia
+  const blockDate = new Date('2025-09-22T00:00:00.000Z');
+  
+  const blockStart = new Date(blockDate.getTime());
+  blockStart.setUTCHours(14, 0, 0, 0); // 14:00 UTC
+
+  const blockEnd = new Date(blockDate.getTime());
+  blockEnd.setUTCHours(16, 0, 0, 0); // 16:00 UTC
 
   await prisma.availabilityBlock.upsert({
     where: {
-      // Necesitamos un identificador único para upsert, podemos usar la fecha de inicio
       startTime_endTime_adminId: {
         startTime: blockStart,
         endTime: blockEnd,
@@ -103,10 +105,15 @@ async function main() {
       adminId: admin.id,
     },
   });
-  console.log('🚫 Bloqueo de tiempo creado para hoy de 14:00 a 16:00.');
+  console.log('🚫 Bloqueo de tiempo creado para el 22/09/2025 de 14:00 a 16:00 UTC.');
 
-  // --- 5. Crear Reservas (asociando clientes, servicios y admin) ---
-  const booking1Time = setMinutes(setHours(today, 10), 0); // Hoy a las 10:00
+  // --- 5. Crear Reservas de Prueba (asociando clientes, servicios y admin) ---
+  const bookingDate = new Date('2025-09-22T00:00:00.000Z');
+
+  // Usamos los métodos nativos del objeto Date
+  const booking1Time = new Date(bookingDate.getTime());
+  booking1Time.setUTCHours(9, 0, 0, 0);
+
   await prisma.booking.upsert({
     where: {
       bookingTime_serviceId_clientId_adminId: {
@@ -125,12 +132,14 @@ async function main() {
     },
   });
 
-  const booking2Time = setMinutes(setHours(today, 11), 30); // Hoy a las 11:30
+  const booking2Time = new Date(bookingDate.getTime());
+  booking2Time.setUTCHours(17, 0, 0, 0);
+
   await prisma.booking.upsert({
     where: {
       bookingTime_serviceId_clientId_adminId: {
         bookingTime: booking2Time,
-        serviceId: service2.id,
+        serviceId: service1.id,
         clientId: client2.id,
         adminId: admin.id,
       },
@@ -139,11 +148,11 @@ async function main() {
     create: {
       bookingTime: booking2Time,
       clientId: client2.id,
-      serviceId: service2.id,
+      serviceId: service1.id,
       adminId: admin.id,
     },
   });
-  console.log('✅ Reservas de ejemplo creadas para hoy.');
+  console.log('✅ Reservas de prueba creadas para el 22/09/2025.');
 
   console.log('🎉 ¡Siembra completada exitosamente!');
 }
