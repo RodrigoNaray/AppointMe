@@ -31,7 +31,11 @@ export const findOne = async (req: Request<{ id: string }>, res: Response) => {
 
 export const create = async (req: Request<{}, {}, CreateServiceDto>, res: Response) => {
   try {
-    const newService = await service.createService(req.body);
+
+    const adminId = req.user!.id;
+
+    const newService = await service.createService(req.body, adminId);
+    
     res.status(201).json(newService);
   } catch (error) {
     if (error instanceof ConflictError) {

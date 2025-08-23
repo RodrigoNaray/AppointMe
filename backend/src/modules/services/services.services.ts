@@ -17,13 +17,18 @@ export const getServiceById = async (id: string) => {
   return service;
 };
 
-export const createService = async (data: CreateServiceDto) => {
+export const createService = async (data: CreateServiceDto, adminId: string) => {
   const existing = await prisma.service.findFirst({ where: { name: data.name } });
   if(existing) {
     throw new ConflictError(`Ya existe un servicio con el nombre '${data.name}'`);
   }
 
-  const newService = await prisma.service.create({ data });
+  const newService = await prisma.service.create({ 
+    data: {
+      ...data,
+      adminId: adminId,
+    } 
+  });
   logger.info({ serviceId: newService.id, serviceName: newService.name }, "Nuevo servicio creado");
   return newService;
 };
