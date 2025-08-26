@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts | pino-pretty",
-    "build": "tsc",
+    "clean": "rimraf dist tsconfig.tsbuildinfo",
+    "build": "npm run clean && tsc",
     "prisma:generate": "prisma generate --schema=./src/prisma/schema.prisma",
     "prisma:migrate:reset": "prisma migrate reset --schema=./src/prisma/schema.prisma",
     "create:admin": "ts-node ./scripts/create-first-admin.ts",
