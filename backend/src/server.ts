@@ -9,8 +9,11 @@ import adminJwtStrategy from './config/passportAdmin';
 import { clientJwtStrategy } from './config/passportClient';
 import availabilityRouter from './modules/availability/availability.admin.routes';
 import clientAuthRoutes from './modules/clientAuth/clientAuth.routes';
+import healthRoutes from './modules/health/health.routes';
 import { isAdminAuthenticated } from './middlewares/isAdminAuthenticated';
 import availabilityPublicRoutes from './modules/availability/availability.public.routes';
+import compression from "compression";
+import helmet from "helmet";
 
 
 dotenv.config();
@@ -29,6 +32,9 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
+app.use(helmet());      
+app.use(compression()); 
+
 //-- COOKIE PARSER --//
 app.use(cookieParser(process.env.JWT_SECRET));
 
@@ -43,6 +49,7 @@ app.use('/api/availability', availabilityPublicRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/client', clientAuthRoutes);
 app.use('/api/services', catalogRoutes);
+app.use('/api/health', healthRoutes)
 
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
