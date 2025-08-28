@@ -10,6 +10,7 @@
     "build": "npm run clean && tsc",
     "prisma:generate": "prisma generate --schema=./src/prisma/schema.prisma",
     "prisma:migrate:reset": "prisma migrate reset --schema=./src/prisma/schema.prisma",
+    "migrate:deploy": "prisma migrate deploy --schema=./src/prisma/schema.prisma",
     "create:admin": "ts-node ./scripts/create-first-admin.ts",
     "db:seed": "prisma db seed"
   },

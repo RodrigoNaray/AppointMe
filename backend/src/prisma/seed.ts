@@ -1,18 +1,26 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
+
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Empezando el proceso de siembra...');
 
+  if(!process.env.ADMIN_PASSWORD) {
+    throw new Error('ADMIN_PASSWORD no esta definida en las variables de entorno');
+  };
+
+  if(!process.env.ADMIN_EMAIL) {
+    throw new Error('ADMIN_EMAIL no esta definida en las variables de entorno');
+  };
   // --- 1. Crear Administrador ---
-  const adminPassword = await bcrypt.hash('adminpass123', 10);
+  const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || '', 10);
   const admin = await prisma.adminUser.upsert({
-    where: { email: 'admin@appointme.com' },
+    where: { email: process.env.ADMIN_EMAIL || '' },
     update: {},
     create: {
-      email: 'admin@appointme.com',
+      email: process.env.ADMIN_EMAIL || '',
       passwordHash: adminPassword,
       schedule: {
         monday: { start: '09:00', end: '18:00', isActive: true },
