@@ -32,7 +32,11 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-app.use(helmet());      
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false, // desactiva CORP para tu API
+  })
+);    
 app.use(compression()); 
 
 //-- COOKIE PARSER --//
