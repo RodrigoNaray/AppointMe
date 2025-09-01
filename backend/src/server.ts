@@ -13,7 +13,7 @@ import healthRoutes from './modules/health/health.routes';
 import { isAdminAuthenticated } from './middlewares/isAdminAuthenticated';
 import availabilityPublicRoutes from './modules/availability/availability.public.routes';
 import compression from "compression";
-import helmet from "helmet";
+// import helmet from "helmet";
 
 
 dotenv.config();
@@ -24,6 +24,7 @@ const PORT: string | number = process.env.PORT || 5000;
 
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173', 
+
   credentials: true, // Si necesitas enviar cookies o cabeceras de autorización
 }));
 
@@ -32,11 +33,11 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-app.use(
-  helmet({
-    crossOriginResourcePolicy: false, // desactiva CORP para tu API
-  })
-);    
+// app.use(
+//   helmet({
+//     crossOriginResourcePolicy: false, // desactiva CORP para tu API
+//   })
+// );    
 app.use(compression()); 
 
 //-- COOKIE PARSER --//
