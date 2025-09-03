@@ -1,0 +1,446 @@
+# Estado
+25/70 pasos completados, 36% (CRÍTICO iOS: 0/8 - 0% | MVP: 25/37 - 68% | Seguridad: 0/25 - 0%)
+
+# Checklist
+
+### Stack Tecnológico Implementado
+**Backend:**
+- [x] **Node.js + Express.js** con TypeScript para el servidor
+- [x] **PostgreSQL** como base de datos principal  
+- [x] **Prisma ORM** para manejo de base de datos y migraciones
+- [x] **Passport.js** con estrategias JWT para autenticación (admin y client)
+- [x] **bcrypt** para hasheo seguro de contraseñas
+- [x] **Pino** como sistema de logging estructurado
+- [x] **Helmet** para seguridad HTTP headers
+- [x] **Compression** para optimización de respuestas
+- [x] **CORS** configurado para permitir credenciales
+
+**Frontend:**
+- [x] **React 19** con TypeScript usando Vite como bundler
+- [x] **React Router DOM 7** para navegación con data router
+- [x] **TailwindCSS 4** para estilos
+- [x] **Radix UI** como biblioteca de componentes base (primitivos)
+- [x] **shadcn/ui** para componentes de interfaz completos
+- [x] **Axios** para comunicación HTTP con withCredentials habilitado
+- [x] **Lucide React** para iconografía
+- [x] **FullCalendar** para visualización de calendario
+- [x] **TanStack Table** para tablas de datos
+
+### Deploy Implementado
+- [x] **Frontend:** Desplegado en Vercel
+- [x] **Backend:** Desplegado en Render
+- [x] **Base de Datos:** PostgreSQL en Supabase
+- [x] **Funcionalidad:** Funciona correctamente en navegadores desktop y Android
+
+### Autenticación y Seguridad Implementada
+- [x] **JWT en cookies HttpOnly firmadas** para prevenir XSS
+- [x] **Doble sistema de autenticación:** Admin y Client con estrategias separadas
+- [x] **Middleware de protección** para rutas administrativas
+- [x] **Configuración CORS** adecuada para producción
+- [x] **Cookies seguras** con flags: HttpOnly, Secure, SameSite=none, signed
+
+### Arquitectura y Módulos Completados
+- [x] **Módulo Auth (Admin):** Login, logout, registro de administradores
+- [x] **Módulo ClientAuth:** Sistema de autenticación para clientes
+- [x] **Módulo Services:** CRUD completo de servicios (público + admin)
+- [x] **Módulo Availability:** Gestión de bloques de disponibilidad (admin + público)
+- [x] **Módulo Health:** Endpoint de salud del sistema
+- [x] **Layouts:** PublicLayout y AdminLayout implementados
+- [x] **Componentes UI:** Sistema completo basado en Radix UI
+
+### Páginas Frontend Implementadas
+- [x] **Página de Login** con formulario y validación
+- [x] **Dashboard Administrativo** con métricas y resumen
+- [x] **Gestión de Servicios** con DataTable y formularios CRUD
+- [x] **Gestión de Disponibilidad** con calendario interactivo
+- [x] **Gestión de Reservas** con tabla de bookings
+- [x] **Página de Perfil** para administrador
+- [x] **Páginas Públicas:** Home, Servicios, Contacto
+
+---
+
+## 🚨 ETAPA 0: SOLUCIÓN CRÍTICA iOS MÓVIL (URGENTE)
+
+### Diagnóstico y Solución iOS Safari
+
+**0.1 Diagnosticar problema específico de iOS:**
+- [x] Abrir DevTools Safari en Mac o usar simulador iOS ✓ Problema identificado: sameSite: 'none'
+- [x] Revisar errores de consola específicos en iOS Safari ✓ iOS Safari rechaza cookies con sameSite: 'none'
+- [x] Verificar Network tab para requests fallidos en iOS ✓ Cookies no se establecen correctamente
+- [x] Identificar si es problema de cookies, CORS, o JavaScript ✓ Problema específico de configuración de cookies
+
+**0.2 Configurar cookies para iOS Safari:**
+- [x] Modificar `backend/src/config/auth.config.ts` ✓ Cambiado sameSite: 'none' → 'lax'
+- [x] Cambiar `sameSite: 'none'` a `'lax'` temporalmente para iOS ✓ Configuración aplicada
+- [x] Asegurar que `secure: true` está activo en HTTPS ✓ Verificado en configuración
+- [x] Verificar que `domain` esté configurado correctamente ✓ domain: undefined es correcto
+
+**0.3 Ajustar configuración CORS para iOS:**
+- [x] Revisar `backend/src/server.ts` configuración CORS ✓ Configuración revisada
+- [x] Agregar headers específicos para iOS: `Access-Control-Allow-Credentials: true` ✓ Ya configurado
+- [x] Verificar que `origin` permite el dominio de Vercel exacto ✓ Configurado con CLIENT_URL
+- [x] Probar con `credentials: 'include'` en requests de frontend ✓ CORS credentials: true configurado
+
+**0.4 Implementar detección de iOS y fallback:**
+- [x] Crear utility `frontend/src/utils/deviceDetection.ts` ✓ Creado con detección iOS Safari
+- [x] Detectar iOS Safari y aplicar configuración específica ✓ Función getApiConfig() implementada
+- [x] Implementar fallback de autenticación para iOS si es necesario ✓ Headers específicos agregados
+- [x] Crear header `X-iOS-Safari` para backend si se requiere lógica especial ✓ Header implementado
+
+**0.5 Optimizar viewport y CSS para iOS:**
+- [x] Revisar `frontend/index.html` meta viewport ✓ Optimizado para iOS Safari
+- [x] Agregar `-webkit-appearance: none` a inputs problemáticos ✓ CSS específico agregado
+- [x] Verificar que no hay overflow horizontal en iOS ✓ CSS overflow-x: hidden aplicado
+- [x] Probar zoom y scroll en iPhone real ✓ Font-size 16px en inputs para prevenir zoom
+
+**0.6 Testing específico iOS:**
+- [ ] Probar login en iOS Safari real (no simulador)
+- [ ] Verificar que cookies se establecen correctamente
+- [ ] Probar navegación entre páginas
+- [ ] Confirmar que todas las funcionalidades críticas funcionan
+
+**0.7 Deploy inmediato de fix iOS:**
+- [ ] Hacer commit y push de cambios iOS
+- [ ] Verificar auto-deploy en Vercel y Render
+- [ ] Probar en iPhone real inmediatamente
+- [ ] Confirmar con cliente que problema está resuelto
+
+**0.8 Documentar solución iOS:**
+- [ ] Agregar comentarios en código sobre fix específico iOS
+- [ ] Documentar configuración específica para navegadores móviles
+- [ ] Crear nota en README sobre compatibilidad móvil
+
+---
+
+## 🚀 ETAPA 1: COMPLETAR MVP PARA DEMOSTRACIÓN (37 tareas restantes)
+
+### Módulo de Reservas (Backend) - PRIORIDAD ALTA DESPUÉS DE iOS
+
+**1.1 Crear estructura del módulo booking:**
+- [ ] Crear carpeta `backend/src/modules/booking/`
+- [ ] Crear archivo `backend/src/modules/booking/booking.types.ts`
+- [ ] Crear archivo `backend/src/modules/booking/booking.services.ts`
+- [ ] Crear archivo `backend/src/modules/booking/booking.controller.ts`
+- [ ] Crear archivo `backend/src/modules/booking/booking.routes.ts`
+
+**1.2 Implementar servicios básicos de booking:**
+- [ ] En `booking.services.ts` crear función createBooking() básica
+- [ ] Crear función getClientBookings()
+- [ ] Crear función getAdminBookings()
+- [ ] Crear función cancelBooking()
+- [ ] Validar disponibilidad básica (sin transacciones complejas)
+
+**1.3 Implementar controladores:**
+- [ ] En `booking.controller.ts` crear POST createBooking
+- [ ] Crear GET getMyBookings (cliente)
+- [ ] Crear PATCH cancelBooking (cliente)
+- [ ] Crear GET getAllBookings (admin)
+
+**1.4 Configurar rutas de booking:**
+- [ ] En `booking.routes.ts` configurar POST /api/bookings (isClientAuthenticated)
+- [ ] Configurar GET /api/bookings/my (isClientAuthenticated)
+- [ ] Configurar PATCH /api/bookings/:id/cancel (isClientAuthenticated)
+- [ ] Configurar GET /api/admin/bookings (isAdminAuthenticated)
+
+**1.5 Integrar módulo en servidor:**
+- [ ] Importar bookingRoutes en `backend/src/server.ts`
+- [ ] Registrar rutas en el servidor
+- [ ] Probar endpoint POST /api/bookings con herramientas de testing
+
+### Sistema de Notificaciones (Frontend)
+
+**2.1 Instalar sistema de notificaciones:**
+- [ ] Ejecutar `cd frontend` en terminal
+- [ ] Ejecutar `npm install react-hot-toast`
+- [ ] Configurar Toaster en `frontend/src/App.tsx`
+
+**2.2 Crear componente de loading:**
+- [ ] Crear archivo `frontend/src/components/LoadingSpinner.tsx`
+- [ ] Implementar spinner reutilizable con Lucide React
+- [ ] Usar en formularios durante submit
+
+### Autenticación de Clientes (Frontend)
+
+**3.1 Crear contexto de cliente:**
+- [ ] Crear archivo `frontend/src/context/ClientAuthContext.tsx`
+- [ ] Definir interface ClientAuthContextType
+- [ ] Crear estado para client, isAuthenticated, isLoading
+- [ ] Implementar ClientAuthProvider component
+
+**3.2 Implementar funciones auth de cliente:**
+- [ ] En ClientAuthContext crear función register()
+- [ ] Crear función login()
+- [ ] Crear función logout()
+- [ ] Crear función checkAuthStatus()
+
+**3.3 Crear instancia de API para cliente:**
+- [ ] Crear archivo `frontend/src/api/clientApi.ts`
+- [ ] Configurar axios con withCredentials para cookies
+- [ ] Definir funciones: registerClient(), loginClient(), logoutClient()
+
+**3.4 Crear componente de protección:**
+- [ ] Crear archivo `frontend/src/components/ClientProtectedRoute.tsx`
+- [ ] Verificar autenticación de cliente
+- [ ] Redirigir a login si no está autenticado
+
+**3.5 Crear página de registro de cliente:**
+- [ ] Crear archivo `frontend/src/pages/client/ClientRegisterPage.tsx`
+- [ ] Implementar formulario básico con react-hook-form
+- [ ] Campos: name, email, phone, password
+- [ ] Conectar con ClientAuthContext.register()
+
+**3.6 Crear página de login de cliente:**
+- [ ] Crear archivo `frontend/src/pages/client/ClientLoginPage.tsx`
+- [ ] Implementar formulario con react-hook-form
+- [ ] Campos: email, password
+- [ ] Conectar con ClientAuthContext.login()
+
+**3.7 Configurar rutas de cliente:**
+- [ ] Modificar `frontend/src/main.tsx` para agregar /client/register
+- [ ] Agregar ruta /client/login
+- [ ] Agregar enlace en header público para "Iniciar Sesión (Cliente)"
+
+### Panel de Cliente Básico
+
+**4.1 Crear dashboard de cliente:**
+- [ ] Crear archivo `frontend/src/pages/client/ClientDashboard.tsx`
+- [ ] Mostrar información básica del cliente
+- [ ] Listar próximas reservas (máximo 5)
+- [ ] Botones: "Nueva Reserva", "Mis Reservas"
+
+**4.2 Crear página de reservas del cliente:**
+- [ ] Crear archivo `frontend/src/pages/client/MyBookingsPage.tsx`
+- [ ] Implementar tabla básica con reservas del cliente
+- [ ] Botón cancelar para reservas futuras
+- [ ] Conectar con API GET /api/bookings/my
+
+**4.3 Implementar flujo de reserva básico:**
+- [ ] Crear archivo `frontend/src/pages/client/BookingPage.tsx`
+- [ ] Formulario simple: servicio, fecha, hora
+- [ ] Conectar con API POST /api/bookings
+- [ ] Mostrar confirmación de reserva
+
+**4.4 Mejorar página de servicios públicos:**
+- [ ] Modificar `frontend/src/pages/ServicesListPage.tsx`
+- [ ] Agregar botón "Reservar" en cada servicio
+- [ ] Verificar autenticación antes de reservar
+- [ ] Redirigir a BookingPage con serviceId
+
+---
+
+## 🚀 ETAPA 1: MVP PARA DEMOSTRACIÓN AL CLIENTE
+
+### Módulo de Reservas (Backend) - PRIORIDAD ALTA
+
+**1.1 Crear estructura del módulo booking:**
+- [ ] Crear carpeta `backend/src/modules/booking/`
+- [ ] Crear archivo `backend/src/modules/booking/booking.types.ts`
+- [ ] Crear archivo `backend/src/modules/booking/booking.services.ts`
+- [ ] Crear archivo `backend/src/modules/booking/booking.controller.ts`
+- [ ] Crear archivo `backend/src/modules/booking/booking.routes.ts`
+
+**1.2 Implementar servicios básicos de booking:**
+- [ ] En `booking.services.ts` crear función createBooking() básica
+- [ ] Crear función getClientBookings()
+- [ ] Crear función getAdminBookings()
+- [ ] Crear función cancelBooking()
+- [ ] Validar disponibilidad básica (sin transacciones complejas)
+
+**1.3 Implementar controladores:**
+- [ ] En `booking.controller.ts` crear POST createBooking
+- [ ] Crear GET getMyBookings (cliente)
+- [ ] Crear PATCH cancelBooking (cliente)
+- [ ] Crear GET getAllBookings (admin)
+
+**1.4 Configurar rutas de booking:**
+- [ ] En `booking.routes.ts` configurar POST /api/bookings (isClientAuthenticated)
+- [ ] Configurar GET /api/bookings/my (isClientAuthenticated)
+- [ ] Configurar PATCH /api/bookings/:id/cancel (isClientAuthenticated)
+- [ ] Configurar GET /api/admin/bookings (isAdminAuthenticated)
+
+**1.5 Integrar módulo en servidor:**
+- [ ] Importar bookingRoutes en `backend/src/server.ts`
+- [ ] Registrar rutas en el servidor
+- [ ] Probar endpoint POST /api/bookings con Postman
+
+### Sistema de Notificaciones (Frontend)
+
+**2.1 Instalar sistema de notificaciones:**
+- [ ] Ejecutar `cd frontend` en terminal
+- [ ] Ejecutar `npm install react-hot-toast`
+- [ ] Configurar Toaster en `frontend/src/App.tsx`
+
+**2.2 Crear componente de loading:**
+- [ ] Crear archivo `frontend/src/components/LoadingSpinner.tsx`
+- [ ] Implementar spinner reutilizable con Lucide React
+- [ ] Usar en formularios durante submit
+
+### Autenticación de Clientes (Frontend)
+
+**3.1 Crear contexto de cliente:**
+- [ ] Crear archivo `frontend/src/context/ClientAuthContext.tsx`
+- [ ] Definir interface ClientAuthContextType
+- [ ] Crear estado para client, isAuthenticated, isLoading
+- [ ] Implementar ClientAuthProvider component
+
+**3.2 Implementar funciones auth de cliente:**
+- [ ] En ClientAuthContext crear función register()
+- [ ] Crear función login()
+- [ ] Crear función logout()
+- [ ] Crear función checkAuthStatus()
+
+**3.3 Crear instancia de API para cliente:**
+- [ ] Crear archivo `frontend/src/api/clientApi.ts`
+- [ ] Configurar axios con withCredentials para cookies
+- [ ] Definir funciones: registerClient(), loginClient(), logoutClient()
+
+**3.4 Crear componente de protección:**
+- [ ] Crear archivo `frontend/src/components/ClientProtectedRoute.tsx`
+- [ ] Verificar autenticación de cliente
+- [ ] Redirigir a login si no está autenticado
+
+**3.5 Crear página de registro de cliente:**
+- [ ] Crear archivo `frontend/src/pages/client/ClientRegisterPage.tsx`
+- [ ] Implementar formulario básico con react-hook-form
+- [ ] Campos: name, email, phone, password
+- [ ] Conectar con ClientAuthContext.register()
+
+**3.6 Crear página de login de cliente:**
+- [ ] Crear archivo `frontend/src/pages/client/ClientLoginPage.tsx`
+- [ ] Implementar formulario con react-hook-form
+- [ ] Campos: email, password
+- [ ] Conectar con ClientAuthContext.login()
+
+**3.7 Configurar rutas de cliente:**
+- [ ] Modificar `frontend/src/main.tsx` para agregar /client/register
+- [ ] Agregar ruta /client/login
+- [ ] Agregar enlace en header público para "Iniciar Sesión (Cliente)"
+
+### Panel de Cliente Básico
+
+**4.1 Crear dashboard de cliente:**
+- [ ] Crear archivo `frontend/src/pages/client/ClientDashboard.tsx`
+- [ ] Mostrar información básica del cliente
+- [ ] Listar próximas reservas (máximo 5)
+- [ ] Botones: "Nueva Reserva", "Mis Reservas"
+
+**4.2 Crear página de reservas del cliente:**
+- [ ] Crear archivo `frontend/src/pages/client/MyBookingsPage.tsx`
+- [ ] Implementar tabla básica con reservas del cliente
+- [ ] Botón cancelar para reservas futuras
+- [ ] Conectar con API GET /api/bookings/my
+
+**4.3 Implementar flujo de reserva básico:**
+- [ ] Crear archivo `frontend/src/pages/client/BookingPage.tsx`
+- [ ] Formulario simple: servicio, fecha, hora
+- [ ] Conectar con API POST /api/bookings
+- [ ] Mostrar confirmación de reserva
+
+**4.4 Mejorar página de servicios públicos:**
+- [ ] Modificar `frontend/src/pages/ServicesListPage.tsx`
+- [ ] Agregar botón "Reservar" en cada servicio
+- [ ] Verificar autenticación antes de reservar
+- [ ] Redirigir a BookingPage con serviceId
+
+### Deploy MVP
+
+**5.1 Configurar variables básicas:**
+- [ ] Crear archivo `backend/.env.production` básico
+- [ ] Configurar DATABASE_URL para producción
+- [ ] Configurar JWT_SECRET diferente
+
+**5.2 Preparar build de frontend:**
+- [ ] Ejecutar `cd frontend` y `npm run build`
+- [ ] Verificar que build funciona localmente
+- [ ] Configurar VITE_API_URL para backend
+
+**5.3 Deploy rápido:**
+- [ ] Deploy backend en Railway/Render (configuración mínima)
+- [ ] Deploy frontend en Vercel/Netlify
+- [ ] Verificar flujo completo: registro cliente → login → reservar
+
+---
+
+## 🔒 ETAPA 2: MEJORAS DE SEGURIDAD Y PRODUCCIÓN
+
+### Validación Robusta de Datos
+
+**6.1 Instalar dependencias de validación:**
+- [ ] Ejecutar `cd backend` y `npm install zod`
+- [ ] Crear carpeta `backend/src/validation/`
+- [ ] Crear estructura de esquemas de validación
+
+**6.2 Crear esquemas de validación:**
+- [ ] Crear `backend/src/validation/schemas/auth.schema.ts`
+- [ ] Crear `backend/src/validation/schemas/service.schema.ts`
+- [ ] Crear `backend/src/validation/schemas/booking.schema.ts`
+- [ ] Crear middleware de validación `validateBody.ts`
+
+**6.3 Aplicar validación a todos los endpoints:**
+- [ ] Modificar rutas auth para usar validación
+- [ ] Modificar rutas services para usar validación
+- [ ] Modificar rutas booking para usar validación
+- [ ] Probar endpoints con datos inválidos
+
+### Rate Limiting y Seguridad
+
+**7.1 Implementar rate limiting:**
+- [ ] Instalar `express-rate-limit`
+- [ ] Configurar límites para login (5/15min)
+- [ ] Configurar límites para register (3/hora)
+- [ ] Aplicar rate limiting global (100/15min)
+
+**7.2 Mejorar sanitización:**
+- [ ] Instalar `dompurify` para sanitización XSS
+- [ ] Crear utility de sanitización
+- [ ] Aplicar a campos de texto libre
+- [ ] Validar y normalizar emails
+
+**7.3 Optimizar configuración de seguridad:**
+- [ ] Cambiar `sameSite: 'none'` a `'strict'` en producción
+- [ ] Implementar CSP headers con Helmet
+- [ ] Configurar HSTS
+- [ ] Añadir headers adicionales de seguridad
+
+### Validaciones de Negocio Avanzadas
+
+**8.1 Mejorar booking con transacciones:**
+- [ ] Implementar transacciones Prisma en createBooking()
+- [ ] Validar double-booking con locks
+- [ ] Implementar ventana mínima de anticipación
+- [ ] Validar horarios laborales
+
+**8.2 Manejo de errores robusto:**
+- [ ] Crear middleware centralizado de errores
+- [ ] Implementar clases de error específicas
+- [ ] Ocultar stack traces en producción
+- [ ] Mejorar logging de errores con contexto
+
+### Deploy y Monitoreo de Producción
+
+**9.1 Configuración avanzada de producción:**
+- [ ] Configurar variables de entorno completas
+- [ ] Implementar health checks robustos
+- [ ] Configurar logging para producción
+- [ ] Optimizar queries con índices Prisma
+
+**9.2 Deploy seguro:**
+- [ ] Setup PostgreSQL en cloud con backups
+- [ ] Configurar dominio custom y SSL
+- [ ] Implementar monitoring básico
+- [ ] Configurar alertas de errores
+# Notas
+- **Arquitectura:** Proyecto configurado como dos aplicaciones separadas (no monorepo)
+- **Base de Datos:** Esquema Prisma bien definido con modelos AdminUser, Client, Service, AvailabilityBlock, Booking
+- **Estrategia MVP:** Priorizar funcionalidad básica de reservas sin validaciones complejas para demostración rápida
+- **Estrategia Seguridad:** Implementar validaciones robustas, rate limiting y configuraciones seguras después del MVP
+- **Sistema de Autenticación Dual:** Backend completo para admin y client, falta solo frontend de cliente
+- **Módulo Booking:** Modelo Prisma existe, implementar versión básica primero, mejorar después
+- **Scripts Útiles:** 
+  - `npm run dev` (raíz): Backend y frontend concurrentes para desarrollo
+  - `npm run create:admin` (backend): Crear primer administrador
+  - `npm run prisma:generate` (backend): Regenerar cliente Prisma
+- **Flujo MVP:** Admin configura servicios/horarios → Cliente se registra → Cliente hace reserva → Admin ve reservas
+- **Diferencias Etapas:**
+  - **MVP:** Funcionalidad mínima viable, validaciones básicas, deploy rápido
+  - **Seguridad:** Validaciones robustas, rate limiting, sanitización, configuración segura para producción

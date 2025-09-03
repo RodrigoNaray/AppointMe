@@ -7,9 +7,9 @@ export const JWT_EXPIRATION = '8h';
 export const cookieOptions: CookieOptions = {
   httpOnly: true, // Impide el acceso desde JavaScript (protección XSS)
   secure: true,//process.env.NODE_ENV === 'production', // Solo se envía en HTTPS en producción
-  sameSite: 'none', // Protección fuerte contra CSRF
+  sameSite: 'lax', // Cambiado de 'none' a 'lax' para compatibilidad iOS Safari
   signed: true, // La cookie estará firmada
-  maxAge: 1000 * 60 * 60 * 8, // 1 hora en milisegundos, consistente con la expiración del JWT
+  maxAge: 1000 * 60 * 60 * 8, // 8 horas en milisegundos, consistente con la expiración del JWT
   domain: undefined,
 };
 
