@@ -10,6 +10,7 @@ export const cookieOptions: CookieOptions = {
   sameSite: 'none', // Protección fuerte contra CSRF
   signed: true, // La cookie estará firmada
   maxAge: 1000 * 60 * 60 * 8, // 1 hora en milisegundos, consistente con la expiración del JWT
+  domain: undefined,
 };
 
 if (!process.env.JWT_SECRET){
