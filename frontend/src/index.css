@@ -3,35 +3,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Optimizaciones específicas para iOS Safari */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-input, button, textarea, select {
-  -webkit-appearance: none;
-  -webkit-border-radius: 0;
-  border-radius: var(--radius);
-}
-
-/* Prevenir zoom en inputs en iOS */
-@media screen and (-webkit-min-device-pixel-ratio: 0) {
-  input[type="text"],
-  input[type="email"],
-  input[type="password"],
-  input[type="tel"],
-  textarea {
-    font-size: 16px;
-  }
-}
-
-/* Prevenir overflow horizontal */
-html, body {
-  overflow-x: hidden;
-  width: 100%;
-  position: relative;
-}
-
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

@@ -24,10 +24,9 @@ const PORT: string | number = process.env.PORT || 5000;
 
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173', 
-  credentials: true, // Necesario para enviar cookies
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
-  exposedHeaders: ['Set-Cookie'], // Exponer header Set-Cookie para iOS
+  credentials: true, // Si necesitas enviar cookies o cabeceras de autorización
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
 }));
 
 
