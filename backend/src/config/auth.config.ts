@@ -4,13 +4,18 @@ export const ACCESS_ADMIN_TOKEN_COOKIE_NAME = 'adminToken';
 export const ACCESS_CLIENT_TOKEN_COOKIE_NAME = 'clientToken';
 export const JWT_EXPIRATION = '8h';
 
+const url = process.env.CLIENT_URL!;
+const hostname = new URL(url).hostname;
+const domain = hostname.replace(/^www\./, "");
+
 export const cookieOptions: CookieOptions = {
   httpOnly: true, // Impide el acceso desde JavaScript (protección XSS)
   secure: true,//process.env.NODE_ENV === 'production', // Solo se envía en HTTPS en producción
   sameSite: 'none', // Protección fuerte contra CSRF
   signed: true, // La cookie estará firmada
   maxAge: 1000 * 60 * 60 * 8, // 1 hora en milisegundos, consistente con la expiración del JWT
-  domain: undefined,
+  domain: domain
+,
 };
 
 if (!process.env.JWT_SECRET){
