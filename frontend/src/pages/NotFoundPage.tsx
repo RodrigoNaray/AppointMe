@@ -12,7 +12,7 @@ export default function NotFoundPage() {
       </p>
       <Link
         to="/"
-        className="bg-amber-400 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors"
+        className="bg-gray-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors"
       >
         Volver al Inicio
       </Link>
