@@ -2,36 +2,35 @@ import { Strategy as JwtStrategy, StrategyOptions } from 'passport-jwt';
 import { Request } from 'express';
 import prisma from './prisma';
 import { ClientJwtPayload } from '../modules/clientAuth/clientAuth.types';
-import { ACCESS_CLIENT_TOKEN_COOKIE_NAME } from './auth.config';
+import { ACCESS_CLIENT_TOKEN_COOKIE_NAME, JWT_SECRET } from './auth.config';
+import { cookieThenAuthHeaderExtractor } from '../utils/jwtExtractors';
 
-// Extraemos el token de la cookie 'clientAccessToken'
-const cookieExtractor = (req: Request): string | null => {
-  let token = null;
-  if (req && req.cookies) {
-    token = req.cookies[ACCESS_CLIENT_TOKEN_COOKIE_NAME];
-  }
-  return token;
+// Prefer signed HttpOnly cookie; fall back to Authorization header
+const jwtFromRequest = (req: Request): string | null => {
+  return cookieThenAuthHeaderExtractor(ACCESS_CLIENT_TOKEN_COOKIE_NAME)(req);
 };
 
 const opts: StrategyOptions = {
-  jwtFromRequest: cookieExtractor,
-  secretOrKey: process.env.JWT_SECRET || 'change-JWT-SECREEEET029318',
+  jwtFromRequest,
+  secretOrKey: JWT_SECRET, // no insecure fallback
 };
 
-// "Bautizamos" esta estrategia con el nombre 'jwt-client'
-export const clientJwtStrategy = new JwtStrategy(opts, async (payload: ClientJwtPayload, done) => {
-  try {
-    // Buscamos en la tabla Client en lugar de AdminUser
-    const client = await prisma.client.findUnique({
-      where: { id: payload.sub },
-    });
+export const clientJwtStrategy = new JwtStrategy(
+  opts,
+  async (payload: ClientJwtPayload, done) => {
+    try {
+      const client = await prisma.client.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, email: true, name: true },
+      });
 
-    if (client) {
-      // Si encontramos el cliente, lo adjuntamos a req.user
-      return done(null, client);
+      if (!client) {
+        return done(null, false);
+      }
+
+      return done(null, { ...client, role: 'client' });
+    } catch (err) {
+      return done(err as Error, false);
     }
-    return done(null, false);
-  } catch (error) {
-    return done(error, false);
   }
-});
+);
