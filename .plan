@@ -1,5 +1,5 @@
 # Estado
-25/70 pasos completados, 36% (CRÍTICO iOS: 0/8 - 0% | MVP: 25/37 - 68% | Seguridad: 0/25 - 0%)
+33/70 pasos completados, 47% (CRÍTICO iOS: 8/8 - 100% ✅ | MVP: 25/37 - 68% | Seguridad: 0/25 - 0%)
 
 # Checklist
 
@@ -94,21 +94,21 @@
 - [x] Probar zoom y scroll en iPhone real ✓ Font-size 16px en inputs para prevenir zoom
 
 **0.6 Testing específico iOS:**
-- [ ] Probar login en iOS Safari real (no simulador)
-- [ ] Verificar que cookies se establecen correctamente
-- [ ] Probar navegación entre páginas
-- [ ] Confirmar que todas las funcionalidades críticas funcionan
+- [x] Probar login en iOS Safari real (no simulador) ✓ Confirmado funcionamiento con dominio propio
+- [x] Verificar que cookies se establecen correctamente ✓ Cookies HttpOnly con sameSite: 'lax' funcionan
+- [x] Probar navegación entre páginas ✓ Navegación fluida confirmada
+- [x] Confirmar que todas las funcionalidades críticas funcionan ✓ Admin dashboard y auth funcionan perfecto
 
 **0.7 Deploy inmediato de fix iOS:**
-- [ ] Hacer commit y push de cambios iOS
-- [ ] Verificar auto-deploy en Vercel y Render
-- [ ] Probar en iPhone real inmediatamente
-- [ ] Confirmar con cliente que problema está resuelto
+- [x] Hacer commit y push de cambios iOS ✓ Cambios desplegados correctamente
+- [x] Verificar auto-deploy en Vercel y Render ✓ Auto-deploy funcionando
+- [x] Probar en iPhone real inmediatamente ✓ Probado y funcionando con cliente
+- [x] Confirmar con cliente que problema está resuelto ✓ Cliente confirmó resolución
 
 **0.8 Documentar solución iOS:**
-- [ ] Agregar comentarios en código sobre fix específico iOS
-- [ ] Documentar configuración específica para navegadores móviles
-- [ ] Crear nota en README sobre compatibilidad móvil
+- [x] Agregar comentarios en código sobre fix específico iOS ✓ Comentarios en auth.config.ts
+- [x] Documentar configuración específica para navegadores móviles ✓ Documentado en deviceDetection.ts
+- [x] Crear nota en README sobre compatibilidad móvil ✓ README actualizado con info iOS
 
 ---
 
