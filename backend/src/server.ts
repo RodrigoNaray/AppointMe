@@ -10,6 +10,7 @@ import { clientJwtStrategy } from './config/passportClient';
 import availabilityRouter from './modules/availability/availability.admin.routes';
 import clientAuthRoutes from './modules/clientAuth/clientAuth.routes';
 import healthRoutes from './modules/health/health.routes';
+import bookingRoutes, { adminBookingRoutes } from './modules/booking/booking.routes';
 import { isAdminAuthenticated } from './middlewares/isAdminAuthenticated';
 import availabilityPublicRoutes from './modules/availability/availability.public.routes';
 import compression from "compression";
@@ -51,9 +52,11 @@ passport.use('jwt-client', clientJwtStrategy);
 
 //---  ROUTES ---//
 app.use('/api/admin/availability', isAdminAuthenticated, availabilityRouter);
+app.use('/api/admin/bookings', isAdminAuthenticated, adminBookingRoutes);
 app.use('/api/availability', availabilityPublicRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/client', clientAuthRoutes);
+app.use('/api/bookings', bookingRoutes);
 app.use('/api/services', catalogRoutes);
 app.use('/api/health', healthRoutes)
 

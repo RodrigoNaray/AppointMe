@@ -1,5 +1,5 @@
 # Estado
-33/70 pasos completados, 47% (CRÍTICO iOS: 8/8 - 100% ✅ | MVP: 25/37 - 68% | Seguridad: 0/25 - 0%)
+38/70 pasos completados, 54% (CRÍTICO iOS: 8/8 - 100% ✅ | MVP: 30/37 - 81% | Seguridad: 0/30 - 0%)
 
 # Checklist
 
@@ -112,42 +112,117 @@
 
 ---
 
-## 🚀 ETAPA 1: COMPLETAR MVP PARA DEMOSTRACIÓN (37 tareas restantes)
+## 🚀 ETAPA 1: COMPLETAR MVP PARA DEMOSTRACIÓN (32 tareas restantes)
 
 ### Módulo de Reservas (Backend) - PRIORIDAD ALTA DESPUÉS DE iOS
 
 **1.1 Crear estructura del módulo booking:**
-- [ ] Crear carpeta `backend/src/modules/booking/`
-- [ ] Crear archivo `backend/src/modules/booking/booking.types.ts`
-- [ ] Crear archivo `backend/src/modules/booking/booking.services.ts`
-- [ ] Crear archivo `backend/src/modules/booking/booking.controller.ts`
-- [ ] Crear archivo `backend/src/modules/booking/booking.routes.ts`
+- [x] Crear carpeta `backend/src/modules/booking/` ✓ Estructura modular implementada
+- [x] Crear archivo `backend/src/modules/booking/booking.types.ts` ✓ Tipos TypeScript definidos
+- [x] Crear archivo `backend/src/modules/booking/booking.services.ts` ✓ Servicios de negocio implementados  
+- [x] Crear archivo `backend/src/modules/booking/booking.controller.ts` ✓ Controladores HTTP creados
+- [x] Crear archivo `backend/src/modules/booking/booking.routes.ts` ✓ Rutas Express configuradas
 
 **1.2 Implementar servicios básicos de booking:**
-- [ ] En `booking.services.ts` crear función createBooking() básica
-- [ ] Crear función getClientBookings()
-- [ ] Crear función getAdminBookings()
-- [ ] Crear función cancelBooking()
-- [ ] Validar disponibilidad básica (sin transacciones complejas)
+- [x] En `booking.services.ts` crear función createBooking() básica ✓ Validaciones MVP implementadas
+- [x] Crear función getClientBookings() ✓ Con filtros de fecha y paginación
+- [x] Crear función getAdminBookings() ✓ Vista administrativa completa
+- [x] Crear función cancelBooking() ✓ Solo reservas futuras del cliente
+- [x] Validar disponibilidad básica (sin transacciones complejas) ✓ Verificación de conflictos
 
 **1.3 Implementar controladores:**
-- [ ] En `booking.controller.ts` crear POST createBooking
-- [ ] Crear GET getMyBookings (cliente)
-- [ ] Crear PATCH cancelBooking (cliente)
-- [ ] Crear GET getAllBookings (admin)
+- [x] En `booking.controller.ts` crear POST createBooking ✓ Con validación de entrada
+- [x] Crear GET getMyBookings (cliente) ✓ Paginación y filtros
+- [x] Crear PATCH cancelBooking (cliente) ✓ Control de permisos
+- [x] Crear GET getAllBookings (admin) ✓ Vista administrativa
 
 **1.4 Configurar rutas de booking:**
-- [ ] En `booking.routes.ts` configurar POST /api/bookings (isClientAuthenticated)
-- [ ] Configurar GET /api/bookings/my (isClientAuthenticated)
-- [ ] Configurar PATCH /api/bookings/:id/cancel (isClientAuthenticated)
-- [ ] Configurar GET /api/admin/bookings (isAdminAuthenticated)
+- [x] En `booking.routes.ts` configurar POST /api/bookings (isClientAuthenticated) ✓ Middleware correcto
+- [x] Configurar GET /api/bookings/my (isClientAuthenticated) ✓ Autenticación de cliente
+- [x] Configurar PATCH /api/bookings/:id/cancel (isClientAuthenticated) ✓ Operación segura
+- [x] Configurar GET /api/admin/bookings (isAdminAuthenticated) ✓ Separación admin/cliente
 
 **1.5 Integrar módulo en servidor:**
-- [ ] Importar bookingRoutes en `backend/src/server.ts`
-- [ ] Registrar rutas en el servidor
+- [x] Importar bookingRoutes en `backend/src/server.ts` ✓ Rutas registradas
+- [x] Registrar rutas en el servidor ✓ /api/bookings y /api/admin/bookings
 - [ ] Probar endpoint POST /api/bookings con herramientas de testing
 
-### Sistema de Notificaciones (Frontend)
+---
+
+## 🔒 AUDITORÍA CRÍTICA DE SEGURIDAD JWT (URGENTE)
+
+### Revisión y Corrección de Vulnerabilidades JWT
+
+**AUDITORIA.1 Evaluar configuración actual de JWT:**
+- [ ] Revisar `backend/src/config/auth.config.ts` - configuración de cookies
+- [ ] Verificar expiración JWT (8h) vs. normas de seguridad (máximo 1h)
+- [ ] Validar fortaleza de JWT_SECRET (mínimo 256 bits)
+- [ ] Comprobar flags de cookies: HttpOnly, Secure, SameSite
+
+**AUDITORIA.2 Identificar inconsistencias entre Admin y Client JWT:**
+- [ ] Comparar `passportAdmin.ts` vs `passportClient.ts` 
+- [ ] Verificar que ambos usen cookies firmadas (signed cookies)
+- [ ] Asegurar consistencia en extracción de tokens
+- [ ] Validar que ambos estrategias manejen errores igual
+
+**AUDITORIA.3 Corregir vulnerabilidades críticas identificadas:**
+- [ ] CRÍTICO: passportClient.ts usa `req.cookies` en lugar de `req.signedCookies`
+- [ ] CRÍTICO: passportClient.ts tiene JWT_SECRET fallback inseguro
+- [ ] CRÍTICO: cookieOptions tiene `sameSite: 'none'` (debería ser 'lax' o 'strict')
+- [ ] Reducir expiración JWT de 8h a 1h según OWASP
+
+**AUDITORIA.4 Implementar validaciones adicionales:**
+- [ ] Agregar rotación de tokens (refresh token pattern)
+- [ ] Implementar blacklist de tokens revocados
+- [ ] Validar payload JWT contra base de datos
+- [ ] Agregar rate limiting en endpoints de auth
+
+**AUDITORIA.5 Testing de seguridad:**
+- [ ] Probar extracción de tokens con cookies malformadas
+- [ ] Verificar comportamiento con JWT expirados
+- [ ] Probar ataques de session fixation
+- [ ] Validar protección CSRF en endpoints críticos
+
+---
+
+## 🧪 PREPARACIÓN PARA TESTING DE AUTENTICACIÓN
+
+### Testing de Endpoints con Autenticación
+
+**TESTING.1 Configurar entorno de testing:**
+- [ ] Instalar Jest y supertest para testing de APIs
+- [ ] Crear `backend/tests/setup.ts` con configuración de base de datos test
+- [ ] Configurar variables de entorno para testing
+- [ ] Crear helpers para generar tokens JWT válidos
+
+**TESTING.2 Testing de autenticación Admin:**
+- [ ] Crear `backend/tests/auth/admin.test.ts`
+- [ ] Probar POST /api/auth/login con credenciales válidas
+- [ ] Probar acceso a rutas protegidas con token válido
+- [ ] Probar rechazo con token inválido/expirado
+- [ ] Verificar limpieza de cookies en logout
+
+**TESTING.3 Testing de autenticación Client:**
+- [ ] Crear `backend/tests/auth/client.test.ts`
+- [ ] Probar POST /api/auth/client/register
+- [ ] Probar POST /api/auth/client/login
+- [ ] Verificar middleware isClientAuthenticated
+- [ ] Probar endpoints de booking con autenticación
+
+**TESTING.4 Testing de seguridad JWT:**
+- [ ] Probar manipulación de cookies firmadas
+- [ ] Verificar expiración automática de tokens
+- [ ] Probar acceso cruzado (admin token en rutas client)
+- [ ] Validar headers de seguridad en respuestas
+
+**TESTING.5 Testing de endpoints de Booking:**
+- [ ] Probar POST /api/bookings con cliente autenticado
+- [ ] Probar GET /api/bookings/my con paginación
+- [ ] Probar PATCH /api/bookings/:id/cancel
+- [ ] Probar GET /api/admin/bookings con admin autenticado
+- [ ] Verificar validaciones de negocio en createBooking
+
+---
 
 **2.1 Instalar sistema de notificaciones:**
 - [ ] Ejecutar `cd frontend` en terminal
@@ -430,17 +505,46 @@
 - [ ] Implementar monitoring básico
 - [ ] Configurar alertas de errores
 # Notas
+
+## 🚨 VULNERABILIDADES CRÍTICAS IDENTIFICADAS (REQUIEREN ATENCIÓN INMEDIATA)
+
+### Problemas de Seguridad JWT:
+1. **CRÍTICO - Inconsistencia en cookies:** `passportAdmin.ts` usa `req.signedCookies` pero `passportClient.ts` usa `req.cookies` sin firma
+2. **CRÍTICO - JWT_SECRET inseguro:** `passportClient.ts` tiene fallback `'change-JWT-SECREEEET029318'` comprometido
+3. **ALTO - SameSite configuración:** `auth.config.ts` usa `sameSite: 'none'` que es vulnerable en ciertos escenarios
+4. **ALTO - Expiración excesiva:** JWT configurado para 8 horas vs. recomendación OWASP de máximo 1 hora
+5. **MEDIO - Falta validación:** No hay verificación adicional de payload contra base de datos
+
+### Estado de Autenticación:
+- ✅ **Estrategias Passport:** Implementadas correctamente para admin y client
+- ✅ **Middlewares:** `isClientAuthenticated` e `isAdminAuthenticated` funcionando
+- ✅ **Cookies HttpOnly:** Protección XSS implementada
+- ❌ **Consistencia:** Diferentes mecanismos de extracción de tokens
+- ❌ **Rotación:** No hay sistema de refresh tokens
+- ❌ **Testing:** Sin pruebas de seguridad específicas
+
+### Recomendaciones Inmediatas:
+1. Corregir `passportClient.ts` para usar cookies firmadas
+2. Eliminar JWT_SECRET fallback y validar variable de entorno
+3. Cambiar `sameSite` a 'lax' para compatibilidad o 'strict' para máxima seguridad  
+4. Reducir expiración JWT a 1 hora
+5. Implementar testing exhaustivo antes de continuar con desarrollo
+
+---
+
+## 📋 NOTAS TÉCNICAS
+
 - **Arquitectura:** Proyecto configurado como dos aplicaciones separadas (no monorepo)
 - **Base de Datos:** Esquema Prisma bien definido con modelos AdminUser, Client, Service, AvailabilityBlock, Booking
 - **Estrategia MVP:** Priorizar funcionalidad básica de reservas sin validaciones complejas para demostración rápida
-- **Estrategia Seguridad:** Implementar validaciones robustas, rate limiting y configuraciones seguras después del MVP
-- **Sistema de Autenticación Dual:** Backend completo para admin y client, falta solo frontend de cliente
-- **Módulo Booking:** Modelo Prisma existe, implementar versión básica primero, mejorar después
+- **Estrategia Seguridad:** **CRÍTICO - Resolver vulnerabilidades JWT antes de continuar**
+- **Sistema de Autenticación Dual:** Backend completo para admin y client, **requiere corrección de seguridad**
+- **Módulo Booking:** ✅ Implementado con validaciones básicas, listo para testing post-corrección JWT
 - **Scripts Útiles:** 
   - `npm run dev` (raíz): Backend y frontend concurrentes para desarrollo
   - `npm run create:admin` (backend): Crear primer administrador
   - `npm run prisma:generate` (backend): Regenerar cliente Prisma
 - **Flujo MVP:** Admin configura servicios/horarios → Cliente se registra → Cliente hace reserva → Admin ve reservas
 - **Diferencias Etapas:**
-  - **MVP:** Funcionalidad mínima viable, validaciones básicas, deploy rápido
-  - **Seguridad:** Validaciones robustas, rate limiting, sanitización, configuración segura para producción
+  - **MVP:** **PAUSADO - Resolver seguridad JWT primero**
+  - **Seguridad:** **EN PROGRESO - Auditoría crítica JWT identificada**
