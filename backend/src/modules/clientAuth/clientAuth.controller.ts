@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as service from './clientAuth.services';
 import { RegisterClientDto, LoginClientDto } from './clientAuth.types';
-import {ACCESS_CLIENT_TOKEN_COOKIE_NAME} from '../../config/auth.config'
+import {ACCESS_CLIENT_TOKEN_COOKIE_NAME, cookieOptions} from '../../config/auth.config'
 import logger from '../../utils/logger';
 
 export const registerClientController = async (req: Request, res: Response) => {
@@ -30,13 +30,8 @@ export const loginClientController = async (req: Request, res: Response) => {
 
     const token = service.generateClientToken(client);
 
-    // Configuramos la cookie para el cliente
-    res.cookie(ACCESS_CLIENT_TOKEN_COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 días
-    });
+    // Configuramos la cookie para el cliente usando cookieOptions centralizadas
+    res.cookie(ACCESS_CLIENT_TOKEN_COOKIE_NAME, token, cookieOptions);
 
     logger.info({ clientId: client.id }, "Login de cliente exitoso");
     res.status(200).json({ message: 'Inicio de sesión exitoso', client });
