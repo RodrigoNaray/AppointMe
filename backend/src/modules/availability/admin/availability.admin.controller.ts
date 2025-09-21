@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as service from './availability.admin.services';
 import { UpdateScheduleDto } from './availability.admin.types';
-import logger from '../../utils/logger';
+import logger from '../../../utils/logger';
 
 export const getScheduleController = async (req: Request, res: Response) => {
   const userId = req.user!.id; 

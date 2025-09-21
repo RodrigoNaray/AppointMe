@@ -1,8 +1,8 @@
 import { Prisma } from '@prisma/client';
-import prisma from '../../config/prisma';
+import prisma from '../../../config/prisma';
 import { UpdateScheduleDto, WeeklySchedule, CalendarEvent } from './availability.admin.types';
 import { startOfMonth, endOfMonth, eachDayOfInterval, format } from 'date-fns';
-import logger from '../../utils/logger';
+import logger from '../../../utils/logger';
 
 export const getSchedule = async (userId: string): Promise<WeeklySchedule> => {
   const user = await prisma.adminUser.findUnique({

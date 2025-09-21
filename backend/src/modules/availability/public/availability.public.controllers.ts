@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as publicService from './availability.public.services';
-import logger from '../../utils/logger';
+import logger from '../../../utils/logger';
 
 export const getAvailableSlotsController = async (req: Request, res: Response) => {
   const { serviceId, date } = req.query;

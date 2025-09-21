@@ -1,8 +1,9 @@
 // backend/src/modules/availability/availability.public.service.ts
 
-import prisma from '../../config/prisma';
+import prisma from '../../../config/prisma';
 import { WeeklySchedule } from './availability.public.types';
 import { addMinutes, format, startOfDay, endOfDay, parse } from 'date-fns';
+import { hasTimeConflictOptimized, TimePeriod } from '../../../utils/timeConflictUtils';
 
 // Mapeo de los días de la semana de JavaScript (0=Domingo) a nuestros strings
 const dayMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -35,12 +36,12 @@ export const getAvailableSlots = async (serviceId: string, date: Date) => {
   }
 
   // 3. Crear una lista de todos los periodos "ocupados" del día
-  const busyPeriods = [
+  const busyPeriods: TimePeriod[] = [
     ...bookings.map(b => ({ start: b.bookingTime, end: addMinutes(b.bookingTime, service.durationMinutes) })),
     ...blocks.map(b => ({ start: b.startTime, end: b.endTime }))
   ];
 
-  // 4. Generar los slots potenciales y filtrarlos
+  // 4. Generar los slots potenciales y filtrarlos de manera optimizada
   const availableSlots: string[] = [];
   const workingHoursStart = parse(daySchedule.start, 'HH:mm', date);
   const workingHoursEnd = parse(daySchedule.end, 'HH:mm', date);
@@ -48,18 +49,23 @@ export const getAvailableSlots = async (serviceId: string, date: Date) => {
   let currentSlotStart = workingHoursStart;
   const slotInterval = 15;
 
+  // Generar todos los slots candidatos primero
+  const candidateSlots: TimePeriod[] = [];
   while (addMinutes(currentSlotStart, service.durationMinutes) <= workingHoursEnd) {
     const currentSlotEnd = addMinutes(currentSlotStart, service.durationMinutes);
-
-    const isOverlapping = busyPeriods.some(busyPeriod => 
-      (currentSlotStart < busyPeriod.end && currentSlotEnd > busyPeriod.start)
-    );
-
-    if (!isOverlapping) {
-      availableSlots.push(format(currentSlotStart, 'HH:mm'));
-    }
-
+    candidateSlots.push({
+      start: new Date(currentSlotStart),
+      end: new Date(currentSlotEnd)
+    });
     currentSlotStart = addMinutes(currentSlotStart, slotInterval);
+  }
+
+  // Filtrar slots usando búsqueda optimizada O(m log n) donde m = slots, n = ocupaciones
+  for (const slot of candidateSlots) {
+    const hasConflict = hasTimeConflictOptimized(slot.start, slot.end, busyPeriods);
+    if (!hasConflict) {
+      availableSlots.push(format(slot.start, 'HH:mm'));
+    }
   }
 
   return availableSlots;
