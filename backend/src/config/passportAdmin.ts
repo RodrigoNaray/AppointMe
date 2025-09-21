@@ -1,4 +1,5 @@
 import { Strategy as JwtStrategy, StrategyOptions } from "passport-jwt";
+import { Request } from 'express';
 import prisma from "./prisma";
 import logger from "../utils/logger";
 import { JWT_SECRET, ACCESS_ADMIN_TOKEN_COOKIE_NAME } from './auth.config';
