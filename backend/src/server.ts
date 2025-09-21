@@ -7,12 +7,12 @@ import cookieParser from 'cookie-parser';
 import passport from 'passport';
 import adminJwtStrategy from './config/passportAdmin'; 
 import { clientJwtStrategy } from './config/passportClient';
-import availabilityRouter from './modules/availability/availability.admin.routes';
+import availabilityRouter from './modules/availability/admin/availability.admin.routes';
 import clientAuthRoutes from './modules/clientAuth/clientAuth.routes';
 import healthRoutes from './modules/health/health.routes';
 import bookingRoutes, { adminBookingRoutes } from './modules/booking/booking.routes';
 import { isAdminAuthenticated } from './middlewares/isAdminAuthenticated';
-import availabilityPublicRoutes from './modules/availability/availability.public.routes';
+import availabilityPublicRoutes from './modules/availability/public/availability.public.routes';
 import compression from "compression";
 import helmet from "helmet";
 
