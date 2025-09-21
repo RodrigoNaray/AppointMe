@@ -1,24 +1,18 @@
 import { Router } from 'express';
-import {
-  createBookingController,
-  getMyBookingsController,
-  cancelBookingController,
-  getAllBookingsController,
-  getBookingByIdController
-} from './booking.controller';
+import * as bookingController from './booking.controller'
 import { isClientAuthenticated } from '../../middlewares/isClientAuthenticated';
 import { isAdminAuthenticated } from '../../middlewares/isAdminAuthenticated';
 
 const router = Router();
 
 // Rutas para clientes autenticados
-router.post('/', isClientAuthenticated, createBookingController);
-router.get('/my', isClientAuthenticated, getMyBookingsController);
-router.get('/:id', isClientAuthenticated, getBookingByIdController);
-router.patch('/:id/cancel', isClientAuthenticated, cancelBookingController);
+router.post('/create', isClientAuthenticated, bookingController.createBooking);
+router.get('/my', isClientAuthenticated, bookingController.getMyBookings);
+router.get('/:id', isClientAuthenticated, bookingController.getBookingById);
+router.patch('/:id/cancel', isClientAuthenticated, bookingController.cancelBooking);
 
 // Rutas para administradores (prefijo /admin se maneja en server.ts)
 export const adminBookingRoutes = Router();
-adminBookingRoutes.get('/', isAdminAuthenticated, getAllBookingsController);
+adminBookingRoutes.get('/', isAdminAuthenticated, bookingController.getAllBookings);
 
 export default router;

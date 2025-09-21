@@ -8,6 +8,7 @@ import {
   PublicClient,
 } from './clientAuth.types';
 import { ConflictError } from '../../utils/error';
+import { JWT_SECRET, JWT_EXPIRATION } from '../../config/auth.config';
 
 /**
  * Registra un nuevo cliente en la base de datos.
@@ -82,12 +83,12 @@ export const generateClientToken = (client: PublicClient): string => {
     role: 'client', // Asignamos el rol explícitamente
   };
 
-  if (!process.env.JWT_SECRET) {
+  if (!JWT_SECRET) {
     throw new Error('JWT_SECRET no está definida en las variables de entorno');
   }
 
-  const token = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: '7d', // Damos a los clientes una sesión más larga
+  const token = jwt.sign(payload, JWT_SECRET, {
+    expiresIn:JWT_EXPIRATION // Damos a los clientes una sesión más larga
   });
 
   return token;

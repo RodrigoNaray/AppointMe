@@ -6,13 +6,120 @@ import {
   BookingError,
   BookingErrorCodes 
 } from './booking.types';
+import { addMinutes, format, startOfDay, endOfDay, parse } from 'date-fns';
+import { hasTimeConflictOptimized, TimePeriod } from '../../utils/timeConflictUtils';
 import logger from '../../utils/logger';
+
+// Mapeo de los días de la semana de JavaScript (0=Domingo) a nuestros strings
+const dayMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+interface WeeklySchedule {
+  [key: string]: {
+    isActive: boolean;
+    start: string;
+    end: string;
+  };
+}
+
+/**
+ * Valida si una hora específica está disponible para una reserva
+ */
+const validateTimeSlotAvailability = async (
+  serviceId: string,
+  requestedTime: Date,
+  serviceDuration: number,
+  adminId: string
+): Promise<boolean> => {
+  try {
+    // 1. Obtener el admin y su horario
+    const adminUser = await prisma.adminUser.findUnique({
+      where: { id: adminId },
+      select: { schedule: true }
+    });
+
+    if (!adminUser || !adminUser.schedule) {
+      return false;
+    }
+
+    // 2. Verificar que esté dentro del horario de trabajo
+    const dayOfWeekIndex = requestedTime.getUTCDay();
+    const dayOfWeek = dayMap[dayOfWeekIndex];
+    const schedule = adminUser.schedule as unknown as WeeklySchedule;
+    const daySchedule = schedule[dayOfWeek];
+
+    if (!daySchedule || !daySchedule.isActive) {
+      return false;
+    }
+
+    // 3. Verificar que la hora esté dentro del rango de trabajo
+    const requestedDate = new Date(requestedTime);
+    const workingHoursStart = parse(daySchedule.start, 'HH:mm', requestedDate);
+    const workingHoursEnd = parse(daySchedule.end, 'HH:mm', requestedDate);
+    const serviceEndTime = addMinutes(requestedTime, serviceDuration);
+
+    if (requestedTime < workingHoursStart || serviceEndTime > workingHoursEnd) {
+      return false;
+    }
+
+    // 4. Obtener todos los conflictos potenciales del día
+    const [bookings, blocks] = await Promise.all([
+      prisma.booking.findMany({
+        where: {
+          adminId,
+          bookingTime: {
+            gte: startOfDay(requestedTime),
+            lte: endOfDay(requestedTime)
+          }
+        },
+        include: {
+          service: {
+            select: { durationMinutes: true }
+          }
+        }
+      }),
+      prisma.availabilityBlock.findMany({
+        where: {
+          adminId,
+          startTime: { lte: endOfDay(requestedTime) },
+          endTime: { gte: startOfDay(requestedTime) }
+        }
+      })
+    ]);
+
+    // 5. Crear lista de períodos ocupados
+    const busyPeriods: TimePeriod[] = [
+      ...bookings.map(b => ({
+        start: b.bookingTime,
+        end: addMinutes(b.bookingTime, b.service.durationMinutes)
+      })),
+      ...blocks.map(b => ({
+        start: b.startTime,
+        end: b.endTime
+      }))
+    ];
+
+    // 6. Verificar conflictos usando búsqueda binaria optimizada O(log n)
+    const requestedPeriodEnd = addMinutes(requestedTime, serviceDuration);
+    
+    const hasConflict = hasTimeConflictOptimized(
+      requestedTime, 
+      requestedPeriodEnd, 
+      busyPeriods
+    );
+
+    return !hasConflict;
+
+  } catch (error) {
+    logger.error({ error, serviceId, requestedTime, adminId }, 'Error validating time slot availability');
+    return false;
+  }
+};
 
 
 
 /**
  * Crear una nueva reserva
- * Implementación básica MVP - validaciones mínimas
+ * Implementación mejorada con validaciones completas
  */
 export const createBooking = async (
   clientId: string,
@@ -22,13 +129,28 @@ export const createBooking = async (
     // 1. Verificar que el servicio existe y está activo
     const service = await prisma.service.findUnique({
       where: { id: data.serviceId },
-      include: { admin: true }
+      include: { 
+        admin: {
+          select: {
+            id: true,
+            minBookingNoticeMinutes: true,
+            schedule: true
+          }
+        }
+      }
     });
 
     if (!service || !service.isActive) {
       const error: BookingError = new Error('Service not found or inactive') as BookingError;
       error.statusCode = 404;
       error.code = BookingErrorCodes.SERVICE_NOT_FOUND;
+      throw error;
+    }
+
+    if (!service.admin) {
+      const error: BookingError = new Error('Admin not found for this service') as BookingError;
+      error.statusCode = 404;
+      error.code = BookingErrorCodes.ADMIN_NOT_FOUND;
       throw error;
     }
 
@@ -41,22 +163,35 @@ export const createBooking = async (
       throw error;
     }
 
-    // 3. Verificar conflictos de horario (básico)
-    const conflictingBooking = await prisma.booking.findFirst({
-      where: {
-        serviceId: data.serviceId,
-        bookingTime: data.bookingTime,
-      }
-    });
+    // 3. Validar tiempo mínimo de antelación
+    const minNoticeMinutes = service.admin.minBookingNoticeMinutes || 60; // Default 1 hora
+    const minBookingTime = addMinutes(now, minNoticeMinutes);
+    
+    if (data.bookingTime < minBookingTime) {
+      const error: BookingError = new Error(
+        `Booking must be made at least ${minNoticeMinutes} minutes in advance`
+      ) as BookingError;
+      error.statusCode = 400;
+      error.code = BookingErrorCodes.INSUFFICIENT_NOTICE;
+      throw error;
+    }
 
-    if (conflictingBooking) {
-      const error: BookingError = new Error('Time slot not available') as BookingError;
+    // 4. Validar disponibilidad completa (horario de trabajo, conflictos, duración)
+    const isAvailable = await validateTimeSlotAvailability(
+      data.serviceId,
+      data.bookingTime,
+      service.durationMinutes,
+      service.adminId
+    );
+
+    if (!isAvailable) {
+      const error: BookingError = new Error('The requested time slot is not available') as BookingError;
       error.statusCode = 409;
       error.code = BookingErrorCodes.UNAVAILABLE_TIME;
       throw error;
     }
 
-    // 4. Crear la reserva
+    // 5. Crear la reserva
     const booking = await prisma.booking.create({
       data: {
         clientId,
@@ -88,8 +223,9 @@ export const createBooking = async (
       bookingId: booking.id,
       clientId,
       serviceId: data.serviceId,
-      bookingTime: data.bookingTime
-    }, 'Booking created successfully');
+      bookingTime: data.bookingTime,
+      adminId: service.adminId
+    }, 'Booking created successfully with enhanced validation');
 
     return booking as BookingWithDetails;
 

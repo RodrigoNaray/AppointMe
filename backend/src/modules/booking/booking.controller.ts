@@ -7,20 +7,14 @@ import {
   GetBookingsResponse,
   BookingError
 } from './booking.types';
-import {
-  createBooking,
-  getClientBookings,
-  getAdminBookings,
-  cancelBooking,
-  getBookingById
-} from './booking.services';
+import * as service from './booking.services'
 import logger from '../../utils/logger';
 
 /**
  * Crear una nueva reserva (Cliente)
  * POST /api/bookings
  */
-export const createBookingController = async (
+export const createBooking = async (
   req: CreateBookingRequest,
   res: Response<CreateBookingResponse>
 ) => {
@@ -54,7 +48,7 @@ export const createBookingController = async (
       });
     }
 
-    const booking = await createBooking(clientId, {
+    const booking = await service.createBooking(clientId, {
       serviceId,
       bookingTime: bookingTimeDate,
       notes
@@ -96,7 +90,7 @@ export const createBookingController = async (
  * Obtener reservas del cliente autenticado
  * GET /api/bookings/my
  */
-export const getMyBookingsController = async (
+export const getMyBookings = async (
   req: GetBookingsRequest,
   res: Response<GetBookingsResponse>
 ) => {
@@ -115,7 +109,7 @@ export const getMyBookingsController = async (
     const from = req.query.from ? new Date(req.query.from) : undefined;
     const to = req.query.to ? new Date(req.query.to) : undefined;
 
-    const { bookings, total } = await getClientBookings(clientId, {
+    const { bookings, total } = await service.getClientBookings(clientId, {
       from,
       to,
       page,
@@ -150,7 +144,7 @@ export const getMyBookingsController = async (
  * Cancelar una reserva (Cliente)
  * PATCH /api/bookings/:id/cancel
  */
-export const cancelBookingController = async (
+export const cancelBooking = async (
   req: CancelBookingRequest,
   res: Response<{ success: boolean; message: string }>
 ) => {
@@ -165,7 +159,7 @@ export const cancelBookingController = async (
 
     const { id } = req.params;
 
-    await cancelBooking(id, clientId);
+    await service.cancelBooking(id, clientId);
 
     logger.info({
       bookingId: id,
@@ -199,7 +193,7 @@ export const cancelBookingController = async (
  * Obtener todas las reservas (Admin)
  * GET /api/admin/bookings
  */
-export const getAllBookingsController = async (
+export const getAllBookings = async (
   req: GetBookingsRequest,
   res: Response<GetBookingsResponse>
 ) => {
@@ -219,7 +213,7 @@ export const getAllBookingsController = async (
     const from = req.query.from ? new Date(req.query.from) : undefined;
     const to = req.query.to ? new Date(req.query.to) : undefined;
 
-    const { bookings, total } = await getAdminBookings(adminId, {
+    const { bookings, total } = await service.getAdminBookings(adminId, {
       from,
       to,
       page,
@@ -254,7 +248,7 @@ export const getAllBookingsController = async (
  * Obtener una reserva específica (Cliente o Admin)
  * GET /api/bookings/:id
  */
-export const getBookingByIdController = async (
+export const getBookingById = async (
   req: GetBookingsRequest,
   res: Response<{ success: boolean; booking?: any; message: string }>
 ) => {
@@ -262,7 +256,7 @@ export const getBookingByIdController = async (
     const { id } = req.params;
     const clientId = req.client?.id;
 
-    const booking = await getBookingById(id, clientId);
+    const booking = await service.getBookingById(id, clientId);
 
     return res.status(200).json({
       success: true,
