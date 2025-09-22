@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import { Client } from '@prisma/client';
 import {
   CreateBookingRequest,
   GetBookingsRequest,
@@ -19,8 +20,9 @@ export const createBooking = async (
   res: Response<CreateBookingResponse>
 ) => {
   try {
-    const clientId = req.client?.id;
-    if (!clientId) {
+    // Usamos req.user, que ahora está tipado gracias a express.d.ts
+    const client = req.user as Client;
+    if (!client?.id) {
       return res.status(401).json({
         success: false,
         booking: undefined as any,
@@ -48,7 +50,7 @@ export const createBooking = async (
       });
     }
 
-    const booking = await service.createBooking(clientId, {
+    const booking = await service.createBooking(client.id, {
       serviceId,
       bookingTime: bookingTimeDate,
       notes
@@ -56,7 +58,7 @@ export const createBooking = async (
 
     logger.info({
       bookingId: booking.id,
-      clientId,
+      clientId: client.id,
       serviceId
     }, 'Booking created via API');
 
@@ -95,8 +97,8 @@ export const getMyBookings = async (
   res: Response<GetBookingsResponse>
 ) => {
   try {
-    const clientId = req.client?.id;
-    if (!clientId) {
+    const client = req.user as Client;
+    if (!client?.id) {
       return res.status(401).json({
         success: false,
         bookings: [],
@@ -109,7 +111,7 @@ export const getMyBookings = async (
     const from = req.query.from ? new Date(req.query.from) : undefined;
     const to = req.query.to ? new Date(req.query.to) : undefined;
 
-    const { bookings, total } = await service.getClientBookings(clientId, {
+    const { bookings, total } = await service.getClientBookings(client.id, {
       from,
       to,
       page,
@@ -149,8 +151,8 @@ export const cancelBooking = async (
   res: Response<{ success: boolean; message: string }>
 ) => {
   try {
-    const clientId = req.client?.id;
-    if (!clientId) {
+    const client = req.user as Client;
+    if (!client?.id) {
       return res.status(401).json({
         success: false,
         message: 'Authentication required'
@@ -159,11 +161,11 @@ export const cancelBooking = async (
 
     const { id } = req.params;
 
-    await service.cancelBooking(id, clientId);
+    await service.cancelBooking(id, client.id);
 
     logger.info({
       bookingId: id,
-      clientId
+      clientId: client.id
     }, 'Booking cancelled via API');
 
     return res.status(200).json({
@@ -254,9 +256,9 @@ export const getBookingById = async (
 ) => {
   try {
     const { id } = req.params;
-    const clientId = req.client?.id;
+    const client = req.user as Client;
 
-    const booking = await service.getBookingById(id, clientId);
+    const booking = await service.getBookingById(id, client.id);
 
     return res.status(200).json({
       success: true,

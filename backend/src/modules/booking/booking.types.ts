@@ -8,11 +8,6 @@ export interface CreateBookingRequest extends Request {
     bookingTime: string; // ISO datetime string
     notes?: string;
   };
-  client?: {
-    id: string;
-    email: string;
-    name: string;
-  };
 }
 
 export interface GetBookingsRequest extends Request {
@@ -22,21 +17,11 @@ export interface GetBookingsRequest extends Request {
     page?: string;
     limit?: string;
   };
-  client?: {
-    id: string;
-    email: string;
-    name: string;
-  };
 }
 
 export interface CancelBookingRequest extends Request {
   params: {
     id: string;
-  };
-  client?: {
-    id: string;
-    email: string;
-    name: string;
   };
 }
 
