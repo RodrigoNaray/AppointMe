@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AdminUser } from '@prisma/client';
 import * as service from './services.services';
 import { CreateServiceDto, UpdateServiceDto } from './services.types';
 import { ConflictError, NotFoundError } from '../../utils/error';
@@ -31,8 +32,8 @@ export const findOne = async (req: Request<{ id: string }>, res: Response) => {
 
 export const create = async (req: Request<{}, {}, CreateServiceDto>, res: Response) => {
   try {
-
-    const adminId = req.user!.id;
+    const admin = req.user as AdminUser;
+    const adminId = admin.id;
 
     const newService = await service.createService(req.body, adminId);
     

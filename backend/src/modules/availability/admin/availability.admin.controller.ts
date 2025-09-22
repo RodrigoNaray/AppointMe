@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
+import { AdminUser } from '@prisma/client';
 import * as service from './availability.admin.services';
 import { UpdateScheduleDto } from './availability.admin.types';
 import logger from '../../../utils/logger';
 
 export const getScheduleController = async (req: Request, res: Response) => {
-  const userId = req.user!.id; 
+  const admin = req.user as AdminUser;
+  const userId = admin.id; 
   try {
     const schedule = await service.getSchedule(userId);
     res.status(200).json(schedule);
@@ -17,7 +19,8 @@ export const getScheduleController = async (req: Request, res: Response) => {
 export const updateScheduleController = async (req: Request, res: Response) => {
   logger.info({ body: req.body }, "Datos recibidos en updateScheduleController");
   
-  const userId = req.user!.id;
+  const admin = req.user as AdminUser;
+  const userId = admin.id;
   const scheduleData: UpdateScheduleDto = req.body;
   try {
     const updatedSchedule = await service.updateSchedule(userId, scheduleData);
@@ -43,7 +46,8 @@ export const getBlocksController = async (req: Request, res: Response) => {
 export const createBlockController = async (req: Request, res: Response) => {
   try {
     const { startTime, endTime, reason } = req.body;
-    const adminId = req.user!.id;
+    const admin = req.user as AdminUser;
+    const adminId = admin.id;
     
     const newBlock = await service.createBlock({
       startTime: new Date(startTime),
@@ -69,7 +73,8 @@ export const deleteBlockController = async (req: Request, res: Response) => {
 };
 
 export const getCalendarEventsController = async (req: Request, res: Response) => {
-  const userId = req.user!.id;
+  const admin = req.user as AdminUser;
+  const userId = admin.id;
   const { month } = req.query;
 
   if (!month || typeof month !== 'string') {
