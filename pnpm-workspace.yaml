@@ -1,0 +1,14 @@
+packages:
+  - frontend
+  - backend
+
+minimumReleaseAge: 1440
+
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@swc/core'
+  - '@tailwindcss/oxide'
+  - bcrypt
+  - esbuild
+  - prisma
