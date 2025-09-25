@@ -9,6 +9,7 @@
     "predev": "pnpm prisma:generate",
     "clean": "rimraf dist tsconfig.tsbuildinfo",
     "build": "pnpm clean && tsc && pnpm prisma:generate",
+    "postinstall": "pnpm prisma:generate",
     "prisma:generate": "prisma generate --schema=./src/prisma/schema.prisma",
     "prisma:migrate:reset": "prisma migrate reset --schema=./src/prisma/schema.prisma",
     "migrate:deploy": "prisma migrate deploy --schema=./src/prisma/schema.prisma",
