@@ -82,7 +82,7 @@ export default function PublicLayout() {
           
           
           <Link to="/login">
-            <Button>Admin Login</Button>
+            <Button>Login</Button>
           </Link>
         </header>
 

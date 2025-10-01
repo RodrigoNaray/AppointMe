@@ -1,5 +1,5 @@
 # Estado
-54/115 pasos completados, 47% (CRÍTICO iOS: 8/8 - 100% ✅ | MVP: 38/42 - 90% | Seguridad: 8/35 - 23% ⚡ | Deploy: 0/20 - 0% | Safari: 0/15 - 0%)
+60/128 pasos completados, 46% (CRÍTICO iOS: 8/8 - 100% ✅ | MVP: 38/42 - 90% | Seguridad: 8/35 - 23% ⚡ | Deploy: 0/20 - 0% | Safari: 0/15 - 0% | SESSION MANAGEMENT: 9/13 - 69% ✅)
 
 # Checklist
 
@@ -7,6 +7,153 @@
 **Backend:**
 - [x] **Node.js + Express.js** con TypeScript p- [ ] Probar GET /api/admin/bookings con admin autenticado
 - [ ] Verificar validaciones de negocio en createBooking
+
+---
+
+## 🔄 GESTIÓN DUAL DE SESIONES (ADMIN + CLIENT) - NUEVA PRIORIDAD
+
+### Análisis y Arquitectura de Sesiones
+
+**SESSION.1 Evaluar AuthContext actual y necesidades:**
+- [x] Analizar `frontend/src/context/AuthContext.tsx` existente (solo para admin) ✓ **Análisis completado:** AuthContext actual solo maneja admin con endpoints hardcodeados `/auth/*`, User interface simple con id/email, sin discriminación de tipo de usuario
+- [x] Identificar limitaciones: solo maneja un tipo de usuario, endpoints hardcodeados ✓ **Limitaciones identificadas:** (1) Single user type sin discriminación admin/client, (2) Endpoints hardcodeadas para admin `/auth/login`, `/auth/profile`, (3) No persistent storage, (4) Interface User genérica sin roles
+- [x] Evaluar si usar Redux, Zustand, o mantener Context API con mejoras ✓ **Context API elegido:** Mejor para migración futura a Redux, discriminated unions para type safety
+- [x] **DECISIÓN TÉCNICA:** Context API optimizado vs Redux Toolkit vs Zustand ✓ **RESUELTO: Context API optimizado** con preparación para migración Redux
+
+**SESSION.2 Diseñar arquitectura de sesiones duales:**
+- [x] **OPCIÓN ELEGIDA:** Un solo contexto con discriminación de tipo de usuario (admin|client) ✓ **Context API con discriminated unions implementado**
+- [x] ~~OPCIÓN B: Dos contextos separados (AdminAuthContext + ClientAuthContext)~~ **DESCARTADA**
+- [x] ~~OPCIÓN C: State manager global (Redux/Zustand) con módulos separados~~ **DESCARTADA** 
+- [x] Evaluar pros/contras de cada opción para mantenimiento y escalabilidad ✓ **Context API elegido por simplicidad y preparación para Redux**
+
+**SESSION.3 Implementar solución elegida:**
+- [x] Refactorizar AuthContext actual para manejar dual sessions ✓ **AuthContext.tsx refactorizado con discriminated unions, backward compatibility mantenida**
+- [x] Crear tipos TypeScript robustos para Admin y Client users ✓ **Discriminated unions implementadas en auth.ts con AdminUser, ClientUser, AuthState**
+- [x] Implementar detección automática de tipo de sesión activa ✓ **checkExistingSession() implementada con prioridad admin->client**
+- [x] Crear hooks específicos: `useAdminAuth()`, `useClientAuth()`, `useCurrentUser()` ✓ **Hooks especializados con type safety implementados**
+
+**SESSION.4 Optimizar gestión de estado:**
+- [ ] Implementar persistent storage para session state (localStorage/sessionStorage)
+- [ ] Manejar refresh automático de tokens si implementas refresh tokens
+- [ ] Crear interceptores de API para manejar 401 automáticamente por tipo de usuario
+- [ ] Implementar logout automático en pestañas inactivas
+
+**SESSION.5 Crear componentes de protección mejorados:**
+- [ ] Refactorizar `ProtectedRoute.tsx` para manejar admin y client routes
+- [ ] Crear `<AdminRoute>`, `<ClientRoute>`, `<PublicRoute>` components
+- [ ] Implementar redirecciones inteligentes basadas en tipo de usuario autenticado
+- [ ] Manejar estados de carga durante verificación de sesión
+
+**SESSION.6 Implementar navegación inteligente:**
+- [ ] Crear lógica para detectar conflictos (admin y client loggeados simultáneamente)
+- [ ] Implementar switch de cuentas o logout automático según contexto
+- [ ] Crear header dinámico que muestre el tipo de usuario activo
+- [ ] Implementar breadcrumbs y navegación contextual por tipo de usuario
+
+**SESSION.7 Testing y validación:**
+- [ ] Probar login/logout de admin sin afectar sesión de cliente
+- [ ] Probar login/logout de cliente sin afectar sesión de admin  
+- [ ] Validar comportamiento en múltiples pestañas del navegador
+- [ ] Probar scenarios edge: token expirado, network errors, etc.
+
+**SESSION.8 Documentación y mejores prácticas:**
+- [ ] Documentar arquitectura de sesiones elegida y justificación
+- [ ] Crear guía de uso para hooks de autenticación
+- [ ] Establecer convenciones para manejo de errores por tipo de usuario
+- [ ] Actualizar TypeScript types y comentarios JSDoc
+
+### Recomendaciones Técnicas Específicas (Octubre 2025)
+
+**Para Context API mejorado (recomendado para tu caso):**
+- Usar un solo AuthProvider con discriminated unions
+- Implementar custom hooks especializados
+- Mantener simplicidad sin overhead de librerías externas
+
+**Para Redux Toolkit (si escalas a muchos features):**
+- RTK Query para cache automático de datos de usuario
+- Mejores DevTools para debugging
+- Más boilerplate pero mejor para equipos grandes
+
+**Para Zustand (balance simplicidad/poder):**
+- Sintaxis más simple que Redux
+- Mejor performance que Context para updates frecuentes
+- Ideal si planeas agregar más estado global
+
+**Decisión basada en OWASP y mejores prácticas React 2025:**
+- Minimizar re-renders innecesarios con useMemo/useCallback
+- Implementar proper cleanup de listeners y timers
+- Usar TypeScript strict mode para type safety
+- Separar concerns: auth state vs user profile data
+
+---
+
+### UI / UX: Registro - Corrección de interacción de label (acción reciente)
+
+- [x] Hacer que TODO el área del label sea clickable para el input de contraseña — Log: se prefirió la asociación implícita (nesting) del `input` dentro de `label` para ampliar el área de golpe.
+  - Nota: Se eliminó el handler onClick manual y se envuelve el `Input` dentro del `label` en `frontend/src/pages/RegisterPage.tsx`.
+  - Justificación (breve): MDN recomienda usar asociación explícita (`for`/`id`) o implícita (input dentro del label). Anidar el input dentro del label mejora la hit-area táctil en móviles y garantiza compatibilidad con tecnologías de asistencia.
+    - Fuente: MDN `<label>` element (Aug 2025) — asociar un label con input mejora accesibilidad y hace clic/tap más fiable.
+  - Buenas prácticas aplicadas:
+    - React/TS: Mantener componentes semánticos y evitar manipulación directa del DOM (se eliminó focus manual) — sigue la recomendación de React de permitir al navegador manejar asociatividad de etiquetas.
+    - OWASP: Mejorar experiencia en la entrada de credenciales ayuda a reducir errores de usuario (menor exposición a reintentos de fuerza bruta accidental) y mantiene la UX coherente con los controles de contraseña.
+
+
+### 🎯 **IMPLEMENTACIÓN COMPLETADA - FASE 1:**
+
+**✅ LOGROS PRINCIPALES:**
+1. **Tipos TypeScript:** Discriminated unions implementadas con type safety completo
+2. **AuthContext refactorizado:** Dual sessions con backward compatibility total
+3. **Hooks especializados:** `useAdminAuth()`, `useClientAuth()`, `useCurrentUser()` 
+4. **API separada:** `clientAuth.ts` con interceptores específicos para cliente
+5. **Detección automática:** Sistema inteligente para identificar sesión existente
+6. **Optimización:** useMemo/useCallback para prevenir re-renders innecesarios
+
+**🔒 SEGURIDAD IMPLEMENTADA:**
+- OWASP: Separación de endpoints por tipo de usuario
+- Type Safety: Discriminated unions previenen errores de tipo
+- Interceptors: Manejo automático de 401 por tipo de usuario
+- Cookies HttpOnly: Mantenida configuración segura existente
+
+**🔧 PREPARACIÓN REDUX:**
+- Estado centralizado en single store pattern
+- Acciones separadas por tipo (loginAdmin, loginClient)
+- Tipos preparados para Redux Toolkit discriminated unions
+- Hooks especializados que serían fáciles de migrar a selectors
+
+**📋 PRÓXIMOS PASOS RECOMENDADOS:**
+1. Testing en componentes existentes
+2. Implementar componentes de protección mejorados
+3. Crear páginas de login específicas para cliente
+4. Validar en producción crossplataform
+
+---
+
+**OPCIÓN RECOMENDADA: Context API mejorado con discriminated unions**
+
+**Justificación:**
+1. **Simplicidad:** No añades dependencias externas (Redux, Zustand)
+2. **Mantenibilidad:** Una sola fuente de verdad para autenticación
+3. **Performance:** Para tu caso de uso, Context API es suficiente
+4. **TypeScript:** Discriminated unions proporcionan type safety excelente
+5. **OWASP:** Menos superficie de ataque al no usar librerías adicionales
+
+**Implementación sugerida:**
+```typescript
+type UserType = 'admin' | 'client';
+type AuthState = 
+  | { type: 'admin'; user: AdminUser; isAuthenticated: true }
+  | { type: 'client'; user: ClientUser; isAuthenticated: true } 
+  | { type: null; user: null; isAuthenticated: false };
+```
+
+**Beneficios específicos para AppointMe:**
+- Un solo provider en lugar de dos contextos separados
+- Hooks especializados: `useAdminAuth()`, `useClientAuth()`
+- Detección automática de tipo de sesión activa
+- Redirecciones inteligentes basadas en userType
+- Fácil testing y debugging
+
+**Migración incremental:** Puedes migrar tu `AuthContext.tsx` actual paso a paso sin romper funcionalidad existente.
 
 ---
 
@@ -107,6 +254,11 @@
 - [x] **Gestión de Reservas** con tabla de bookings
 - [x] **Página de Perfil** para administrador
 - [x] **Páginas Públicas:** Home, Servicios, Contacto
+
+### Cambios recientes (UI)
+- [x] Mejoras en `RegisterPage` — feedback de contraseña profesional y responsive: se implementó un panel compacto con iconos condicionales y tipado TypeScript, reserva espacio para evitar layout shift y diseño móvil-friendly. (Justificación: UX responsiva y accesible; evita reflow; sigue buenas prácticas React/TypeScript y OWASP para validación previa al envío.)
+- [x] Pulido final en `RegisterPage` — agregado indicador de progreso compacto, toggle de detalles (colapsado en móvil) y mejoras de accesibilidad. (Justificación: minimiza layout shift; mejora claridad en móvil; sigue prácticas de accesibilidad y validación front-end.)
+- [x] Verificación rápida: `RegisterPage.tsx` actualizado. Calidad: responsive (Tailwind utility classes), TypeScript-typed, evita layout shifts (panel reservado), accesibilidad básica (toggle, lectura visual). (Justificación técnica: useMemo/useEffect para minimizar re-renders; validación front-end complementaria antes del submit; cumple OWASP al validar entradas en cliente y enviar solo datos validados.)
 
 ---
 
@@ -513,6 +665,42 @@
 
 ## 🚨 VULNERABILIDADES CRÍTICAS IDENTIFICADAS (REQUIEREN ATENCIÓN INMEDIATA)
 
+### 🔄 ANÁLISIS ESPECÍFICO: GESTIÓN DE SESIONES DUALES
+
+**Problemas identificados en AuthContext actual:**
+1. **⚠️ Single User Type:** Solo maneja administradores, no clientes
+2. **⚠️ Endpoints Hardcoded:** APIs hardcodeadas en `/auth/*` (solo admin)
+3. **⚠️ No Type Discrimination:** No diferencia entre tipos de usuario
+4. **⚠️ Session Conflicts:** Potencial conflicto si admin y client se loggean simultáneamente
+5. **⚠️ No Persistent Storage:** Estado se pierde al refresh de página
+
+**Estado actual de autenticación:**
+- ✅ **Backend:** Dual authentication completamente implementada (admin + client)
+- ✅ **JWT Cookies:** HttpOnly cookies funcionando para ambos tipos
+- ✅ **Middleware:** `isAdminAuthenticated` e `isClientAuthenticated` operativos
+- ⚠️ **Frontend:** Solo AuthContext para admin implementado
+- 🔥 **CRÍTICO:** No hay sistema frontend para autenticación de clientes
+
+**Alternativas evaluadas para solución:**
+
+**1. REDUX TOOLKIT (Complejo, pero poderoso):**
+- ✅ **Pros:** Excellent DevTools, RTK Query, mejor para equipos grandes
+- ❌ **Contras:** Overhead, más código boilerplate, curva de aprendizaje
+- 📊 **Caso de uso:** Aplicaciones con mucho estado global y equipos grandes
+
+**2. ZUSTAND (Equilibrio simplicidad/funcionalidad):**
+- ✅ **Pros:** Sintaxis simple, mejor performance que Context, menos boilerplate que Redux
+- ✅ **Pros:** Perfecto para estado global medium-scale
+- ❌ **Contras:** Dependency adicional, menos maduro que Redux
+- 📊 **Caso de uso:** Aplicaciones que crecerán en complejidad de estado
+
+**3. CONTEXT API MEJORADO (Recomendado para AppointMe):**
+- ✅ **Pros:** Cero dependencias externas, parte de React, fácil testing
+- ✅ **Pros:** Discriminated unions en TypeScript para type safety
+- ✅ **Pros:** Migración incremental desde AuthContext actual
+- ❌ **Contras:** Re-renders si no se optimiza correctamente
+- 📊 **Caso de uso:** Aplicaciones con auth como estado principal y pocos consumers
+
 ### Problemas de Seguridad JWT (CORRECCIÓN INCREMENTAL):
 1. **🔥 PRIORIDAD 1 - Inconsistencia en cookies:** `passportAdmin.ts` usa `req.signedCookies` pero `passportClient.ts` usa `req.cookies` sin firma
 2. **🔥 PRIORIDAD 1 - JWT_SECRET inseguro:** `passportClient.ts` tiene fallback `'change-JWT-SECREEEET029318'` comprometido
@@ -609,3 +797,50 @@
 - **Diferencias Etapas:**
   - **MVP:** **LISTO PARA CONTINUAR - Vulnerabilidades JWT críticas resueltas** ✅
   - **Seguridad:** **FASE 1 COMPLETADA - Auditoría crítica JWT implementada** ✅
+
+### 🔄 PLAN DE IMPLEMENTACIÓN RECOMENDADO - SESIONES DUALES
+
+**FASE 1: Refactorización de AuthContext (2-3 horas)**
+1. Actualizar tipos TypeScript en `frontend/src/types/auth.ts`
+2. Refactorizar `AuthContext.tsx` para usar discriminated unions
+3. Crear hooks especializados `useAdminAuth()` y `useClientAuth()`
+4. Mantener backward compatibility con `useAuth()` actual
+
+**FASE 2: Implementación de APIs cliente (1-2 horas)**  
+1. Crear `frontend/src/api/clientApi.ts` (similar al actual `client.ts` pero para client auth)
+2. Implementar endpoints: `/auth/client/login`, `/auth/client/register`, `/auth/client/profile`
+3. Configurar interceptores separados para manejar errores por tipo de usuario
+
+**FASE 3: Componentes de protección (1 hora)**
+1. Refactorizar `ProtectedRoute.tsx` para detectar tipo de usuario
+2. Crear `<AdminRoute>`, `<ClientRoute>`, `<PublicRoute>` components
+3. Implementar redirecciones inteligentes
+
+**FASE 4: Testing y validación (1 hora)**
+1. Probar login/logout de admin y client independientes
+2. Validar comportamiento en múltiples pestañas
+3. Probar edge cases: tokens expirados, network errors
+
+**TIEMPO TOTAL ESTIMADO: 5-7 horas de desarrollo**
+**COMPLEJIDAD:** Media (refactorización de código existente)
+**RIESGO:** Bajo (cambios incrementales, sin breaking changes)
+
+### 🎯 NEXT STEPS INMEDIATOS:
+
+1. **DECIDIR** qué approach prefieres (recomiendo Context API mejorado)
+2. **PLANIFICAR** cuándo hacer la refactorización (antes o después de completar MVP)
+3. **EVALUAR** si necesitas ayuda con la implementación específica
+
+---
+
+## 🔄 INTEGRACIÓN DE FORMULARIOS DE LOGIN (CLIENTE)
+
+**LOGIN.1 Actualizar formulario de login del cliente:**
+- [ ] Conectar formulario de login del cliente (`LoginPage.tsx`) al nuevo contexto (`loginClient`).
+- [ ] Validar que el formulario maneje correctamente errores de autenticación.
+- [ ] Probar flujo completo de login para cliente.
+
+**LOGIN.2 Validar integración del frontend:**
+- [ ] Verificar que tanto el login de admin como el de cliente funcionan correctamente.
+- [ ] Asegurar que no haya conflictos entre sesiones de admin y cliente.
+- [ ] Actualizar documentación interna sobre el uso del nuevo contexto.

@@ -41,6 +41,8 @@ Tus responsabilidades son:
 6. Devuelve siempre el archivo `.plan` completo y actualizado.  
 
 Reglas:
+- Reviso siempre las fuentes de docuemntacion para Octubre de 2025, las busco de nuevo siempre.
+- Para desarrollar frontend uso los componentes de la bilioteca shadcn-iu, con React y Typescript unicamente. Si voy a hacer otra cosa tengo que consultar.
 - No elimines pasos anteriores, solo márcalos o divídelos en subtareas.  
 - Sé breve en las explicaciones, pero siempre fundamenta en buenas prácticas.  
 - **Consulta siempre antes de realizar cambios en la arquitectura o en estructuras críticas del proyecto.**  

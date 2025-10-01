@@ -1,12 +1,16 @@
 import {lazy} from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
+import AdminLoginPage from './pages/admin/login/AdminLoginPage';
 import PublicLayout from './layouts/PublicLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import NotFoundPage from './pages/NotFoundPage';
 import ServicesListPage from './pages/ServicesListPage';
 import ContactPage from './pages/ContactPage';
+
+//--- Public routes ---//
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const RegisterPage = lazy(() => import('./pages/RegisterPage'))
 
 //--- Admin routes ---//
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'))
@@ -24,9 +28,11 @@ const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: 'login', element: <LoginPage /> },
+      { path: 'Adminlogin', element: <AdminLoginPage /> },
       { path: 'services', element: <ServicesListPage /> },
       { path: 'contact', element: <ContactPage /> },
+      { path: 'login', element: <LoginPage/> },
+      { path: 'register', element: <RegisterPage/> },
     ],
   },
   {  
