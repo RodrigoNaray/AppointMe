@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useClientAuth } from "@/context/AuthContext";
 import type { RegisterDto } from "@/types/auth";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -38,9 +38,15 @@ export default function RegisterPage() {
         setPasswordFeedback(feedback);
     }, [password]);
 
-    const metCount = useMemo(() => passwordFeedback.filter(f => f.valid).length, [passwordFeedback]);
-    const totalCount = passwordFeedback.length || 1;
-    const progressPercent = Math.round((metCount / totalCount) * 100);
+
+    // whether the password meets all criteria
+    const passwordValid = passwordCriteria.every((criterion) => criterion.test(password));
+
+    // build aria-describedby: include balloon and/or error message ids as needed
+    const describedByIds = [
+        showBalloon ? 'password-balloon' : undefined,
+        !passwordValid && password.length > 0 ? 'password-error' : undefined,
+    ].filter(Boolean).join('') || undefined;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -60,6 +66,12 @@ export default function RegisterPage() {
         const registerData: RegisterDto = { name, email, phone, password };
         await registerClient(registerData);
     };
+
+    // whether confirm password matches
+    const passwordsMatch = password === confirmPassword;
+
+    // build describedBy for confirm field
+    const confirmDescribedBy = !passwordsMatch && confirmPassword.length > 0 ? 'confirm-error' : undefined;
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
@@ -106,7 +118,7 @@ export default function RegisterPage() {
                         </div>
                         <div className="relative">
                             {/* explicit association: label (full-width) + sibling input to match other fields */}
-                            <label htmlFor="password" className="block text-sm font-medium cursor-pointer w-full">Contraseña</label>
+                            <label htmlFor="password" className={`block text-sm font-medium cursor-pointer w-full ${!passwordValid && password.length > 0 ? 'text-red-600' : ''}`}>Contraseña</label>
                             <Input
                                 type="password"
                                 id="password"
@@ -117,8 +129,14 @@ export default function RegisterPage() {
                                 onFocus={() => setShowBalloon(true)}
                                 onBlur={() => setShowBalloon(false)}
                                 onKeyDown={(e) => { if (e.key === 'Escape') setShowBalloon(false); }}
-                                aria-describedby={showBalloon ? 'password-balloon' : undefined}
+                                aria-invalid={!passwordValid && password.length > 0}
+                                aria-describedby={describedByIds}
                             />
+
+                            {/* Small red inline message when password doesn't meet requirements */}
+                            {!passwordValid && password.length > 0 && (
+                                <p id="password-error" className="text-red-600 text-sm mt-1">La contraseña debe cumplir con los requerimientos</p>
+                            )}
 
                             {/* Floating balloon - absolute positioned; hidden by default, appears above to avoid layout shift */}
                             <div
@@ -143,7 +161,7 @@ export default function RegisterPage() {
                             </div>
                         </div>
                         <div>
-                            <label htmlFor="confirmPassword" className="block text-sm font-medium">Confirmar Contraseña</label>
+                            <label htmlFor="confirmPassword" className={`block text-sm font-medium ${!passwordsMatch && confirmPassword.length > 0 ? 'text-red-600' : ''}`}>Confirmar Contraseña</label>
                             <Input
                                 type="password"
                                 id="confirmPassword"
@@ -151,7 +169,13 @@ export default function RegisterPage() {
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 required
                                 className="w-full"
+                                aria-invalid={!passwordsMatch && confirmPassword.length > 0}
+                                aria-describedby={confirmDescribedBy}
                             />
+
+                            {!passwordsMatch && confirmPassword.length > 0 && (
+                                <p id="confirm-error" className="text-red-600 text-sm mt-1">Las contraseñas deben coincidir</p>
+                            )}
                         </div>
                         <Button type="submit" className="w-full">Registrarse</Button>
                     </form>
