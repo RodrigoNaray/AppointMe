@@ -1,4 +1,4 @@
-import { createContext, useState, useContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
+import { createContext, useState, useContext, ReactNode, useEffect, useMemo, useCallback, useRef } from 'react';
 import apiClient from '../api/client';
 import clientAuthService from '../api/clientAuth';
 import type { 
@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isAuthenticated: false 
   });
   const [isLoading, setIsLoading] = useState(true);
+  const sessionChecked = useRef(false); // Flag para evitar llamadas duplicadas
 
   // Función para verificar sesión existente al inicializar
   const checkExistingSession = useCallback(async () => {
@@ -69,7 +70,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    checkExistingSession();
+    if (!sessionChecked.current) {
+      checkExistingSession();
+      sessionChecked.current = true; // Marca que la sesión ya fue verificada
+    }
   }, [checkExistingSession]);
 
   // Funciones de autenticación de admin

@@ -1,16 +1,16 @@
 import axios from 'axios';
 import type { LoginDto, RegisterDto, ClientUser } from '../types/auth';
+import { API_CONFIG } from './config';
 
-// API client específico para autenticación de clientes
-// Siguiendo mejores prácticas de separación de concerns (septiembre 2025)
-const clientAuthApi = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
-  withCredentials: true, // Importante para cookies HttpOnly
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+/**
+ * Cliente HTTP específico para autenticación de clientes
+ * 
+ * Separación de concerns: mantener lógica de auth aislada del cliente genérico
+ * permite interceptores específicos y mejor testabilidad
+ * 
+ * Configuración: importada desde config.ts para consistencia
+ */
+const clientAuthApi = axios.create(API_CONFIG);
 
 // Interceptor para manejar errores específicos de autenticación cliente
 clientAuthApi.interceptors.response.use(

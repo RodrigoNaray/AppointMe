@@ -1,8 +1,14 @@
 import axios from 'axios';
+import { API_CONFIG } from './config';
 
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL, 
-  withCredentials: true, // Activado para enviar las credenciales en cada peticion (Cookies)
-});
+/**
+ * Cliente HTTP genérico para llamadas API
+ * 
+ * Uso: servicios generales, bookings, availability, etc.
+ * Para autenticación de clientes, usar clientAuthService desde clientAuth.ts
+ * 
+ * Configuración: importada desde config.ts para mantener consistencia
+ */
+const apiClient = axios.create(API_CONFIG);
 
 export default apiClient;
