@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import toast from 'react-hot-toast';
 import { useClientAuth } from "@/context/AuthContext";
 import type { LoginDto } from "@/types/auth";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -16,17 +18,33 @@ function GoogleIcon({ className }: { className?: string }) {
         </svg>
     );
 }
-import { Link } from "react-router-dom";
 
 export default function LoginPage() {
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const { loginClient } = useClientAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const loginData: LoginDto = { email, password };
-        await loginClient(loginData);
+        setIsLoading(true);
+        
+        try {
+            const loginData: LoginDto = { email, password };
+            await loginClient(loginData);
+            
+            toast.success('¡Inicio de sesión exitoso!');
+            
+            // Redirigir al dashboard o home
+            setTimeout(() => {
+                navigate('/');
+            }, 1000);
+        } catch (error: any) {
+            toast.error(error.message || 'Error al iniciar sesión');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleGoogleLogin = () => {
@@ -62,7 +80,9 @@ export default function LoginPage() {
                                 required
                             />
                         </div>
-                        <Button type="submit" className="w-full">Iniciar Sesión</Button>
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                            {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                        </Button>
                     </form>
                     <Separator className="my-4" />
                     <Button variant="outline" className="w-full flex items-center justify-center gap-2" onClick={handleGoogleLogin}>

@@ -1,0 +1,204 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Mail, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { clientAuthService } from '@/api/clientAuth';
+import { useAuth } from '@/context/AuthContext';
+
+/**
+ * Componente para solicitar cambio de email (usuario autenticado)
+ * OWASP: Requiere contraseña para confirmar identidad
+ * Reutiliza estructura de ResendVerificationPage
+ */
+export default function ChangeEmailPage() {
+  const { authState } = useAuth();
+  const [newEmail, setNewEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  // Verificar si el usuario está autenticado
+  if (!authState.isAuthenticated || authState.type !== 'client') {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+        <Card className="w-full max-w-md shadow-lg">
+          <CardHeader className="text-center">
+            <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-2" />
+            <CardTitle className="text-2xl font-bold">Acceso Denegado</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-gray-600">
+              Debes iniciar sesión para cambiar tu email.
+            </p>
+            <Link to="/login">
+              <Button className="w-full">Ir al Login</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validaciones
+    if (!newEmail.includes('@')) {
+      setMessage("Por favor ingresa un email válido");
+      setIsSuccess(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setMessage("La contraseña debe tener al menos 6 caracteres");
+      setIsSuccess(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage('');
+
+    try {
+      const result = await clientAuthService.requestEmailChange(newEmail, password);
+
+      if (result.success) {
+        setMessage(result.message);
+        setIsSuccess(true);
+        setNewEmail('');
+        setPassword('');
+      } else {
+        setMessage(result.message);
+        setIsSuccess(false);
+      }
+    } catch (error) {
+      setMessage('Error interno del servidor. Intenta nuevamente.');
+      setIsSuccess(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Cambiar Email</CardTitle>
+          <p className="text-gray-600 mt-2">
+            Email actual: <strong>{authState.user.email}</strong>
+          </p>
+        </CardHeader>
+        <CardContent>
+          {!isSuccess ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="newEmail" className="block text-sm font-medium">
+                  Nuevo Email
+                </label>
+                <Input
+                  type="email"
+                  id="newEmail"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="nuevo-email@ejemplo.com"
+                  required
+                  className="w-full mt-1"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium">
+                  Contraseña Actual
+                </label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Tu contraseña"
+                    required
+                    className="w-full mt-1 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Requerida para confirmar tu identidad
+                </p>
+              </div>
+
+              {message && (
+                <div className={`text-sm p-3 rounded ${isSuccess ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                  {message}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Mail className="w-4 h-4 mr-2 animate-pulse" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Solicitar Cambio de Email
+                  </>
+                )}
+              </Button>
+            </form>
+          ) : (
+            <div className="text-center space-y-4">
+              <div className="flex justify-center">
+                <CheckCircle className="w-16 h-16 text-green-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-green-600">
+                  ¡Solicitud Enviada!
+                </h3>
+                <p className="text-gray-600 mt-2">
+                  {message}
+                </p>
+                <p className="text-sm text-gray-500 mt-3">
+                  Revisa tu bandeja de entrada del nuevo email y haz clic en el enlace de verificación.
+                </p>
+              </div>
+              <Button
+                onClick={() => {
+                  setIsSuccess(false);
+                  setMessage('');
+                }}
+                variant="outline"
+                className="w-full"
+              >
+                Solicitar Otro Cambio
+              </Button>
+            </div>
+          )}
+
+          <div className="text-center mt-6">
+            <Link
+              to="/login"
+              className="block text-sm text-blue-500 hover:underline"
+            >
+              Volver al Dashboard
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

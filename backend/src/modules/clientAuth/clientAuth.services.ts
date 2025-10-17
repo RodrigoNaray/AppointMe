@@ -6,12 +6,18 @@ import {
   LoginClientDto,
   ClientJwtPayload,
   PublicClient,
+  EmailVerificationResult,
+  ChangeEmailRequestDto,
+  EmailChangeResult,
 } from './clientAuth.types';
 import { ConflictError } from '../../utils/error';
 import { JWT_SECRET, JWT_EXPIRATION } from '../../config/auth.config';
+import { sendVerificationEmail, sendEmailChangeVerification } from '../../services/emailService';
+import { generateTokenWithExpiration } from '../../utils/tokenUtils';
+import logger from '../../utils/logger';
 
 /**
- * Registra un nuevo cliente en la base de datos.
+ * Registra un nuevo cliente en la base de datos y envía email de verificación.
  * @param data - Datos del cliente para el registro.
  * @returns El objeto del cliente público (sin contraseña).
  */
@@ -31,18 +37,52 @@ export const registerClient = async (data: RegisterClientDto): Promise<PublicCli
     passwordHash = await bcrypt.hash(data.password, 10);
   }
 
-  // 3. Crear el nuevo cliente en la base de datos
+  // 3. Generar token de verificación de email
+  const { token: verificationToken, expiration: verificationExpires } = generateTokenWithExpiration(24);
+
+  // 4. Crear el nuevo cliente en la base de datos con datos de verificación
   const newClient = await prisma.client.create({
     data: {
       email: data.email,
       name: data.name,
       phone: data.phone,
       passwordHash,
+      emailVerified: false,
+      emailVerificationToken: verificationToken,
+      emailVerificationExpires: verificationExpires,
     },
   });
 
-  // 4. Omitir el passwordHash antes de devolver el objeto
-  const { passwordHash: _, ...publicClient } = newClient;
+  // 5. Enviar email de verificación de forma asíncrona
+  try {
+    const emailSent = await sendVerificationEmail({
+      to: newClient.email,
+      name: newClient.name,
+      verificationToken: verificationToken,
+    });
+
+    if (emailSent) {
+      logger.info({
+        clientId: newClient.id, 
+        email: newClient.email 
+      }, 'Verification email sent successfully');
+    } else {
+      logger.warn({
+        clientId: newClient.id, 
+        email: newClient.email 
+      }, 'Failed to send verification email');
+    }
+  } catch (error) {
+    // No fallar el registro si el email no se puede enviar
+    logger.error({
+      clientId: newClient.id, 
+      email: newClient.email,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, 'Error sending verification email');
+  }
+
+  // 6. Omitir campos sensibles antes de devolver el objeto
+  const { passwordHash: _, emailVerificationToken: __, ...publicClient } = newClient;
   return publicClient;
 };
 
@@ -66,7 +106,7 @@ export const validateClient = async (data: LoginClientDto): Promise<PublicClient
     return null; // Contraseña incorrecta
   }
 
-  const { passwordHash, ...publicClient } = client;
+  const { passwordHash: _, emailVerificationToken: __, ...publicClient } = client;
   return publicClient;
 };
 
@@ -92,4 +132,295 @@ export const generateClientToken = (client: PublicClient): string => {
   });
 
   return token;
+};
+
+/**
+ * Verifica el email de un cliente usando el token de verificación.
+ * @param token - Token de verificación enviado por email.
+ * @returns Objeto con resultado de verificación y estado del cliente.
+ */
+export const verifyClientEmail = async (token: string): Promise<EmailVerificationResult> => {
+  logger.info({ token: token.substring(0, 10) + '...' }, 'Attempting email verification');
+  
+  // Buscar cliente con el token de verificación pendiente
+  const client = await prisma.client.findFirst({
+    where: {
+      emailVerificationToken: token,
+      emailVerified: false,
+    },
+  });
+
+  if (!client) {
+    // El token no existe o ya fue usado
+    // Por seguridad OWASP, no revelamos si la cuenta existe o está verificada
+    logger.warn({ token: token.substring(0, 10) + '...' }, 'Token not found - may be invalid, expired, or already used');
+    return {
+      success: false,
+      alreadyVerified: false,
+      message: 'Este link de verificación ya no es válido. Si ya verificaste tu cuenta, puedes iniciar sesión directamente.',
+    };
+  }
+
+  // Verificar si el token ha expirado
+  if (client.emailVerificationExpires && new Date() > client.emailVerificationExpires) {
+    logger.warn({ 
+      clientId: client.id, 
+      expiration: client.emailVerificationExpires 
+    }, 'Verification token has expired');
+    return {
+      success: false,
+      alreadyVerified: false,
+      message: 'El token de verificación ha expirado. Solicita un nuevo email de verificación.',
+    };
+  }
+
+  // Actualizar cliente como verificado y limpiar datos de verificación
+  const verifiedClient = await prisma.client.update({
+    where: { id: client.id },
+    data: {
+      emailVerified: true,
+      emailVerificationToken: null,
+      emailVerificationExpires: null,
+    },
+  });
+
+  logger.info({ clientId: verifiedClient.id }, 'Email verification successful');
+
+  // Retornar cliente público (sin campos sensibles)
+  const { passwordHash: _, emailVerificationToken: __, ...publicClient } = verifiedClient;
+  return {
+    success: true,
+    alreadyVerified: false,
+    client: publicClient,
+    message: 'Email verificado exitosamente. Ya puedes iniciar sesión.',
+  };
+};
+
+/**
+ * Reenvía el email de verificación para un cliente autenticado.
+ * OWASP: Usa clientId del JWT en lugar de email del body para prevenir enumeración de usuarios.
+ * @param clientId - ID del cliente autenticado (extraído del JWT).
+ * @returns true si el email se reenvió exitosamente, false si el cliente no existe o ya está verificado.
+ */
+export const resendVerificationEmail = async (clientId: string): Promise<boolean> => {
+  // Buscar cliente por ID (proviene del JWT verificado)
+  const client = await prisma.client.findUnique({
+    where: { id: clientId },
+  });
+
+  if (!client) {
+    logger.warn({ clientId }, 'Client not found for resend verification');
+    return false;
+  }
+
+  if (client.emailVerified) {
+    logger.info({ clientId }, 'Client email already verified');
+    return false;
+  }
+
+  // Generar nuevo token de verificación
+  const { token: verificationToken, expiration: verificationExpires } = generateTokenWithExpiration(24);
+
+  // Actualizar cliente con nuevo token
+  await prisma.client.update({
+    where: { id: client.id },
+    data: {
+      emailVerificationToken: verificationToken,
+      emailVerificationExpires: verificationExpires,
+    },
+  });
+
+  // Enviar nuevo email de verificación
+  try {
+    const emailSent = await sendVerificationEmail({
+      to: client.email,
+      name: client.name,
+      verificationToken: verificationToken,
+    });
+
+    if (emailSent) {
+      logger.info({ clientId: client.id }, 'Verification email resent successfully');
+      return true;
+    } else {
+      logger.warn({ clientId: client.id }, 'Failed to resend verification email');
+      return false;
+    }
+  } catch (error) {
+    logger.error({
+      clientId: client.id,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, 'Error resending verification email');
+    return false;
+  }
+};
+
+/**
+ * Solicita cambio de email para un cliente autenticado (Paso 1)
+ * OWASP: Requiere contraseña para confirmar identidad
+ * @param clientId - ID del cliente autenticado
+ * @param data - Nuevo email y contraseña de confirmación
+ * @returns EmailChangeResult con éxito o error
+ */
+export const requestEmailChange = async (
+  clientId: string,
+  data: ChangeEmailRequestDto
+): Promise<EmailChangeResult> => {
+  // Buscar cliente por ID
+  const client = await prisma.client.findUnique({
+    where: { id: clientId },
+  });
+
+  if (!client || !client.passwordHash) {
+    logger.warn({ clientId }, 'Client not found or has no password');
+    return {
+      success: false,
+      message: 'No se pudo procesar la solicitud.',
+    };
+  }
+
+  // Verificar contraseña para confirmar identidad
+  const isPasswordValid = await bcrypt.compare(data.password, client.passwordHash);
+  if (!isPasswordValid) {
+    logger.warn({ clientId }, 'Invalid password for email change request');
+    return {
+      success: false,
+      message: 'Contraseña incorrecta.',
+    };
+  }
+
+  // Verificar que el nuevo email sea diferente
+  if (data.newEmail.toLowerCase() === client.email.toLowerCase()) {
+    return {
+      success: false,
+      message: 'El nuevo email debe ser diferente al actual.',
+    };
+  }
+
+  // Verificar que el nuevo email no esté en uso por otro usuario
+  const existingClient = await prisma.client.findUnique({
+    where: { email: data.newEmail },
+  });
+
+  if (existingClient) {
+    // Por seguridad OWASP, no revelar si el email está en uso
+    logger.warn({ 
+      clientId, 
+      newEmail: data.newEmail 
+    }, 'Email already in use by another client');
+    return {
+      success: false,
+      message: 'No se pudo completar la solicitud. Intenta con otro email.',
+    };
+  }
+
+  // Generar token de cambio de email
+  const { token: emailChangeToken, expiration: emailChangeExpires } = generateTokenWithExpiration(24);
+
+  // Guardar datos pendientes de cambio
+  await prisma.client.update({
+    where: { id: clientId },
+    data: {
+      pendingEmail: data.newEmail,
+      emailChangeToken: emailChangeToken,
+      emailChangeExpires: emailChangeExpires,
+    },
+  });
+
+  // Enviar email de verificación al NUEVO email
+  try {
+    const emailSent = await sendEmailChangeVerification({
+      to: client.email, // Notificar al email actual
+      name: client.name,
+      newEmail: data.newEmail,
+      emailChangeToken: emailChangeToken,
+    });
+
+    if (emailSent) {
+      logger.info({ clientId, newEmail: data.newEmail }, 'Email change verification sent');
+      return {
+        success: true,
+        message: `Hemos enviado un email de verificación a ${data.newEmail}. Revisa tu bandeja de entrada.`,
+      };
+    } else {
+      logger.warn({ clientId }, 'Failed to send email change verification');
+      return {
+        success: false,
+        message: 'No se pudo enviar el email de verificación. Intenta nuevamente.',
+      };
+    }
+  } catch (error) {
+    logger.error({
+      clientId,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, 'Error sending email change verification');
+    return {
+      success: false,
+      message: 'Error al enviar el email de verificación.',
+    };
+  }
+};
+
+/**
+ * Verifica y confirma el cambio de email (Paso 2)
+ * @param token - Token de verificación recibido por email
+ * @returns EmailChangeResult con éxito o error
+ */
+export const verifyEmailChange = async (token: string): Promise<EmailChangeResult> => {
+  logger.info({ token: token.substring(0, 10) + '...' }, 'Attempting email change verification');
+
+  // Buscar cliente con el token de cambio de email
+  const client = await prisma.client.findFirst({
+    where: {
+      emailChangeToken: token,
+    },
+  });
+
+  if (!client || !client.pendingEmail) {
+    logger.warn({ token: token.substring(0, 10) + '...' }, 'Invalid email change token');
+    return {
+      success: false,
+      message: 'Este link de verificación no es válido o ya fue usado.',
+    };
+  }
+
+  // Verificar si el token ha expirado
+  if (client.emailChangeExpires && new Date() > client.emailChangeExpires) {
+    logger.warn({ 
+      clientId: client.id, 
+      expiration: client.emailChangeExpires 
+    }, 'Email change token has expired');
+    return {
+      success: false,
+      message: 'El token de verificación ha expirado. Solicita un nuevo cambio de email.',
+    };
+  }
+
+  // Actualizar el email y limpiar datos pendientes
+  try {
+    await prisma.client.update({
+      where: { id: client.id },
+      data: {
+        email: client.pendingEmail,
+        pendingEmail: null,
+        emailChangeToken: null,
+        emailChangeExpires: null,
+      },
+    });
+
+    logger.info({ clientId: client.id, newEmail: client.pendingEmail }, 'Email change successful');
+
+    return {
+      success: true,
+      message: 'Email actualizado exitosamente. Por favor inicia sesión con tu nuevo email.',
+    };
+  } catch (error) {
+    logger.error({
+      clientId: client.id,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, 'Error updating email');
+    return {
+      success: false,
+      message: 'Error al actualizar el email. Intenta nuevamente.',
+    };
+  }
 };

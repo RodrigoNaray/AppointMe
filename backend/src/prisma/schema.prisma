@@ -43,11 +43,24 @@ model Client {
   passwordHash String?   // Opcional para el login con Google
   googleId     String?   @unique
 
+  // Campos de verificación de email
+  emailVerified Boolean @default(false)
+  emailVerificationToken String?
+  emailVerificationExpires DateTime?
+
+  // Campos de cambio de email
+  pendingEmail String?
+  emailChangeToken String?
+  emailChangeExpires DateTime?
+
   // Relación: Un cliente puede tener muchas reservas
   bookings     Booking[]
 
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  @@index([emailVerificationToken])
+  @@index([emailChangeToken])
 }
 
 // Modelo para los Servicios ofrecidos

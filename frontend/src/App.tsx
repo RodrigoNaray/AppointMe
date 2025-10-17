@@ -1,5 +1,6 @@
 import {lazy} from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import HomePage from './pages/HomePage';
 import AdminLoginPage from './pages/admin/login/AdminLoginPage';
 import PublicLayout from './layouts/PublicLayout';
@@ -11,6 +12,10 @@ import ContactPage from './pages/ContactPage';
 //--- Public routes ---//
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const RegisterPage = lazy(() => import('./pages/RegisterPage'))
+const EmailVerificationPage = lazy(() => import('./pages/EmailVerificationPage'))
+const ResendVerificationPage = lazy(() => import('./pages/ResendVerificationPage'))
+const ChangeEmailPage = lazy(() => import('./pages/ChangeEmailPage'))
+const VerifyEmailChangePage = lazy(() => import('./pages/VerifyEmailChangePage'))
 
 //--- Admin routes ---//
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'))
@@ -33,6 +38,10 @@ const router = createBrowserRouter([
       { path: 'contact', element: <ContactPage /> },
       { path: 'login', element: <LoginPage/> },
       { path: 'register', element: <RegisterPage/> },
+      { path: 'verify-email', element: <EmailVerificationPage/> },
+      { path: 'resend-verification', element: <ResendVerificationPage/> },
+      { path: 'change-email', element: <ChangeEmailPage/> },
+      { path: 'verify-email-change', element: <VerifyEmailChangePage/> },
     ],
   },
   {  
@@ -59,7 +68,35 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
+      <RouterProvider router={router} />
+    </>
+  );
 }
 
 export default App;

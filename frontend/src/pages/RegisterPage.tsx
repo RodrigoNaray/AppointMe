@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { useClientAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import toast from 'react-hot-toast';
+import { clientAuthService } from "@/api/clientAuth";
 import type { RegisterDto } from "@/types/auth";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,14 +14,15 @@ interface PasswordFeedback {
 }
 
 export default function RegisterPage() {
+    const navigate = useNavigate();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const [passwordFeedback, setPasswordFeedback] = useState<PasswordFeedback[]>([]);
-    const { registerClient } = useClientAuth();
     const [showBalloon, setShowBalloon] = useState(false);
 
     const passwordCriteria = [
@@ -62,9 +65,33 @@ export default function RegisterPage() {
             setErrorMessage("La contraseña no cumple con todos los requisitos");
             return;
         }
-        setErrorMessage(''); // Clear error message if validation passes
-        const registerData: RegisterDto = { name, email, phone, password };
-        await registerClient(registerData);
+        
+        setErrorMessage('');
+        setIsLoading(true);
+
+        try {
+            const registerData: RegisterDto = { name, email, phone, password };
+            const result = await clientAuthService.register(registerData);
+            
+            if (result.success) {
+                toast.success('¡Registro exitoso! Revisa tu email para verificar tu cuenta.', {
+                    duration: 5000,
+                });
+                
+                // Redirigir a una página de confirmación o login
+                setTimeout(() => {
+                    navigate('/login');
+                }, 2000);
+            } else {
+                toast.error(result.message || 'Error en el registro');
+                setErrorMessage(result.message || 'Error en el registro');
+            }
+        } catch (error) {
+            toast.error('Error interno del servidor');
+            setErrorMessage('Error interno del servidor');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // whether confirm password matches
@@ -177,7 +204,9 @@ export default function RegisterPage() {
                                 <p id="confirm-error" className="text-red-600 text-sm mt-1">Las contraseñas deben coincidir</p>
                             )}
                         </div>
-                        <Button type="submit" className="w-full">Registrarse</Button>
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                            {isLoading ? 'Registrando...' : 'Registrarse'}
+                        </Button>
                     </form>
                 </CardContent>
             </Card>

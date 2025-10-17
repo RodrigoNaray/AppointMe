@@ -36,13 +36,68 @@ export const clientAuthService = {
   },
 
   /**
-   * Registro de nuevo cliente
+   * Registro de nuevo cliente con verificación de correo
    * @param data Datos de registro
-   * @returns Cliente registrado
+   * @returns Respuesta del servidor
    */
-  register: async (data: RegisterDto): Promise<ClientUser> => {
-    const response = await clientAuthApi.post<{ user: ClientUser }>('/auth/client/register', data);
-    return { ...response.data.user, type: 'client' as const };
+  register: async (data: RegisterDto): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await clientAuthApi.post<{ message: string; client: any }>('/auth/client/register', data);
+      return {
+        success: true,
+        message: response.data.message
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error en el registro'
+      };
+    }
+  },
+
+  /**
+   * Verificar email del cliente
+   * @param token Token de verificación recibido por email
+   * @returns Respuesta del servidor
+   */
+  verifyEmail: async (token: string): Promise<{ success: boolean; message: string; client?: any; alreadyVerified?: boolean }> => {
+    try {
+      const response = await clientAuthApi.post<{ message: string; client: any; alreadyVerified?: boolean }>('/auth/client/verify-email', { token });
+      return {
+        success: true,
+        message: response.data.message,
+        client: response.data.client,
+        alreadyVerified: response.data.alreadyVerified
+      };
+    } catch (error: any) {
+      // Si el error indica que ya está verificado, tratarlo como éxito
+      const alreadyVerified = error.response?.data?.alreadyVerified === true;
+      return {
+        success: alreadyVerified, // Éxito si ya está verificado
+        message: error.response?.data?.message || 'Error en la verificación',
+        alreadyVerified
+      };
+    }
+  },
+
+  /**
+   * Reenviar email de verificación (usuario autenticado)
+   * OWASP: No requiere email en el body - se obtiene del JWT
+   * @returns Respuesta del servidor
+   */
+  resendVerification: async (): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await clientAuthApi.post<{ message: string }>('/auth/client/resend-verification');
+      return {
+        success: true,
+        message: response.data.message
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error al reenviar verificación'
+      };
+    }
   },
 
   /**
@@ -59,6 +114,50 @@ export const clientAuthService = {
    */
   logout: async (): Promise<void> => {
     await clientAuthApi.post('/auth/client/logout');
+  },
+
+  /**
+   * Solicitar cambio de email (usuario autenticado)
+   * @param newEmail Nuevo email
+   * @param password Contraseña para confirmar identidad
+   * @returns Respuesta del servidor
+   */
+  requestEmailChange: async (newEmail: string, password: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await clientAuthApi.post<{ message: string }>('/auth/client/request-email-change', { 
+        newEmail, 
+        password 
+      });
+      return {
+        success: true,
+        message: response.data.message
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error al solicitar cambio de email'
+      };
+    }
+  },
+
+  /**
+   * Verificar cambio de email mediante token
+   * @param token Token de verificación
+   * @returns Respuesta del servidor
+   */
+  verifyEmailChange: async (token: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await clientAuthApi.post<{ message: string }>('/auth/client/verify-email-change', { token });
+      return {
+        success: true,
+        message: response.data.message
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error al verificar cambio de email'
+      };
+    }
   },
 };
 

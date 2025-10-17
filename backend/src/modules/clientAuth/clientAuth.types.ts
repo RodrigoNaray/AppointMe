@@ -22,5 +22,25 @@ export interface ClientJwtPayload {
   role: "client"; // Añadimos el rol explícitamente
 }
 
-// El tipo de objeto de cliente que devolveremos (sin el hash de la contraseña)
-export type PublicClient = Omit<Client, "passwordHash">;
+// El tipo de objeto de cliente que devolveremos (sin campos sensibles)
+export type PublicClient = Omit<Client, "passwordHash" | "emailVerificationToken">;
+
+// Resultado de la verificación de email con diferentes estados
+export interface EmailVerificationResult {
+  success: boolean;
+  alreadyVerified: boolean;
+  client?: PublicClient;
+  message: string;
+}
+
+// DTO para solicitar cambio de email
+export interface ChangeEmailRequestDto {
+  newEmail: string;
+  password: string; // Requiere contraseña para confirmar identidad
+}
+
+// Resultado de la solicitud de cambio de email
+export interface EmailChangeResult {
+  success: boolean;
+  message: string;
+}
