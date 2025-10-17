@@ -20,4 +20,8 @@ clientAuthRoutes.post('/resend-verification', isClientAuthenticated, controller.
 clientAuthRoutes.post('/request-email-change', isClientAuthenticated, controller.requestEmailChangeController);
 clientAuthRoutes.post('/verify-email-change', controller.verifyEmailChangeController);
 
+// Ruta para cambio de contraseña (requiere autenticación)
+// OWASP A02:2021: Protegida con middleware isClientAuthenticated
+clientAuthRoutes.post('/change-password', isClientAuthenticated, controller.changePasswordController);
+
 export default clientAuthRoutes;

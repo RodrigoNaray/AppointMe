@@ -31,8 +31,8 @@ export const clientAuthService = {
    * @returns Datos del cliente autenticado
    */
   login: async (data: LoginDto): Promise<ClientUser> => {
-    const response = await clientAuthApi.post<{ user: ClientUser }>('/auth/client/login', data);
-    return { ...response.data.user, type: 'client' as const };
+    const response = await clientAuthApi.post<{ message: string; client: ClientUser }>('/auth/client/login', data);
+    return { ...response.data.client, type: 'client' as const };
   },
 
   /**
@@ -156,6 +156,33 @@ export const clientAuthService = {
       return {
         success: false,
         message: error.response?.data?.message || 'Error al verificar cambio de email'
+      };
+    }
+  },
+
+  /**
+   * Cambiar contraseña del cliente autenticado
+   * @param currentPassword Contraseña actual
+   * @param newPassword Nueva contraseña
+   * @returns Respuesta del servidor
+   */
+  changePassword: async (
+    currentPassword: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await clientAuthApi.post<{ message: string }>(
+        '/auth/client/change-password',
+        { currentPassword, newPassword }
+      );
+      return {
+        success: true,
+        message: response.data.message
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error al cambiar la contraseña'
       };
     }
   },

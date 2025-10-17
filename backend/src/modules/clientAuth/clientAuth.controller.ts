@@ -199,3 +199,54 @@ export const verifyEmailChangeController = async (req: Request, res: Response) =
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
+
+/**
+ * Controller para cambiar la contraseña de un cliente autenticado.
+ * 
+ * Mejores prácticas:
+ * - Express.js: Validación de body antes de procesar
+ * - OWASP A02:2021: Usa req.user del middleware (requiere autenticación)
+ * - Node.js: Logging de intentos de cambio de contraseña
+ * - TypeScript: Type-safe con validaciones
+ */
+export const changePasswordController = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as { id: string; email: string; name: string };
+    
+    if (!user) {
+      return res.status(401).json({ message: 'Usuario no autenticado' });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    // Validaciones básicas
+    if (!currentPassword || typeof currentPassword !== 'string') {
+      return res.status(400).json({ message: 'Contraseña actual requerida' });
+    }
+
+    if (!newPassword || typeof newPassword !== 'string') {
+      return res.status(400).json({ message: 'Nueva contraseña requerida' });
+    }
+
+    // Validación de longitud (OWASP A02:2021)
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'La nueva contraseña debe tener al menos 6 caracteres' });
+    }
+
+    // Llamar al servicio
+    const result = await service.changePassword(user.id, {
+      currentPassword,
+      newPassword,
+    });
+
+    if (!result.success) {
+      return res.status(400).json({ message: result.message });
+    }
+
+    logger.info({ clientId: user.id }, "Password changed successfully");
+    res.status(200).json({ message: result.message });
+  } catch (error: any) {
+    logger.error(error, "Error changing password");
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};

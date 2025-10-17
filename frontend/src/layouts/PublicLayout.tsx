@@ -2,8 +2,11 @@ import { Link, NavLink, Outlet } from 'react-router-dom';
 import { Menu, Package2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from '@/context/AuthContext';
+import UserMenu from '@/components/UserMenu';
 
 export default function PublicLayout() {
+  const { authState } = useAuth();
   
   const navLinks = [
     { to: "/services", label: "Servicios" },
@@ -80,10 +83,14 @@ export default function PublicLayout() {
           
           <div className="w-full flex-1"></div>
           
-          
-          <Link to="/login">
-            <Button>Login</Button>
-          </Link>
+          {/* Auth Button/Menu: Muestra Login o UserMenu según estado de autenticación */}
+          {authState.isAuthenticated && authState.type === 'client' ? (
+            <UserMenu />
+          ) : (
+            <Link to="/login">
+              <Button>Login</Button>
+            </Link>
+          )}
         </header>
 
         

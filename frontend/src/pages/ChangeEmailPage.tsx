@@ -191,10 +191,10 @@ export default function ChangeEmailPage() {
 
           <div className="text-center mt-6">
             <Link
-              to="/login"
+              to="/profile"
               className="block text-sm text-blue-500 hover:underline"
             >
-              Volver al Dashboard
+              Volver al Perfil
             </Link>
           </div>
         </CardContent>

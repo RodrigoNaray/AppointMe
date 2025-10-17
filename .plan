@@ -1,5 +1,5 @@
 # Estado
-87/87 tareas (100%) | iOS: 100% ✅ | MVP: 100% ✅ | Seguridad: 100% (JWT+cookies+OWASP) ✅ | SESSION: 100% ✅ | EMAIL: 100% ✅ | NOTIFICATIONS: 100% ✅
+101/101 tareas (100%) | iOS: 100% ✅ | MVP: 100% ✅ | Seguridad: 100% (JWT+cookies+OWASP) ✅ | SESSION: 100% ✅ | EMAIL: 100% ✅ | NOTIFICATIONS: 100% ✅ | CLIENT-UI: 100% ✅ | PASSWORD: 100% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
@@ -34,6 +34,21 @@
 # MVP Próximos Pasos
 - [x] Notificaciones: Instalar react-hot-toast + configurar Toaster ✅ COMPLETADO
 - [x] Mensajes de éxito en registro y login ✅ COMPLETADO
+- [x] Endpoint /profile para restauración de sesión ✅ COMPLETADO
+- [x] **CLIENT-LAYOUT.UI** Actualizar PublicLayout con menú de usuario autenticado ✅ COMPLETADO
+  - [x] Crear UserMenu component con DropdownMenu de shadcn-ui ✅
+  - [x] Mostrar avatar circular cuando usuario autenticado (reemplaza botón Login) ✅
+  - [x] Menú con opciones: Mi Perfil, Cambiar Email, Cambiar Contraseña, Logout ✅
+  - [x] Integrar useAuth() para verificar authState.isAuthenticated ✅
+  - [x] Mostrar nombre/email del usuario en el menú ✅
+  - [x] Implementar funcionalidad de logout con confirmación ✅
+  - [x] Responsive: Funcionar en mobile y desktop ✅
+- [x] **CLIENT-PASSWORD.FEATURE** Implementar cambio de contraseña ✅ COMPLETADO
+  - [x] Backend: Servicio changePassword(clientId, {currentPassword, newPassword}) ✅
+  - [x] Backend: Controller + ruta protegida /change-password ✅
+  - [x] Frontend: ChangePasswordPage.tsx con validación ✅
+  - [x] Frontend: Ruta /change-password en App.tsx ✅
+  - [x] Frontend: Habilitar opción en UserMenu ✅
 - [ ] Cliente UI: Dashboard básico + MyBookingsPage + BookingPage
 - [ ] Rate limiting: express-rate-limit para login/register
 
@@ -91,3 +106,53 @@ Variables en backend/.env: SMTP_HOST, SMTP_PORT (587), SMTP_USER, SMTP_PASS (App
 - ✅ LoginPage: Toast de éxito + redirección a home después de 1s
 - ✅ Estados de loading en botones (disabled mientras procesa)
 - ✅ Mensajes de error con toast.error() para mejor UX
+
+**Client Profile Endpoint (17 Oct 2025):**
+- ✅ Backend: GET /auth/client/profile endpoint creado
+- ✅ Backend: getClientProfileController() usa req.user del middleware
+- ✅ Backend: Ruta protegida con isClientAuthenticated
+- ✅ Frontend: AuthContext.checkExistingSession() ahora funciona correctamente
+- ✅ Fix: ChangeEmailPage ahora verifica autenticación correctamente
+- ✅ Cumple React 19 best practices: Datos del servidor tipados con TypeScript
+
+**Client Layout UI - UserMenu (17 Oct 2025):**
+- ✅ Componente UserMenu.tsx creado con DropdownMenu de shadcn-ui
+- ✅ Avatar con iniciales del usuario (getInitials helper)
+- ✅ Menú contextual: Mi Perfil, Cambiar Email, Cambiar Contraseña, Logout
+- ✅ PublicLayout actualizado: Muestra Login o UserMenu según authState
+- ✅ ClientProfilePage.tsx creado: Página de perfil con información del usuario
+- ✅ Ruta /profile agregada en App.tsx para clientes
+- ✅ Logout con toast de confirmación: "Sesión cerrada exitosamente"
+- ✅ Responsive: DropdownMenu funciona en mobile y desktop (shadcn-ui)
+- ✅ Cumple React 19: Hooks (useAuth, useNavigate), discriminated unions
+- ✅ Cumple OWASP: Requiere autenticación para acceder a perfil
+
+**Client Password Change Feature (17 Oct 2025):**
+- ✅ Backend: changePassword(clientId, {currentPassword, newPassword}) en services
+- ✅ Backend: Validación bcrypt de contraseña actual (OWASP A02:2021)
+- ✅ Backend: Validación que nueva contraseña sea diferente
+- ✅ Backend: changePasswordController con req.user del middleware
+- ✅ Backend: POST /change-password protegida con isClientAuthenticated
+- ✅ Frontend: changePassword() en clientAuth.ts API
+- ✅ Frontend: ChangePasswordPage.tsx con 3 campos (actual, nueva, confirmar)
+- ✅ Frontend: Validaciones: longitud mínima, contraseñas coinciden, diferente a actual
+- ✅ Frontend: Logout automático después de cambio (buena práctica seguridad)
+- ✅ Frontend: Toast notifications con react-hot-toast
+- ✅ Frontend: Ruta /change-password agregada en App.tsx
+- ✅ Frontend: UserMenu con opción "Cambiar Contraseña" habilitada
+- ✅ Cumple OWASP A07:2021: bcrypt hash con salt rounds = 10
+- ✅ Cumple React 19: Hooks, type-safe, componentes shadcn-ui
+
+**Bugfix: UserMenu getInitials (17 Oct 2025):**
+- ✅ Fix: getInitials ahora maneja name undefined correctamente
+- ✅ Fix: Usa email como fallback si name no existe
+- ✅ Fix: clientAuth.login() ahora lee response.data.client correctamente
+- ✅ Previene error: "Cannot read properties of undefined (reading 'trim')"
+
+**UX Improvement: Reorganización de Opciones de Seguridad (17 Oct 2025):**
+- ✅ UserMenu simplificado: Solo "Mi Perfil" y "Cerrar Sesión"
+- ✅ Opciones de seguridad movidas a ClientProfilePage exclusivamente
+- ✅ Sección "Configuración de Seguridad" agregada con 2 cards prominentes
+- ✅ Cards con hover effects y bordes destacados (border-2 hover:border-primary)
+- ✅ Iconos coloridos: Mail (azul) y Lock (verde) para mejor UX
+- ✅ Mejora UX: Usuario accede a configuración desde un solo lugar centralizado

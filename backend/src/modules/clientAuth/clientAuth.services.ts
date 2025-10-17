@@ -424,3 +424,89 @@ export const verifyEmailChange = async (token: string): Promise<EmailChangeResul
     };
   }
 };
+
+/**
+ * Cambia la contraseña de un cliente autenticado.
+ * @param clientId - ID del cliente autenticado.
+ * @param data - Contraseña actual y nueva contraseña.
+ * @returns Resultado de la operación.
+ * 
+ * Mejores prácticas implementadas:
+ * - OWASP A02:2021: Verifica contraseña actual antes de cambiar (autenticación adicional)
+ * - OWASP A07:2021: bcrypt con salt rounds = 10 (protección contra rainbow tables)
+ * - Node.js: Manejo de errores con try-catch y logging
+ * - TypeScript: Type-safe con interfaces
+ */
+export const changePassword = async (
+  clientId: string,
+  data: { currentPassword: string; newPassword: string }
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    // 1. Obtener cliente de la base de datos
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      select: { id: true, passwordHash: true, email: true },
+    });
+
+    if (!client) {
+      return {
+        success: false,
+        message: 'Cliente no encontrado.',
+      };
+    }
+
+    if (!client.passwordHash) {
+      return {
+        success: false,
+        message: 'Esta cuenta no tiene contraseña configurada.',
+      };
+    }
+
+    // 2. Verificar que la contraseña actual sea correcta (OWASP A02:2021)
+    const isCurrentPasswordValid = await bcrypt.compare(data.currentPassword, client.passwordHash);
+
+    if (!isCurrentPasswordValid) {
+      logger.warn({ clientId }, 'Failed password change attempt: incorrect current password');
+      return {
+        success: false,
+        message: 'La contraseña actual es incorrecta.',
+      };
+    }
+
+    // 3. Validar que la nueva contraseña sea diferente
+    const isSamePassword = await bcrypt.compare(data.newPassword, client.passwordHash);
+    
+    if (isSamePassword) {
+      return {
+        success: false,
+        message: 'La nueva contraseña debe ser diferente a la actual.',
+      };
+    }
+
+    // 4. Hashear la nueva contraseña (OWASP A07:2021)
+    const newPasswordHash = await bcrypt.hash(data.newPassword, 10);
+
+    // 5. Actualizar contraseña en la base de datos
+    await prisma.client.update({
+      where: { id: clientId },
+      data: { passwordHash: newPasswordHash },
+    });
+
+    logger.info({ clientId, email: client.email }, 'Password changed successfully');
+
+    return {
+      success: true,
+      message: 'Contraseña actualizada exitosamente.',
+    };
+  } catch (error) {
+    logger.error({
+      clientId,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, 'Error changing password');
+    
+    return {
+      success: false,
+      message: 'Error al cambiar la contraseña. Intenta nuevamente.',
+    };
+  }
+};

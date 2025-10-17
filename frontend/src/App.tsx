@@ -16,6 +16,8 @@ const EmailVerificationPage = lazy(() => import('./pages/EmailVerificationPage')
 const ResendVerificationPage = lazy(() => import('./pages/ResendVerificationPage'))
 const ChangeEmailPage = lazy(() => import('./pages/ChangeEmailPage'))
 const VerifyEmailChangePage = lazy(() => import('./pages/VerifyEmailChangePage'))
+const ClientProfilePage = lazy(() => import('./pages/ClientProfilePage'))
+const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage'))
 
 //--- Admin routes ---//
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'))
@@ -42,6 +44,8 @@ const router = createBrowserRouter([
       { path: 'resend-verification', element: <ResendVerificationPage/> },
       { path: 'change-email', element: <ChangeEmailPage/> },
       { path: 'verify-email-change', element: <VerifyEmailChangePage/> },
+      { path: 'profile', element: <ClientProfilePage/> },
+      { path: 'change-password', element: <ChangePasswordPage/> },
     ],
   },
   {  
