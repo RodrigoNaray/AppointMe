@@ -41,7 +41,7 @@ export default function LoginPage() {
                 navigate('/');
             }, 1000);
         } catch (error: any) {
-            toast.error(error.message || 'Error al iniciar sesión');
+            toast.error('Usuario o contraseña incorrecta');
         } finally {
             setIsLoading(false);
         }

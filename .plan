@@ -156,3 +156,17 @@ Variables en backend/.env: SMTP_HOST, SMTP_PORT (587), SMTP_USER, SMTP_PASS (App
 - ✅ Cards con hover effects y bordes destacados (border-2 hover:border-primary)
 - ✅ Iconos coloridos: Mail (azul) y Lock (verde) para mejor UX
 - ✅ Mejora UX: Usuario accede a configuración desde un solo lugar centralizado
+
+**UX Improvement: Mensaje de Error en Login (17 Oct 2025):**
+- ✅ LoginPage: Toast de error ahora muestra "Usuario o contraseña incorrecta"
+- ✅ Mensaje claro y específico para el usuario
+- ✅ Cumple OWASP: No revela si el usuario existe o no (previene enumeración)
+
+**UX Improvement: Toast con Botón de Cerrar (17 Oct 2025):**
+- ✅ Toaster configurado con estilos mejorados
+- ✅ Success toast: Fondo verde (#10b981)
+- ✅ Error toast: Fondo rojo (#ef4444)  
+- ✅ Estilos: Padding 16px, border-radius 8px, font-size 14px
+- ✅ Duración optimizada: 1.5 segundos para todos los toasts
+- ✅ Fix: Revertido custom render para mantener estilos predeterminados
+- ✅ UX: Toasts rápidos y no intrusivos
