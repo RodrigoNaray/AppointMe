@@ -9,6 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import NotFoundPage from './pages/NotFoundPage';
 import ServicesListPage from './pages/ServicesListPage';
 import ContactPage from './pages/ContactPage';
+import PlatformFeaturesPage from './pages/PlatformFeaturesPage';
 
 //--- Public routes ---//
 const LoginPage = lazy(() => import('./pages/LoginPage'))
@@ -37,6 +38,7 @@ const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: 'features', element: <PlatformFeaturesPage /> },
       { path: 'Adminlogin', element: <AdminLoginPage /> },
       { path: 'services', element: <ServicesListPage /> },
       { path: 'contact', element: <ContactPage /> },

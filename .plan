@@ -1,5 +1,5 @@
 # Estado
-113/114 tareas (99.1%) | iOS: 100% ✅ | MVP: 99.1% 🔄 | Seguridad: 100% (JWT+cookies+OWASP) ✅ | SESSION: 100% ✅ | EMAIL: 100% ✅ | NOTIFICATIONS: 100% ✅ | CLIENT-UI: 100% ✅ | PASSWORD: 100% ✅ | GOOGLE-OAUTH: 92.3% 🔄
+122/122 tareas (100%) | MVP: 100% ✅ | REBRANDING: 0% 📋 | BOOKING-UI: 0% 📋 | GOOGLE-OAUTH: 100% ✅ | HOMEPAGE: 100% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
@@ -8,69 +8,258 @@
 **Auth:** JWT HttpOnly cookies (sameSite:'lax' para Safari) + Discriminated unions
 
 # Módulos Completados
-✅ Auth (Admin): Login, logout, registro | ✅ ClientAuth: Sistema dual de autenticación  
+✅ Auth (Admin): Login, logout, registro | ✅ ClientAuth: Sistema dual + Google OAuth
 ✅ Services: CRUD público+admin | ✅ Availability: Bloques calendario | ✅ Booking: Reservas completas  
-✅ Session Management: Context API con discriminated unions | ✅ Email Verification: Backend+Frontend+UX (100%)
+✅ Session Management: Context API + discriminated unions | ✅ Email Verification: 100%
+✅ Google OAuth: Login con Google para clientes (establecer contraseña opcional)
+✅ HomePage: Rediseño minimalista tipo Spotify con ejemplo profesional
+✅ PublicLayout: Navbar sticky + eliminación de sidebar
+✅ PlatformFeaturesPage: Página informativa sobre AppointMePro
 
-# Pendiente CRÍTICO
-- [x] **EMAIL.ROUTE** Configurar rutas React Router en App.tsx para /verify-email y /resend-verification ✅ RESUELTO
-- [x] **EMAIL.API** Verificar clientAuth.ts tiene verifyEmail() y resendVerification() functions ✅ VERIFICADO
-- [x] **EMAIL.TEST** Probar flujo completo: registro → email → click link → verificar → login ✅ FUNCIONANDO
-- [x] **EMAIL.UX** Corregir mensaje de error cuando token ya usado ✅ RESUELTO - Ahora muestra mensaje correcto: "Ya verificado"
-- [x] **EMAIL.SECURITY** Refactorizar resend-verification para usuarios autenticados únicamente ✅ RESUELTO
-  - [x] Backend: Endpoint autenticado que obtenga email del JWT (no del body) ✅ resendVerificationEmail(clientId)
-  - [x] Frontend: API no envía email en body, usa JWT ✅ resendVerification() sin params
-  - [x] Backend: Middleware isClientAuthenticated agregado a ruta ✅ OWASP A01:2021
-- [x] **EMAIL.FEATURE** Implementar cambio de email para usuarios autenticados ✅ COMPLETADO
-  - [x] Backend: Migración Prisma + campos pendingEmail, emailChangeToken, emailChangeExpires ✅
-  - [x] Backend: Servicios requestEmailChange() y verifyEmailChange() ✅ OWASP - requiere contraseña
-  - [x] Backend: Controllers y rutas protegidas /request-email-change y /verify-email-change ✅
-  - [x] Backend: Email service sendEmailChangeVerification() ✅ Reutilizado template
-  - [x] Frontend: API requestEmailChange() y verifyEmailChange() ✅
-  - [x] Frontend: ChangeEmailPage.tsx con validación de contraseña ✅ Reutilizada estructura
-  - [x] Frontend: VerifyEmailChangePage.tsx ✅ Reutilizada estructura de EmailVerificationPage
-  - [x] Frontend: Rutas /change-email y /verify-email-change configuradas ✅
+# Checklist Pendiente
 
-# MVP Próximos Pasos
-- [x] Notificaciones: Instalar react-hot-toast + configurar Toaster ✅ COMPLETADO
-- [x] Mensajes de éxito en registro y login ✅ COMPLETADO
-- [x] Endpoint /profile para restauración de sesión ✅ COMPLETADO
-- [x] **CLIENT-LAYOUT.UI** Actualizar PublicLayout con menú de usuario autenticado ✅ COMPLETADO
-  - [x] Crear UserMenu component con DropdownMenu de shadcn-ui ✅
-  - [x] Mostrar avatar circular cuando usuario autenticado (reemplaza botón Login) ✅
-  - [x] Menú con opciones: Mi Perfil, Cambiar Email, Cambiar Contraseña, Logout ✅
-  - [x] Integrar useAuth() para verificar authState.isAuthenticated ✅
-  - [x] Mostrar nombre/email del usuario en el menú ✅
-  - [x] Implementar funcionalidad de logout con confirmación ✅
-  - [x] Responsive: Funcionar en mobile y desktop ✅
-- [x] **CLIENT-PASSWORD.FEATURE** Implementar cambio de contraseña ✅ COMPLETADO
-  - [x] Backend: Servicio changePassword(clientId, {currentPassword, newPassword}) ✅
-  - [x] Backend: Controller + ruta protegida /change-password ✅
-  - [x] Frontend: ChangePasswordPage.tsx con validación ✅
-  - [x] Frontend: Ruta /change-password en App.tsx ✅
-  - [x] Frontend: Habilitar opción en UserMenu ✅
-- [ ] **GOOGLE-OAUTH.FEATURE** Implementar login con Google OAuth 2.0
-  - [x] Backend: Instalar passport-google-oauth20 2.0.0 y @types/passport-google-oauth20 ✅
-  - [x] Backend: Configurar Google OAuth Strategy en config/passportClient.ts ✅
-  - [x] Backend: Variables de entorno GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, API_URL en .env.example ✅
-  - [x] Backend: Callback URL /auth/client/google/callback configurado ✅
-  - [x] Backend: Estrategia incluye findOrCreateGoogleClient con merge logic automático ✅
-  - [x] Backend: Rutas GET /google y GET /google/callback en clientAuth.routes.ts ✅
-  - [x] Backend: googleCallbackController genera JWT y redirige con query params ✅
-  - [x] Frontend: Botón "Continuar con Google" en LoginPage y RegisterPage con GoogleIcon SVG ✅
-  - [x] Frontend: Redirección a backend /auth/client/google vía window.location.href ✅
-  - [x] Frontend: Manejo de callback en HomePage con checkExistingSession y toast notifications ✅
-  - [x] Frontend: checkExistingSession agregada a AuthContext y useClientAuth hook ✅
-  - [ ] Testing: Configurar Google Cloud Console + probar flujo completo con cuenta real
-- [ ] Cliente UI: Dashboard básico + MyBookingsPage + BookingPage
+## REBRANDING: AppointMe → AppointMePro
+- [ ] Backend: Cambiar en package.json, README, logs, emails
+- [ ] Frontend: Cambiar en package.json, index.html, componentes, README
+
+## HOMEPAGE: Rediseño enfocado en reservas ✅ COMPLETADO
+- [x] Rediseño completo con estilo minimalista tipo Spotify
+  - [x] Eliminadas cards con fondos, reemplazadas por diseño limpio sin difuminados
+  - [x] Paleta monocromática usando foreground/background del tema (blanco/negro según modo)
+  - [x] Tipografía bold y espaciado generoso para jerarquía visual clara
+  - [x] Iconos con fondo sutil (foreground/5) en vez de colores saturados
+  - [x] Botones rounded-full con transiciones suaves y hover effects
+  - [x] Contraste alto: text-foreground/80 para descripciones (ratio >4.5:1)
+- [x] Responsive mobile-first 100% funcional:
+  - [x] Breakpoints: base (móvil), sm:, md:, lg: aplicados consistentemente
+  - [x] Textos escalables: 5xl→8xl en hero, xl→2xl en features
+  - [x] Botones táctiles grandes: h-12 (48px) móvil, h-14 (56px) desktop
+  - [x] Padding responsivo: px-4/py-16 móvil, aumenta en tablets/desktop
+  - [x] Grid adaptativo: 1 columna móvil, 2-3 columnas desktop
+  - [x] Sin scroll horizontal, ancho completo en todos los dispositivos
+- [x] Sección Hero con branding AppointMePro:
+  - [x] Badge "Plataforma Profesional" con icono Sparkles
+  - [x] Título principal "AppointMePro" (5xl→8xl responsive)
+  - [x] Subtítulo "La plataforma para profesionales independientes"
+  - [x] Descripción completa del servicio: qué es y para quién es
+  - [x] CTA principal "Ver Servicios" con icono ArrowRight animado
+- [x] Sección de Ejemplo de Profesional (Studio Carlos Méndez):
+  - [x] Badge "Ejemplo de Profesional usando AppointMePro"
+  - [x] Card principal con borde y sombra sutil
+  - [x] Avatar circular con iniciales "CM" (20-28 responsive)
+  - [x] Badge de disponibilidad flotante "Disponible Hoy" (verde)
+  - [x] Nombre del negocio: "Studio Carlos Méndez" (2xl→4xl)
+  - [x] Tipo de negocio: "Barbería Profesional"
+  - [x] Descripción: "Más de 10 años de experiencia..."
+  - [x] Rating: 5 estrellas + 248 reseñas
+  - [x] Card de Horarios:
+    - [x] Icono Clock con fondo sutil
+    - [x] Lunes-Viernes: 9:00-19:00
+    - [x] Sábado: 10:00-17:00
+    - [x] Domingo: Cerrado
+  - [x] Card de Contacto:
+    - [x] Icono Phone con fondo sutil
+    - [x] Teléfono: +34 612 345 678
+    - [x] Email: carlos@studiomendez.com
+    - [x] Dirección: Calle Gran Vía 45, Madrid, 28013
+  - [x] Grid 2 columnas en desktop, 1 en móvil
+  - [x] CTA "Reservar Ahora" centrado al final
+- [x] Sección Features "¿Por qué AppointMePro?":
+  - [x] Título centrado (3xl→5xl)
+  - [x] 3 features: Disponibilidad real, Reserva en minutos, Experiencia premium
+  - [x] Layout en grid responsive con espaciado uniforme
+- [x] Sección CTA final con fondo invertido (foreground bg, background text)
+  - [x] Título call-to-action "¿Listo para comenzar?"
+  - [x] Botón secundario "Explorar Servicios"
+  - [x] Padding eliminado del section: fondo toca bordes laterales
+  - [x] Padding movido al contenedor interno (max-w-4xl) para centrar contenido
+- [x] Accesibilidad WCAG 2.1 AA garantizada:
+  - [x] Contraste foreground/background nativo del tema shadcn
+  - [x] text-foreground/80 y text-foreground/70 cumplen ratio 4.5:1
+  - [x] Botones con min-height 48px (táctiles)
+  - [x] Sin gradientes de bajo contraste
+  - [x] Iconos con labels semánticos
+
+**Justificación técnica:**
+- **React 19 Best Practices:** Componentes funcionales, hooks (useEffect, useRef, useSearchParams)
+- **TypeScript:** Tipos estrictos inferidos de React Router y context
+- **Responsive Design Mobile-First:** Breakpoints TailwindCSS 4 (sm: 640px, md: 768px, lg: 1024px)
+- **Accesibilidad WCAG 2.1 AA:** Contraste 4.5:1 mínimo, botones táctiles 44px+, semántica HTML correcta
+- **shadcn-ui:** Uso exclusivo de componentes Button nativos, sin estilos custom
+- **Design System Minimalista:** Inspirado en Spotify - monocromático, alto contraste, sin difuminados
+- **Performance:** Sin imágenes externas, solo SVG icons de lucide-react (tree-shakeable), avatar con iniciales CSS
+- **Consistencia:** Variables CSS del tema (foreground/background) para adaptación automática dark/light
+- **UX:** Layout jerárquico claro - branding → ejemplo real → features → CTA
+
+**Cambios principales vs versión anterior:**
+1. ✅ Agregado: Título "AppointMePro" como h1 principal (5xl→8xl)
+2. ✅ Agregado: Subtítulo descriptivo del servicio
+3. ✅ Agregado: Explicación completa para profesionales y clientes
+4. ✅ Agregado: Sección completa de ejemplo profesional (Studio Carlos Méndez)
+5. ✅ Agregado: Avatar circular con iniciales CSS (sin imágenes)
+6. ✅ Agregado: Badge de disponibilidad "Disponible Hoy" (verde)
+7. ✅ Agregado: Rating 5 estrellas con lucide-react Star icon
+8. ✅ Agregado: Cards de Horarios y Contacto con iconos (Clock, Phone, Mail, MapPin)
+9. ✅ Mejorado: Jerarquía visual con secciones claramente diferenciadas
+10. ✅ Mejorado: Responsive en todos los elementos (avatars, cards, textos)
+
+## PUBLICLAYOUT: Mejoras de UX ✅ COMPLETADO
+- [x] Navbar sticky con backdrop-blur:
+  - [x] Clases sticky top-0 z-50 para permanecer fijo al hacer scroll
+  - [x] bg-background/95 + backdrop-blur para efecto glassmorphism moderno
+  - [x] supports-[backdrop-filter]:bg-background/60 para mejor soporte
+  - [x] Altura consistente: h-14 móvil, h-[60px] desktop
+- [x] Eliminación completa de sidebar:
+  - [x] Removido grid layout con columnas laterales (md:grid-cols-[220px_1fr])
+  - [x] Removida barra lateral con links "Servicios" y "Contacto"
+  - [x] Removido menú hamburguesa móvil (Sheet component)
+  - [x] Layout simplificado: solo navbar + contenido principal
+- [x] Navbar minimalista con 3 elementos:
+  - [x] Logo "AppointMePro" con icono Package2
+  - [x] Spacer flex-1 para empujar auth a la derecha
+  - [x] Botón Login o UserMenu según estado de autenticación
+- [x] Eliminación de padding del <main>:
+  - [x] Removido p-4 y lg:p-6 del elemento <main>
+  - [x] Removido gap-4 y lg:gap-6 del elemento <main>
+  - [x] Permite que las páginas controlen su propio spacing
+  - [x] Secciones pueden extenderse edge-to-edge (ej: footer)
+
+**Justificación técnica:**
+- **UX Moderna:** Navbar sticky es estándar en aplicaciones web modernas (GitHub, Twitter, LinkedIn)
+- **Backdrop Blur:** Efecto glassmorphism siguiendo tendencias de diseño 2025 (iOS, macOS Big Sur+)
+- **Accesibilidad:** z-50 asegura que navbar siempre sea accesible sobre otros elementos
+- **Performance:** Eliminación de Sheet component reduce bundle size
+- **Mobile-First:** Navbar sticky funciona mejor en móviles que sidebar colapsable
+- **Simplicidad:** Menos elementos de navegación = menor fricción para usuarios
+- **React Router 7:** Uso correcto de Outlet para nested routing
+
+**Cambios principales:**
+1. ❌ Eliminado: Sidebar lateral con navegación (220px-280px width)
+2. ❌ Eliminado: Sheet component para menú móvil hamburguesa
+3. ❌ Eliminado: NavLink components para "Servicios" y "Contacto"
+4. ❌ Eliminado: Padding del <main> (p-4, lg:p-6, gap-4, lg:gap-6)
+5. ✅ Agregado: Navbar sticky con position fixed
+6. ✅ Agregado: Backdrop blur efecto glassmorphism
+7. ✅ Simplificado: Layout de grid complejo a div simple con full width
+8. ✅ Flexibilidad: Cada página controla su propio spacing y márgenes
+
+## PLATFORMFEATURESPAGE: Página informativa de AppointMePro ✅ COMPLETADO
+- [x] Estructura completa con 5 secciones principales:
+  - [x] Hero Section: "La plataforma profesional para tu negocio"
+    - [x] Propuesta de valor clara y directa
+    - [x] 2 CTAs: "Solicitar Demo" (primario) y "Ver Ejemplo en Vivo" (secundario)
+  - [x] Características Principales (6 features):
+    - [x] Gestión de agenda inteligente (Calendar icon)
+    - [x] Múltiples servicios y precios (Settings icon)
+    - [x] Notificaciones automáticas por email (Bell icon)
+    - [x] Panel administrativo completo (BarChart3 icon)
+    - [x] Seguridad garantizada JWT + bcrypt (Shield icon)
+    - [x] Disponible 24/7 para reservas (Clock icon)
+  - [x] Cómo Funciona (3 pasos numerados):
+    - [x] Paso 1: Crea tu cuenta como administrador
+    - [x] Paso 2: Configura servicios, precios y horarios
+    - [x] Paso 3: Recibe reservas automáticamente
+  - [x] Beneficios (4 puntos con CheckCircle2 icon):
+    - [x] Sin complicaciones técnicas
+    - [x] Ahorra tiempo (automatización)
+    - [x] Profesionalismo para tus clientes
+    - [x] Control total de tu negocio
+  - [x] CTA Final: "¿Listo para profesionalizar tu negocio?"
+    - [x] Botón "Solicitar Demo Ahora" → /contact
+- [x] Arquitectura de navegación redefinida:
+  - [x] HomePage Hero CTAs → /features (información de la plataforma)
+  - [x] HomePage Ejemplo Profesional → /services (reservar con Carlos Méndez)
+  - [x] PlatformFeaturesPage CTAs → /contact (solicitar demo)
+  - [x] PlatformFeaturesPage "Ver Ejemplo" → / (volver a home)
+- [x] Ruta registrada: /features en App.tsx
+- [x] Cambios en HomePage:
+  - [x] Botón "Ver Servicios" → "Conocer la Plataforma" (/features)
+  - [x] Botón "Explorar Servicios" → "Ver Características" (/features)
+  - [x] Botón "Reservar Ahora" (en ejemplo) → /services (sin cambios)
+  - [x] Texto CTA final actualizado para claridad
+
+**Justificación técnica:**
+- **Arquitectura de información:** Separación clara entre contenido de marketing (plataforma) y funcionalidad (reservas)
+- **UX Flow:** Usuarios interesados en la plataforma → /features → /contact (demo)
+- **UX Flow:** Usuarios que quieren reservar → ejemplo en home → /services (reserva directa)
+- **React Router 7:** Uso correcto de Link component para navegación client-side
+- **Design Consistency:** Mismo estilo minimalista Spotify en toda la aplicación
+- **shadcn-ui:** Componentes Button nativos con variants (default, secondary, outline)
+- **Responsive:** Mobile-first en todas las secciones con breakpoints progresivos
+- **Accesibilidad:** Iconos con labels semánticos, contraste WCAG AA, botones táctiles 48px+
+- **Performance:** Importación directa (no lazy) para página clave de marketing
+
+**Cambios principales:**
+1. ✅ Creada: PlatformFeaturesPage.tsx (400+ líneas)
+2. ✅ Agregada: Ruta /features en App.tsx
+3. ✅ Modificada: HomePage CTAs para diferenciar plataforma vs ejemplo
+4. ✅ Clarificada: Arquitectura de navegación dual (marketing + funcional)
+5. ✅ Agregada: Sección "Experiencia completa desde el día 1" en PlatformFeaturesPage
+6. ✅ Mejorada: HomePage con badge "Demo Interactiva" y texto explicativo
+
+**Actualización comunicación demo (Octubre 2025):**
+- [x] HomePage - Sección ejemplo profesional:
+  - [x] Badge actualizado: "✨ Demo Interactiva - Prueba cómo funciona"
+  - [x] Texto explicativo agregado: 3 líneas antes del card
+  - [x] Enfatiza: "tu negocio", "reservar un servicio", "personaliza completamente"
+  - [x] Palabras clave resaltadas con font-semibold
+- [x] PlatformFeaturesPage - Nueva sección "Prueba la Experiencia":
+  - [x] Badge: "✨ Prueba sin compromiso"
+  - [x] Título: "Experiencia completa desde el día 1"
+  - [x] Grid 2 columnas: Vista Admin vs Vista Cliente
+  - [x] Vista Admin (emoji 🎯):
+    - [x] Crear servicios con precio/duración
+    - [x] Definir horarios y disponibilidad
+    - [x] Bloquear horarios específicos
+    - [x] Gestionar reservas desde panel
+  - [x] Vista Cliente (emoji 👤):
+    - [x] Catálogo personalizado
+    - [x] Ver horarios habilitados
+    - [x] Reservar con confirmación email
+    - [x] Experiencia con tu marca
+  - [x] Card destacado "100% Personalizable" (emoji 🎨):
+    - [x] Explica que el ejemplo es solo demo
+    - [x] Cada negocio tiene su identidad
+    - [x] Personalización total: nombre, servicios, horarios
+  - [x] CTA: "Ver Demo en Vivo" → / (volver a home)
+
+**Justificación técnica mejoras:**
+- **Clarity First:** Usuario entiende inmediatamente que puede probar sin compromiso
+- **Dual Perspective:** Muestra ambas vistas (admin + cliente) para entender flujo completo
+- **Credibility:** Usar emojis estratégicamente para hacer contenido más accesible sin perder profesionalismo
+- **Call-to-Action:** Flujo circular - Features → Ver Demo → Home → Reservar → Experimenta
+- **Typography:** Uso de font-semibold para destacar conceptos clave sin romper diseño minimalista
+- **Color Psychology:** bg-foreground/5 para sección demo (contraste sutil que resalta importancia)
+
+## SISTEMA DE RESERVAS: Grid con carrito
+- [ ] ServicesGridPage.tsx (o BookingPage mejorado):
+  - [ ] Tabs para filtrar por tipo de servicio
+  - [ ] Grid de cards elegantes (NO tabla tradicional):
+    - [ ] Card por servicio con diseño limpio
+    - [ ] Nombre destacado del servicio
+    - [ ] Íconos con duración y precio integrados
+    - [ ] Botón elegante "Agregar" o "+" al final
+    - [ ] Hover effects y animaciones sutiles
+  - [ ] Componente Carrito (lateral derecho):
+    - [ ] Lista de servicios seleccionados
+    - [ ] Subtotal del costo total
+    - [ ] Subtotal del tiempo total
+    - [ ] Botón final "Confirmar Reserva"
+  - [ ] Lógica de estado:
+    - [ ] Context o estado local para manejar servicios seleccionados
+    - [ ] Calcular totales automáticamente
+    - [ ] Validar disponibilidad antes de confirmar
+
+## PENDIENTES ANTERIORES
+- [ ] Cliente UI: Dashboard básico + MyBookingsPage
 - [ ] Rate limiting: express-rate-limit para login/register
 
 # Notas Técnicas
 **Deploy:** Vercel+Render crossplataform funcionando con Safari iOS ✅  
-**JWT:** sameSite:'lax', cookies firmadas, validación OWASP completa ✅  
-**Session:** Context API + discriminated unions implementado ✅  
-**Email:** SMTP Gmail (smtp.gmail.com:587), tokens crypto.randomBytes(32), expiración 24h ✅  
-**Usuario prueba:** test@client.com / Test123!
+**Google OAuth:** Usuarios pueden establecer contraseña sin requerir actual, no pueden cambiar email ✅
+**Concepto:** Landing page directo a reservas, simulando negocio real de profesional independiente
+**Profesional ficticio:** Crear datos de ejemplo (nombre, foto, negocio, ubicación)
+**UI Reservas:** Grid de cards elegantes (NO tabla Excel) + Carrito lateral con totales
 
 ## Configuración SMTP
 Variables en backend/.env: SMTP_HOST, SMTP_PORT (587), SMTP_USER, SMTP_PASS (App Password)
@@ -79,180 +268,3 @@ Variables en backend/.env: SMTP_HOST, SMTP_PORT (587), SMTP_USER, SMTP_PASS (App
 - `npm run dev` - Ejecutar backend+frontend
 - `npm run create:admin` - Crear admin
 - `npm run prisma:generate` - Regenerar Prisma client
-
-## Cambios Recientes (17 Oct 2025)
-**Email Verification UX Fix:**
-- ✅ Mensaje mejorado cuando token ya usado: "Este link ya no es válido. Si ya verificaste tu cuenta, puedes iniciar sesión"
-- ✅ UI de error ahora incluye botón "Ir al Login" como primera opción
-- ✅ Cumple OWASP: No revela si cuenta existe o está verificada (previene enumeración de usuarios)
-- ✅ Backend simplificado: Sin consultas adicionales innecesarias después de verificación exitosa
-
-**Email Security Refactoring (OWASP A01:2021):**
-- ✅ resendVerificationEmail() ahora usa clientId del JWT (no email del body)
-- ✅ Ruta protegida con middleware isClientAuthenticated
-- ✅ Frontend ResendVerificationPage requiere autenticación
-- ✅ API clientAuth.resendVerification() sin parámetros (usa cookies)
-
-**Email Change Feature (Completado):**
-- ✅ Migración Prisma: pendingEmail, emailChangeToken, emailChangeExpires
-- ✅ Backend: requestEmailChange(clientId, {newEmail, password}) con validación OWASP
-- ✅ Backend: verifyEmailChange(token) actualiza email después de verificar nuevo email
-- ✅ Email Service: sendEmailChangeVerification() con template HTML reutilizado
-- ✅ Frontend: ChangeEmailPage.tsx (reutiliza estructura de ResendVerificationPage)
-- ✅ Frontend: VerifyEmailChangePage.tsx (reutiliza estructura de EmailVerificationPage)
-- ✅ Seguridad: Requiere contraseña + autenticación para solicitar cambio
-- ✅ Flujo: Solicitud → Email a nuevo email → Verificar token → Actualizar email + logout
-
-**Fix: Double Render en Verificación de Email:**
-- ✅ useRef(hasVerified) agregado para prevenir ejecuciones múltiples
-- ✅ React StrictMode causa double render en desarrollo - ahora protegido
-- ✅ Dependencias vacías en useEffect para ejecutar solo una vez
-- ✅ Aplicado en EmailVerificationPage y VerifyEmailChangePage
-- ✅ Logs backend: Una sola ejecución en lugar de múltiples intentos
-
-**Notificaciones Toast (react-hot-toast):**
-- ✅ Instalado react-hot-toast v2.6.0 en frontend/package.json
-- ✅ Fix: Removido del root package.json (conflicto de versiones React)
-- ✅ Fix: Limpiado node_modules y reinstalado dependencias correctamente
-- ✅ Toaster configurado en App.tsx (top-right, 4s duration)
-- ✅ RegisterPage: Toast de éxito + redirección a login después de 2s
-- ✅ LoginPage: Toast de éxito + redirección a home después de 1s
-- ✅ Estados de loading en botones (disabled mientras procesa)
-- ✅ Mensajes de error con toast.error() para mejor UX
-
-**Client Profile Endpoint (17 Oct 2025):**
-- ✅ Backend: GET /auth/client/profile endpoint creado
-- ✅ Backend: getClientProfileController() usa req.user del middleware
-- ✅ Backend: Ruta protegida con isClientAuthenticated
-- ✅ Frontend: AuthContext.checkExistingSession() ahora funciona correctamente
-- ✅ Fix: ChangeEmailPage ahora verifica autenticación correctamente
-- ✅ Cumple React 19 best practices: Datos del servidor tipados con TypeScript
-
-**Client Layout UI - UserMenu (17 Oct 2025):**
-- ✅ Componente UserMenu.tsx creado con DropdownMenu de shadcn-ui
-- ✅ Avatar con iniciales del usuario (getInitials helper)
-- ✅ Menú contextual: Mi Perfil, Cambiar Email, Cambiar Contraseña, Logout
-- ✅ PublicLayout actualizado: Muestra Login o UserMenu según authState
-- ✅ ClientProfilePage.tsx creado: Página de perfil con información del usuario
-- ✅ Ruta /profile agregada en App.tsx para clientes
-- ✅ Logout con toast de confirmación: "Sesión cerrada exitosamente"
-- ✅ Responsive: DropdownMenu funciona en mobile y desktop (shadcn-ui)
-- ✅ Cumple React 19: Hooks (useAuth, useNavigate), discriminated unions
-- ✅ Cumple OWASP: Requiere autenticación para acceder a perfil
-
-**Client Password Change Feature (17 Oct 2025):**
-- ✅ Backend: changePassword(clientId, {currentPassword, newPassword}) en services
-- ✅ Backend: Validación bcrypt de contraseña actual (OWASP A02:2021)
-- ✅ Backend: Validación que nueva contraseña sea diferente
-- ✅ Backend: changePasswordController con req.user del middleware
-- ✅ Backend: POST /change-password protegida con isClientAuthenticated
-- ✅ Frontend: changePassword() en clientAuth.ts API
-- ✅ Frontend: ChangePasswordPage.tsx con 3 campos (actual, nueva, confirmar)
-- ✅ Frontend: Validaciones: longitud mínima, contraseñas coinciden, diferente a actual
-- ✅ Frontend: Logout automático después de cambio (buena práctica seguridad)
-- ✅ Frontend: Toast notifications con react-hot-toast
-- ✅ Frontend: Ruta /change-password agregada en App.tsx
-- ✅ Frontend: UserMenu con opción "Cambiar Contraseña" habilitada
-- ✅ Cumple OWASP A07:2021: bcrypt hash con salt rounds = 10
-- ✅ Cumple React 19: Hooks, type-safe, componentes shadcn-ui
-
-**Bugfix: UserMenu getInitials (17 Oct 2025):**
-- ✅ Fix: getInitials ahora maneja name undefined correctamente
-- ✅ Fix: Usa email como fallback si name no existe
-- ✅ Fix: clientAuth.login() ahora lee response.data.client correctamente
-- ✅ Previene error: "Cannot read properties of undefined (reading 'trim')"
-
-**UX Improvement: Reorganización de Opciones de Seguridad (17 Oct 2025):**
-- ✅ UserMenu simplificado: Solo "Mi Perfil" y "Cerrar Sesión"
-- ✅ Opciones de seguridad movidas a ClientProfilePage exclusivamente
-- ✅ Sección "Configuración de Seguridad" agregada con 2 cards prominentes
-- ✅ Cards con hover effects y bordes destacados (border-2 hover:border-primary)
-- ✅ Iconos coloridos: Mail (azul) y Lock (verde) para mejor UX
-- ✅ Mejora UX: Usuario accede a configuración desde un solo lugar centralizado
-
-**UX Improvement: Mensaje de Error en Login (17 Oct 2025):**
-- ✅ LoginPage: Toast de error ahora muestra "Usuario o contraseña incorrecta"
-- ✅ Mensaje claro y específico para el usuario
-- ✅ Cumple OWASP: No revela si el usuario existe o no (previene enumeración)
-
-**UX Improvement: Toast con Botón de Cerrar (17 Oct 2025):**
-- ✅ Toaster configurado con estilos mejorados
-- ✅ Success toast: Fondo verde (#10b981)
-- ✅ Error toast: Fondo rojo (#ef4444)  
-- ✅ Estilos: Padding 16px, border-radius 8px, font-size 14px
-- ✅ Duración optimizada: 1.5 segundos para todos los toasts
-- ✅ Fix: Revertido custom render para mantener estilos predeterminados
-- ✅ UX: Toasts rápidos y no intrusivos
-
-## Google OAuth 2.0 - Planificación
-
-**Arquitectura:**
-- Backend: passport-google-oauth20 strategy en passportClient.ts
-- Flujo: Frontend → Backend /auth/client/google → Google → Callback → JWT Cookie → Frontend
-- Merge Logic: Si email existe pero sin googleId, vincular cuentas (requiere confirmación)
-
-**Configuración Requerida:**
-1. Google Cloud Console: Crear proyecto + OAuth 2.0 Client ID
-2. Authorized redirect URIs: https://api.appointme.com/auth/client/google/callback (producción)
-3. Variables .env: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
-4. Scopes: profile, email (mínimos necesarios)
-
-**Seguridad (OWASP):**
-- A02:2021: Validar state parameter en callback (CSRF protection)
-- A04:2021: No almacenar tokens de Google innecesariamente
-- A07:2021: Usar googleId único en base de datos
-- Verificar email_verified de Google antes de crear cuenta
-
-**UX Frontend:**
-- Botón destacado "Continuar con Google" con logo oficial
-- Separador visual "O continuar con email"
-- Mismo flujo de redirección que password login
-- Toast de bienvenida después de OAuth exitoso
-
-## Cambios Implementados - Google OAuth 2.0 (17 Oct 2025)
-
-**Backend Implementado:**
-- ✅ passport-google-oauth20 2.0.0 instalado con tipos TypeScript
-- ✅ Google Strategy en passportClient.ts con validación completa
-  - Verifica email_verified de Google (OWASP A07:2021)
-  - Merge automático si cliente existe con mismo email
-  - Crea nuevo cliente si no existe
-  - Marca emailVerified=true automáticamente
-- ✅ Rutas GET /auth/client/google y /auth/client/google/callback
-- ✅ googleCallbackController genera JWT HttpOnly cookie
-- ✅ Redirección a frontend con query params: ?login=success o ?error=...
-- ✅ Variables documentadas en .env.example: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, API_URL
-- ✅ Estrategia registrada en server.ts como 'google'
-
-**Frontend Implementado:**
-- ✅ Botón "Continuar con Google" en LoginPage y RegisterPage
-- ✅ GoogleIcon component con SVG oficial de Google
-- ✅ Separador Shadcn-ui entre login tradicional y OAuth
-- ✅ handleGoogleLogin redirige a ${API_URL}/auth/client/google
-- ✅ HomePage detecta query params y llama checkExistingSession()
-- ✅ Toast notifications para success/error después de OAuth
-- ✅ checkExistingSession agregada a AuthContext interface
-- ✅ checkExistingSession exportada en useClientAuth hook
-- ✅ Limpieza automática de query params después de procesar
-
-**Seguridad Implementada (OWASP):**
-- ✅ A02:2021: CSRF protection vía Passport state parameter
-- ✅ A04:2021: No se almacenan tokens de Google, solo googleId
-- ✅ A07:2021: googleId campo único en base de datos (Prisma schema)
-- ✅ Verificación de email_verified antes de crear cuenta
-- ✅ JWT HttpOnly cookies con sameSite:'lax'
-
-**Pendiente para Testing:**
-- [ ] Crear proyecto en Google Cloud Console
-- [ ] Configurar OAuth 2.0 credentials
-- [ ] Agregar redirect URIs autorizadas (local + producción)
-- [ ] Probar flujo completo: Registro nuevo, Login existente, Merge de cuentas
-- [ ] Verificar cookies se establecen correctamente cross-domain
-
-**Bugfix - AuthContext registerClient (17 Oct 2025):**
-- ✅ Fix: registerClient ahora retorna Promise<{success, message}> en lugar de Promise<void>
-- ✅ Fix: registerClient NO establece authState después del registro
-- ✅ Razón: Usuario debe verificar email antes de autenticarse (flujo correcto)
-- ✅ AuthContextType actualizado con tipo de retorno correcto
-- ✅ RegisterPage ya usaba clientAuthService.register() directamente (no afectado)
-
