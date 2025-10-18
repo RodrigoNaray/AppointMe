@@ -21,6 +21,11 @@ export default function ChangeEmailPage() {
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
+  // Verificar si el usuario se registró con Google
+  const isGoogleUser = authState.isAuthenticated && 
+                       authState.type === 'client' && 
+                       authState.user.googleId;
+
   // Verificar si el usuario está autenticado
   if (!authState.isAuthenticated || authState.type !== 'client') {
     return (
@@ -92,7 +97,33 @@ export default function ChangeEmailPage() {
           </p>
         </CardHeader>
         <CardContent>
-          {!isSuccess ? (
+          {/* Bloquear cambio de email para usuarios de Google */}
+          {isGoogleUser ? (
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-start gap-3">
+                  <Mail className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-blue-900 mb-2">
+                      Cuenta vinculada con Google
+                    </h3>
+                    <p className="text-sm text-blue-800 leading-relaxed">
+                      Tu cuenta está autenticada con Google. El email de tu cuenta está vinculado 
+                      directamente a tu cuenta de Google y no puede ser modificado desde aquí.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center mt-6">
+                <Link to="/profile">
+                  <Button className="w-full">
+                    Volver al Perfil
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : !isSuccess ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="newEmail" className="block text-sm font-medium">

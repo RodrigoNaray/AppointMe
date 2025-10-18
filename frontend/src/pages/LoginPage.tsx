@@ -48,8 +48,10 @@ export default function LoginPage() {
     };
 
     const handleGoogleLogin = () => {
-        // Aquí iría la lógica para iniciar sesión con Google
-        console.log("Login con Google");
+        // Redireccionar al backend para iniciar el flujo de OAuth
+        // Remover el trailing slash de VITE_API_BASE_URL si existe
+        const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:5000/api';
+        window.location.href = `${apiUrl}/auth/client/google`;
     };
 
     return (

@@ -22,6 +22,7 @@ export interface ClientUser {
   name: string;
   email: string;
   phone: string;
+  googleId?: string | null; // Para usuarios registrados con Google OAuth
   type: 'client';
 }
 
@@ -42,11 +43,14 @@ export interface AuthContextType {
   
   // Funciones de cliente
   loginClient: (data: LoginDto) => Promise<void>;
-  registerClient: (data: RegisterDto) => Promise<void>;
+  registerClient: (data: RegisterDto) => Promise<{ success: boolean; message: string }>;
   logoutClient: () => Promise<void>;
   
   // Función de logout general
   logout: () => Promise<void>;
+
+  // Función para verificar sesión existente (útil para OAuth callbacks)
+  checkExistingSession: () => Promise<void>;
 
   // Backward compatibility - deprecado pero mantenido
   /** @deprecated Use loginAdmin instead */

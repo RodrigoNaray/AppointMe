@@ -31,6 +31,11 @@ export default function ChangePasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Verificar si el usuario se registró con Google (no tiene contraseña)
+  const isGoogleUser = authState.isAuthenticated && 
+                       authState.type === 'client' && 
+                       authState.user.googleId;
+
   // Verificar si el usuario está autenticado
   if (!authState.isAuthenticated || authState.type !== 'client') {
     return (
@@ -57,9 +62,12 @@ export default function ChangePasswordPage() {
     e.preventDefault();
 
     // Validaciones frontend
-    if (currentPassword.length < 6) {
-      toast.error("La contraseña actual debe tener al menos 6 caracteres");
-      return;
+    // Si NO es usuario de Google, validar contraseña actual
+    if (!isGoogleUser) {
+      if (currentPassword.length < 6) {
+        toast.error("La contraseña actual debe tener al menos 6 caracteres");
+        return;
+      }
     }
 
     if (newPassword.length < 6) {
@@ -67,7 +75,8 @@ export default function ChangePasswordPage() {
       return;
     }
 
-    if (newPassword === currentPassword) {
+    // Solo validar que sea diferente si NO es usuario de Google
+    if (!isGoogleUser && newPassword === currentPassword) {
       toast.error("La nueva contraseña debe ser diferente a la actual");
       return;
     }
@@ -80,7 +89,9 @@ export default function ChangePasswordPage() {
     setIsLoading(true);
 
     try {
-      const result = await clientAuthService.changePassword(currentPassword, newPassword);
+      // Para usuarios de Google, enviar string vacío como contraseña actual
+      const passwordToSend = isGoogleUser ? '' : currentPassword;
+      const result = await clientAuthService.changePassword(passwordToSend, newPassword);
 
       if (result.success) {
         toast.success(result.message);
@@ -106,38 +117,57 @@ export default function ChangePasswordPage() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <Lock className="w-12 h-12 text-blue-500 mx-auto mb-2" />
-          <CardTitle className="text-2xl font-bold">Cambiar Contraseña</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            {isGoogleUser ? 'Establecer Contraseña' : 'Cambiar Contraseña'}
+          </CardTitle>
           <p className="text-gray-600 mt-2">
-            Actualiza tu contraseña de forma segura
+            {isGoogleUser 
+              ? 'Crea una contraseña para tu cuenta de Google'
+              : 'Actualiza tu contraseña de forma segura'
+            }
           </p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Contraseña Actual */}
-            <div>
-              <label htmlFor="currentPassword" className="block text-sm font-medium mb-1">
-                Contraseña Actual
-              </label>
-              <div className="relative">
-                <Input
-                  id="currentPassword"
-                  type={showCurrentPassword ? "text" : "password"}
-                  placeholder="Ingresa tu contraseña actual"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                >
-                  {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
+          {/* Aviso para usuarios de Google */}
+          {isGoogleUser && (
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-800">
+                <strong>ℹ️ Cuenta vinculada con Google</strong>
+                <br />
+                Actualmente inicias sesión con Google. Al establecer una contraseña, 
+                también podrás iniciar sesión con tu email y contraseña.
+              </p>
             </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Contraseña Actual - Solo mostrar si NO es usuario de Google */}
+            {!isGoogleUser && (
+              <div>
+                <label htmlFor="currentPassword" className="block text-sm font-medium mb-1">
+                  Contraseña Actual
+                </label>
+                <div className="relative">
+                  <Input
+                    id="currentPassword"
+                    type={showCurrentPassword ? "text" : "password"}
+                    placeholder="Ingresa tu contraseña actual"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Nueva Contraseña */}
             <div>
@@ -196,7 +226,10 @@ export default function ChangePasswordPage() {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? 'Cambiando contraseña...' : 'Cambiar Contraseña'}
+              {isLoading 
+                ? (isGoogleUser ? 'Estableciendo contraseña...' : 'Cambiando contraseña...') 
+                : (isGoogleUser ? 'Establecer Contraseña' : 'Cambiar Contraseña')
+              }
             </Button>
 
             <div className="text-center">
@@ -213,9 +246,14 @@ export default function ChangePasswordPage() {
               <div className="text-sm text-gray-700">
                 <p className="font-medium mb-1">Por seguridad:</p>
                 <ul className="list-disc list-inside space-y-1 text-xs">
-                  <li>La nueva contraseña debe ser diferente a la actual</li>
+                  {!isGoogleUser && (
+                    <li>La nueva contraseña debe ser diferente a la actual</li>
+                  )}
                   <li>Se cerrará tu sesión después del cambio</li>
-                  <li>Deberás iniciar sesión con la nueva contraseña</li>
+                  <li>Deberás iniciar sesión con tu nueva contraseña</li>
+                  {isGoogleUser && (
+                    <li>Podrás seguir usando Google o tu email y contraseña para iniciar sesión</li>
+                  )}
                 </ul>
               </div>
             </div>

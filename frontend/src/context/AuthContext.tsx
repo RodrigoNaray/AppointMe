@@ -122,15 +122,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const registerClient = useCallback(async (data: RegisterDto) => {
     try {
-      const clientUser = await clientAuthService.register(data);
+      const result = await clientAuthService.register(data);
       
-      setAuthState({
-        type: 'client',
-        user: clientUser,
-        isAuthenticated: true
-      });
+      // Después del registro, el usuario debe verificar su email
+      // NO establecemos authState porque no está autenticado hasta verificar email
+      if (!result.success) {
+        throw new Error(result.message);
+      }
+      
+      // Retornar el resultado para que el componente pueda mostrar mensaje
+      return result;
     } catch (error) {
-      setAuthState({ type: null, user: null, isAuthenticated: false });
+      // No cambiar authState en caso de error
       throw error;
     }
   }, []);
@@ -171,6 +174,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     registerClient,
     logoutClient,
     logout,
+    checkExistingSession, // Exportar para uso en callbacks de OAuth
     // Backward compatibility
     login,
     isAuthenticated: authState.isAuthenticated,
@@ -184,6 +188,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     registerClient,
     logoutClient,
     logout,
+    checkExistingSession,
     login,
   ]);
 
@@ -225,6 +230,7 @@ export const useClientAuth = () => {
     loginClient: context.loginClient,
     registerClient: context.registerClient,
     logoutClient: context.logoutClient,
+    checkExistingSession: context.checkExistingSession, // Para OAuth callbacks
     isLoading: context.isLoading,
   };
 };

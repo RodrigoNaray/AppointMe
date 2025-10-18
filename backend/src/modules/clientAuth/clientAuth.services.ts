@@ -135,6 +135,33 @@ export const generateClientToken = (client: PublicClient): string => {
 };
 
 /**
+ * Obtiene el perfil completo de un cliente por su ID.
+ * @param clientId - ID del cliente.
+ * @returns El objeto del cliente público con todos sus datos.
+ */
+export const getClientProfile = async (clientId: string): Promise<PublicClient | null> => {
+  try {
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+    });
+
+    if (!client) {
+      return null;
+    }
+
+    // Retornar cliente público sin datos sensibles
+    const { passwordHash, emailVerificationToken, ...publicClient } = client;
+    return publicClient;
+  } catch (error) {
+    logger.error({
+      clientId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 'Error fetching client profile');
+    throw error;
+  }
+};
+
+/**
  * Verifica el email de un cliente usando el token de verificación.
  * @param token - Token de verificación enviado por email.
  * @returns Objeto con resultado de verificación y estado del cliente.
@@ -270,8 +297,25 @@ export const requestEmailChange = async (
     where: { id: clientId },
   });
 
-  if (!client || !client.passwordHash) {
-    logger.warn({ clientId }, 'Client not found or has no password');
+  if (!client) {
+    logger.warn({ clientId }, 'Client not found');
+    return {
+      success: false,
+      message: 'No se pudo procesar la solicitud.',
+    };
+  }
+
+  // Bloquear cambio de email para usuarios de Google OAuth
+  if (client.googleId) {
+    logger.warn({ clientId, googleId: client.googleId }, 'Email change blocked for Google OAuth user');
+    return {
+      success: false,
+      message: 'No puedes cambiar el email de una cuenta vinculada con Google.',
+    };
+  }
+
+  if (!client.passwordHash) {
+    logger.warn({ clientId }, 'Client has no password');
     return {
       success: false,
       message: 'No se pudo procesar la solicitud.',
@@ -445,7 +489,7 @@ export const changePassword = async (
     // 1. Obtener cliente de la base de datos
     const client = await prisma.client.findUnique({
       where: { id: clientId },
-      select: { id: true, passwordHash: true, email: true },
+      select: { id: true, passwordHash: true, email: true, googleId: true },
     });
 
     if (!client) {
@@ -455,13 +499,29 @@ export const changePassword = async (
       };
     }
 
+    // Caso especial: Usuario de Google OAuth sin contraseña (establecer primera contraseña)
     if (!client.passwordHash) {
+      // Permitir establecer contraseña sin requerir la actual
+      logger.info({ clientId, email: client.email }, 'Setting password for Google OAuth user');
+      
+      // Hashear la nueva contraseña (OWASP A07:2021)
+      const newPasswordHash = await bcrypt.hash(data.newPassword, 10);
+
+      // Establecer contraseña en la base de datos
+      await prisma.client.update({
+        where: { id: clientId },
+        data: { passwordHash: newPasswordHash },
+      });
+
+      logger.info({ clientId, email: client.email }, 'Password set successfully for Google user');
+
       return {
-        success: false,
-        message: 'Esta cuenta no tiene contraseña configurada.',
+        success: true,
+        message: 'Contraseña establecida exitosamente. Ahora puedes usar email y contraseña para iniciar sesión.',
       };
     }
 
+    // Caso normal: Usuario con contraseña existente (cambiar contraseña)
     // 2. Verificar que la contraseña actual sea correcta (OWASP A02:2021)
     const isCurrentPasswordValid = await bcrypt.compare(data.currentPassword, client.passwordHash);
 
@@ -508,5 +568,60 @@ export const changePassword = async (
       success: false,
       message: 'Error al cambiar la contraseña. Intenta nuevamente.',
     };
+  }
+};
+
+/**
+ * Actualiza el perfil de un cliente (phone, name, etc.).
+ * @param clientId - ID del cliente a actualizar.
+ * @param data - Datos a actualizar (puede incluir phone, name, etc.).
+ * @returns El cliente actualizado sin datos sensibles.
+ */
+export const updateClientProfile = async (
+  clientId: string,
+  data: { phone?: string; name?: string }
+): Promise<PublicClient> => {
+  try {
+    // Validar que el cliente existe
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+    });
+
+    if (!client) {
+      throw new Error('Cliente no encontrado.');
+    }
+
+    // Actualizar el cliente
+    const updatedClient = await prisma.client.update({
+      where: { id: clientId },
+      data: {
+        ...(data.phone !== undefined && { phone: data.phone }),
+        ...(data.name !== undefined && { name: data.name }),
+      },
+    });
+
+    // Retornar cliente público sin datos sensibles
+    return {
+      id: updatedClient.id,
+      email: updatedClient.email,
+      name: updatedClient.name,
+      phone: updatedClient.phone,
+      emailVerified: updatedClient.emailVerified,
+      googleId: updatedClient.googleId,
+      emailVerificationExpires: updatedClient.emailVerificationExpires,
+      pendingEmail: updatedClient.pendingEmail,
+      emailChangeToken: updatedClient.emailChangeToken,
+      emailChangeExpires: updatedClient.emailChangeExpires,
+      createdAt: updatedClient.createdAt,
+      updatedAt: updatedClient.updatedAt,
+    };
+  } catch (error) {
+    logger.error({
+      message: 'Error updating client profile',
+      clientId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 'Error updating client profile');
+
+    throw new Error('Error al actualizar el perfil. Intenta nuevamente.');
   }
 };

@@ -1,6 +1,7 @@
 import {lazy} from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import HomePage from './pages/HomePage';
 import AdminLoginPage from './pages/admin/login/AdminLoginPage';
 import PublicLayout from './layouts/PublicLayout';
@@ -18,6 +19,7 @@ const ChangeEmailPage = lazy(() => import('./pages/ChangeEmailPage'))
 const VerifyEmailChangePage = lazy(() => import('./pages/VerifyEmailChangePage'))
 const ClientProfilePage = lazy(() => import('./pages/ClientProfilePage'))
 const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage'))
+
 
 //--- Admin routes ---//
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'))
@@ -73,7 +75,7 @@ const router = createBrowserRouter([
 
 function App() {
   return (
-    <>
+    <ErrorBoundary>
       <Toaster 
         position="top-right"
         toastOptions={{
@@ -108,7 +110,7 @@ function App() {
         }}
       />
       <RouterProvider router={router} />
-    </>
+    </ErrorBoundary>
   );
 }
 

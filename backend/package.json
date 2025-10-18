@@ -14,7 +14,8 @@
     "prisma:migrate:reset": "prisma migrate reset --schema=./src/prisma/schema.prisma",
     "migrate:deploy": "prisma migrate deploy --schema=./src/prisma/schema.prisma",
     "create:admin": "ts-node ./scripts/create-first-admin.ts",
-    "db:seed": "prisma db seed --schema=./src/prisma/schema.prisma"
+    "db:seed": "prisma db seed --schema=./src/prisma/schema.prisma",
+    "verify:google-oauth": "node verify-google-oauth.js"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +33,7 @@
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^7.0.9",
     "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "pino": "^9.2.0"
   },
@@ -45,6 +47,7 @@
     "@types/node": "^20.14.2",
     "@types/nodemailer": "^7.0.2",
     "@types/passport": "^1.0.17",
+    "@types/passport-google-oauth20": "^2.0.16",
     "@types/passport-jwt": "^4.0.1",
     "pino-pretty": "^11.2.1",
     "prisma": "^5.15.0",

@@ -6,7 +6,7 @@ import authRoutes from './modules/auth/auth.routes';
 import cookieParser from 'cookie-parser';
 import passport from 'passport';
 import adminJwtStrategy from './config/passportAdmin'; 
-import { clientJwtStrategy } from './config/passportClient';
+import { clientJwtStrategy, googleStrategy } from './config/passportClient';
 import availabilityRouter from './modules/availability/admin/availability.admin.routes';
 import clientAuthRoutes from './modules/clientAuth/clientAuth.routes';
 import healthRoutes from './modules/health/health.routes';
@@ -49,6 +49,7 @@ app.use(cookieParser(process.env.JWT_SECRET));
 app.use(passport.initialize());
 passport.use('jwt-admin', adminJwtStrategy); 
 passport.use('jwt-client', clientJwtStrategy);
+passport.use('google', googleStrategy);
 
 //---  ROUTES ---//
 app.use('/api/admin/availability', isAdminAuthenticated, availabilityRouter);

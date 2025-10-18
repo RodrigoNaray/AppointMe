@@ -1,9 +1,54 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import toast from "react-hot-toast";
+import { useClientAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CalendarCheck, List, MousePointerClick } from "lucide-react";
 
 export default function HomePage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { checkExistingSession } = useClientAuth();
+  const hasProcessedCallback = useRef(false);
+
+  useEffect(() => {
+    // Evitar procesamiento múltiple del callback
+    if (hasProcessedCallback.current) return;
+
+    // Verificar si venimos del callback de Google OAuth
+    const loginStatus = searchParams.get('login');
+    const errorParam = searchParams.get('error');
+
+    if (loginStatus === 'success') {
+      hasProcessedCallback.current = true;
+      
+      // Verificar la sesión después del login con Google
+      checkExistingSession();
+      toast.success('¡Bienvenido! Has iniciado sesión con Google');
+      
+      // Limpiar los parámetros de la URL
+      setSearchParams({});
+    } else if (errorParam) {
+      hasProcessedCallback.current = true;
+      
+      // Manejar errores de autenticación
+      let errorMessage = 'Error al iniciar sesión con Google';
+      
+      if (errorParam === 'google_auth_failed') {
+        errorMessage = 'No se pudo autenticar con Google. Intenta nuevamente.';
+      } else if (errorParam === 'authentication_failed') {
+        errorMessage = 'Error en la autenticación. Por favor intenta de nuevo.';
+      } else if (errorParam === 'server_error') {
+        errorMessage = 'Error del servidor. Por favor intenta más tarde.';
+      }
+      
+      toast.error(errorMessage);
+      
+      // Limpiar los parámetros de la URL
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, checkExistingSession]);
+
   return (
     <div className="flex flex-col items-center">
       <section className="w-full py-12 md:py-24 lg:py-32 text-center">

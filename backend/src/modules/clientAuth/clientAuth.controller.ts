@@ -60,17 +60,65 @@ export const getClientProfileController = async (req: Request, res: Response) =>
       return res.status(401).json({ message: 'Usuario no autenticado' });
     }
 
-    // Devolver datos del usuario autenticado
+    // Obtener perfil completo usando el servicio
+    const client = await service.getClientProfile(user.id);
+
+    if (!client) {
+      return res.status(404).json({ message: 'Cliente no encontrado' });
+    }
+
+    // Devolver datos del usuario autenticado con googleId
     res.status(200).json({ 
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
+        id: client.id,
+        email: client.email,
+        name: client.name,
+        phone: client.phone,
+        googleId: client.googleId,
         type: 'client' as const
       }
     });
   } catch (error: any) {
     logger.error(error, "Error obteniendo perfil de cliente");
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+/**
+ * Actualizar perfil del cliente (ej: agregar teléfono después de Google OAuth)
+ */
+export const updateClientProfileController = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as { id: string };
+    const { phone } = req.body;
+
+    if (!user) {
+      return res.status(401).json({ message: 'Usuario no autenticado' });
+    }
+
+    // Validar que el teléfono sea proporcionado
+    if (!phone || typeof phone !== 'string') {
+      return res.status(400).json({ message: 'Teléfono es requerido' });
+    }
+
+    // Validación básica de formato (10-15 dígitos)
+    const cleanPhone = phone.replace(/[\s-]/g, '');
+    if (!/^[0-9]{10,15}$/.test(cleanPhone)) {
+      return res.status(400).json({ 
+        message: 'Formato de teléfono inválido. Debe contener entre 10 y 15 dígitos' 
+      });
+    }
+
+    // Actualizar en la base de datos
+    const updatedClient = await service.updateClientProfile(user.id, { phone: cleanPhone });
+
+    logger.info({ clientId: user.id }, 'Perfil de cliente actualizado');
+    res.status(200).json({ 
+      message: 'Perfil actualizado exitosamente',
+      client: updatedClient
+    });
+  } catch (error: any) {
+    logger.error(error, 'Error actualizando perfil de cliente');
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
@@ -220,7 +268,8 @@ export const changePasswordController = async (req: Request, res: Response) => {
     const { currentPassword, newPassword } = req.body;
 
     // Validaciones básicas
-    if (!currentPassword || typeof currentPassword !== 'string') {
+    // Nota: currentPassword puede ser vacío para usuarios de Google OAuth (sin passwordHash)
+    if (typeof currentPassword !== 'string') {
       return res.status(400).json({ message: 'Contraseña actual requerida' });
     }
 
@@ -248,5 +297,36 @@ export const changePasswordController = async (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error(error, "Error changing password");
     res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+/**
+ * Controller para manejar el callback de Google OAuth
+ * OWASP A02:2021: El usuario ya fue autenticado por Passport
+ * Genera JWT y establece cookie HttpOnly
+ */
+export const googleCallbackController = (req: Request, res: Response) => {
+  try {
+    // req.user fue establecido por Passport después de autenticar con Google
+    const user = req.user as any;
+
+    if (!user) {
+      logger.warn("Google OAuth callback sin usuario autenticado");
+      return res.redirect(`${process.env.CLIENT_URL}/login?error=authentication_failed`);
+    }
+
+    // Generar JWT token para el cliente
+    const token = service.generateClientToken(user);
+
+    // Establecer cookie HttpOnly con el token
+    res.cookie(ACCESS_CLIENT_TOKEN_COOKIE_NAME, token, cookieOptions);
+
+    logger.info({ clientId: user.id, email: user.email }, "Cliente autenticado exitosamente con Google OAuth");
+
+    // Redireccionar al frontend con éxito
+    res.redirect(`${process.env.CLIENT_URL}/?login=success`);
+  } catch (error: any) {
+    logger.error(error, "Error en callback de Google OAuth");
+    res.redirect(`${process.env.CLIENT_URL}/login?error=server_error`);
   }
 };

@@ -1,5 +1,5 @@
 # Estado
-101/101 tareas (100%) | iOS: 100% ✅ | MVP: 100% ✅ | Seguridad: 100% (JWT+cookies+OWASP) ✅ | SESSION: 100% ✅ | EMAIL: 100% ✅ | NOTIFICATIONS: 100% ✅ | CLIENT-UI: 100% ✅ | PASSWORD: 100% ✅
+113/114 tareas (99.1%) | iOS: 100% ✅ | MVP: 99.1% 🔄 | Seguridad: 100% (JWT+cookies+OWASP) ✅ | SESSION: 100% ✅ | EMAIL: 100% ✅ | NOTIFICATIONS: 100% ✅ | CLIENT-UI: 100% ✅ | PASSWORD: 100% ✅ | GOOGLE-OAUTH: 92.3% 🔄
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
@@ -49,6 +49,19 @@
   - [x] Frontend: ChangePasswordPage.tsx con validación ✅
   - [x] Frontend: Ruta /change-password en App.tsx ✅
   - [x] Frontend: Habilitar opción en UserMenu ✅
+- [ ] **GOOGLE-OAUTH.FEATURE** Implementar login con Google OAuth 2.0
+  - [x] Backend: Instalar passport-google-oauth20 2.0.0 y @types/passport-google-oauth20 ✅
+  - [x] Backend: Configurar Google OAuth Strategy en config/passportClient.ts ✅
+  - [x] Backend: Variables de entorno GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, API_URL en .env.example ✅
+  - [x] Backend: Callback URL /auth/client/google/callback configurado ✅
+  - [x] Backend: Estrategia incluye findOrCreateGoogleClient con merge logic automático ✅
+  - [x] Backend: Rutas GET /google y GET /google/callback en clientAuth.routes.ts ✅
+  - [x] Backend: googleCallbackController genera JWT y redirige con query params ✅
+  - [x] Frontend: Botón "Continuar con Google" en LoginPage y RegisterPage con GoogleIcon SVG ✅
+  - [x] Frontend: Redirección a backend /auth/client/google vía window.location.href ✅
+  - [x] Frontend: Manejo de callback en HomePage con checkExistingSession y toast notifications ✅
+  - [x] Frontend: checkExistingSession agregada a AuthContext y useClientAuth hook ✅
+  - [ ] Testing: Configurar Google Cloud Console + probar flujo completo con cuenta real
 - [ ] Cliente UI: Dashboard básico + MyBookingsPage + BookingPage
 - [ ] Rate limiting: express-rate-limit para login/register
 
@@ -170,3 +183,76 @@ Variables en backend/.env: SMTP_HOST, SMTP_PORT (587), SMTP_USER, SMTP_PASS (App
 - ✅ Duración optimizada: 1.5 segundos para todos los toasts
 - ✅ Fix: Revertido custom render para mantener estilos predeterminados
 - ✅ UX: Toasts rápidos y no intrusivos
+
+## Google OAuth 2.0 - Planificación
+
+**Arquitectura:**
+- Backend: passport-google-oauth20 strategy en passportClient.ts
+- Flujo: Frontend → Backend /auth/client/google → Google → Callback → JWT Cookie → Frontend
+- Merge Logic: Si email existe pero sin googleId, vincular cuentas (requiere confirmación)
+
+**Configuración Requerida:**
+1. Google Cloud Console: Crear proyecto + OAuth 2.0 Client ID
+2. Authorized redirect URIs: https://api.appointme.com/auth/client/google/callback (producción)
+3. Variables .env: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+4. Scopes: profile, email (mínimos necesarios)
+
+**Seguridad (OWASP):**
+- A02:2021: Validar state parameter en callback (CSRF protection)
+- A04:2021: No almacenar tokens de Google innecesariamente
+- A07:2021: Usar googleId único en base de datos
+- Verificar email_verified de Google antes de crear cuenta
+
+**UX Frontend:**
+- Botón destacado "Continuar con Google" con logo oficial
+- Separador visual "O continuar con email"
+- Mismo flujo de redirección que password login
+- Toast de bienvenida después de OAuth exitoso
+
+## Cambios Implementados - Google OAuth 2.0 (17 Oct 2025)
+
+**Backend Implementado:**
+- ✅ passport-google-oauth20 2.0.0 instalado con tipos TypeScript
+- ✅ Google Strategy en passportClient.ts con validación completa
+  - Verifica email_verified de Google (OWASP A07:2021)
+  - Merge automático si cliente existe con mismo email
+  - Crea nuevo cliente si no existe
+  - Marca emailVerified=true automáticamente
+- ✅ Rutas GET /auth/client/google y /auth/client/google/callback
+- ✅ googleCallbackController genera JWT HttpOnly cookie
+- ✅ Redirección a frontend con query params: ?login=success o ?error=...
+- ✅ Variables documentadas en .env.example: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, API_URL
+- ✅ Estrategia registrada en server.ts como 'google'
+
+**Frontend Implementado:**
+- ✅ Botón "Continuar con Google" en LoginPage y RegisterPage
+- ✅ GoogleIcon component con SVG oficial de Google
+- ✅ Separador Shadcn-ui entre login tradicional y OAuth
+- ✅ handleGoogleLogin redirige a ${API_URL}/auth/client/google
+- ✅ HomePage detecta query params y llama checkExistingSession()
+- ✅ Toast notifications para success/error después de OAuth
+- ✅ checkExistingSession agregada a AuthContext interface
+- ✅ checkExistingSession exportada en useClientAuth hook
+- ✅ Limpieza automática de query params después de procesar
+
+**Seguridad Implementada (OWASP):**
+- ✅ A02:2021: CSRF protection vía Passport state parameter
+- ✅ A04:2021: No se almacenan tokens de Google, solo googleId
+- ✅ A07:2021: googleId campo único en base de datos (Prisma schema)
+- ✅ Verificación de email_verified antes de crear cuenta
+- ✅ JWT HttpOnly cookies con sameSite:'lax'
+
+**Pendiente para Testing:**
+- [ ] Crear proyecto en Google Cloud Console
+- [ ] Configurar OAuth 2.0 credentials
+- [ ] Agregar redirect URIs autorizadas (local + producción)
+- [ ] Probar flujo completo: Registro nuevo, Login existente, Merge de cuentas
+- [ ] Verificar cookies se establecen correctamente cross-domain
+
+**Bugfix - AuthContext registerClient (17 Oct 2025):**
+- ✅ Fix: registerClient ahora retorna Promise<{success, message}> en lugar de Promise<void>
+- ✅ Fix: registerClient NO establece authState después del registro
+- ✅ Razón: Usuario debe verificar email antes de autenticarse (flujo correcto)
+- ✅ AuthContextType actualizado con tipo de retorno correcto
+- ✅ RegisterPage ya usaba clientAuthService.register() directamente (no afectado)
+

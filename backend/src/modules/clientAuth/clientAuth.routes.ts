@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import passport from 'passport';
 import * as controller from './clientAuth.controller';
 import { isClientAuthenticated } from '../../middlewares/isClientAuthenticated';
 
@@ -10,6 +11,10 @@ clientAuthRoutes.post('/logout', controller.logoutClientController);
 
 // Ruta para obtener el perfil del cliente autenticado
 clientAuthRoutes.get('/profile', isClientAuthenticated, controller.getClientProfileController);
+
+// Ruta para actualizar el perfil del cliente autenticado (ej. phone)
+// OWASP A02:2021: Protegida con middleware isClientAuthenticated
+clientAuthRoutes.patch('/profile', isClientAuthenticated, controller.updateClientProfileController);
 
 // Rutas para verificación de email
 clientAuthRoutes.post('/verify-email', controller.verifyEmailController);
@@ -23,5 +28,24 @@ clientAuthRoutes.post('/verify-email-change', controller.verifyEmailChangeContro
 // Ruta para cambio de contraseña (requiere autenticación)
 // OWASP A02:2021: Protegida con middleware isClientAuthenticated
 clientAuthRoutes.post('/change-password', isClientAuthenticated, controller.changePasswordController);
+
+// Rutas de Google OAuth 2.0
+// OWASP A02:2021: CSRF protection mediante state parameter (manejado por passport)
+clientAuthRoutes.get(
+  '/google',
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'],
+    session: false,
+  })
+);
+
+clientAuthRoutes.get(
+  '/google/callback',
+  passport.authenticate('google', { 
+    session: false,
+    failureRedirect: `${process.env.CLIENT_URL}/login?error=google_auth_failed`,
+  }),
+  controller.googleCallbackController
+);
 
 export default clientAuthRoutes;
