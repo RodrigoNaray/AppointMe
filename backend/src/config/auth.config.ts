@@ -17,6 +17,16 @@ export const cookieOptions: CookieOptions = {
   domain: domain,
 };
 
+// Opciones para clearCookie (sin maxAge según Express 5.x deprecation warning)
+export const clearCookieOptions: CookieOptions = {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'lax',
+  signed: true,
+  domain: domain,
+  path: '/', // Asegurar que coincida con el path usado al crear la cookie
+};
+
 if (!process.env.JWT_SECRET){
     throw new Error('FATAL ERROR: La configuración de seguridad del servidor es incompleta.');
 };

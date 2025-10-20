@@ -12,6 +12,8 @@ El proyecto mantiene un archivo `.plan` en el repositorio, que actúa como **ún
 3. Si recibes nuevas instrucciones o detectas trabajo pendiente, **agregarlas a la checklist en orden lógico**.  
 4. Antes de registrar una tarea grande, **divídela en subtareas claras, pequeñas y alcanzables**.  
 5. Siempre devuelve el archivo `.plan` **completo y actualizado**, sobrescribiendo la versión anterior.  
+6. No colocar resumenes o cosasa que no sean exclusivamente nuevas tareas o completar con una cruz las tareas pendientes.
+7. Hacer exclusivamente codigo limpio y escalable pensando en software mantenible a largo plazo. No se pueden hacer parches bajo ningun concepto, solo soluciones escalables.
 
 ### Reglas
 - **No sobrecargues el `.plan`**: escribe lo mínimo necesario para que otra IA o humano pueda continuar sin perder contexto.  
@@ -39,8 +41,10 @@ Tus responsabilidades son:
    - Agrega una breve nota de lo que se logró.  
    - Justifica los cambios con **mejores prácticas oficiales** de React, TypeScript, Node.js, Prisma y OWASP.  
 4. Si un paso es demasiado grande, divídelo en subtareas antes de ejecutarlo y consulta antes de aplicar cambios críticos.  
-5. Actualiza la sección **Estado** con el progreso (ej. "3/7 pasos completados, 42%").  
-6. Devuelve siempre el archivo `.plan` completo y actualizado.  
+5. Devuelve siempre el archivo `.plan` completo y actualizado.  
+6. No colocar resumenes o cosasa que no sean exclusivamente nuevas tareas o completar con una cruz las tareas pendientes.
+7. Hacer exclusivamente codigo limpio y escalable pensando en software mantenible a largo plazo. No se pueden hacer parches bajo ningun concepto, solo soluciones escalables.
+8. Siempre debo respetar la estructura del codigo, respetando las practicas del proyecto y reutilizadno las funciones que ya hay, salvo que eso sea 100% imposible.
 
 Reglas:
 - Reviso siempre las fuentes de docuemntacion para Octubre de 2025, las busco de nuevo siempre.

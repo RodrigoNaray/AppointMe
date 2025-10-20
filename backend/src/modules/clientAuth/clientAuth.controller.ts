@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as service from './clientAuth.services';
 import { RegisterClientDto, LoginClientDto } from './clientAuth.types';
-import {ACCESS_CLIENT_TOKEN_COOKIE_NAME, cookieOptions} from '../../config/auth.config'
+import {ACCESS_CLIENT_TOKEN_COOKIE_NAME, ACCESS_ADMIN_TOKEN_COOKIE_NAME, cookieOptions, clearCookieOptions} from '../../config/auth.config'
 import logger from '../../utils/logger';
 
 export const registerClientController = async (req: Request, res: Response) => {
@@ -28,12 +28,17 @@ export const loginClientController = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Credenciales incorrectas' });
     }
 
+    // OWASP A01:2021 - Broken Access Control Prevention:
+    // Invalidar sesión de admin si existe ANTES de crear sesión cliente
+    // Previene sesiones simultáneas que podrían causar escalación de privilegios
+    res.clearCookie(ACCESS_ADMIN_TOKEN_COOKIE_NAME, clearCookieOptions);
+
     const token = service.generateClientToken(client);
 
     // Configuramos la cookie para el cliente usando cookieOptions centralizadas
     res.cookie(ACCESS_CLIENT_TOKEN_COOKIE_NAME, token, cookieOptions);
 
-    logger.info({ clientId: client.id }, "Login de cliente exitoso");
+    logger.info({ clientId: client.id }, "Login de cliente exitoso (sesión admin invalidada si existía)");
     res.status(200).json({ message: 'Inicio de sesión exitoso', client });
   } catch (error: any) {
     logger.error(error, "Error en el login de cliente");
@@ -43,7 +48,8 @@ export const loginClientController = async (req: Request, res: Response) => {
 
 export const logoutClientController = (req: Request, res: Response) => {
   try{
-    res.clearCookie(ACCESS_CLIENT_TOKEN_COOKIE_NAME);
+    // OWASP Best Practice: clearCookie debe usar las mismas opciones que se usaron al crear la cookie (sin maxAge)
+    res.clearCookie(ACCESS_CLIENT_TOKEN_COOKIE_NAME, clearCookieOptions);
     logger.info("Sesión de cliente cerrada");
     res.status(200).json({ message: 'Sesión cerrada exitosamente' });
   } catch (error: any) {
@@ -315,13 +321,16 @@ export const googleCallbackController = (req: Request, res: Response) => {
       return res.redirect(`${process.env.CLIENT_URL}/login?error=authentication_failed`);
     }
 
+    // OWASP A01:2021: Invalidar sesión de admin si existe antes de crear sesión cliente
+    res.clearCookie(ACCESS_ADMIN_TOKEN_COOKIE_NAME, clearCookieOptions);
+
     // Generar JWT token para el cliente
     const token = service.generateClientToken(user);
 
-    // Establecer cookie HttpOnly con el token
+    // Establecer cookie HttpOnly con el token  
     res.cookie(ACCESS_CLIENT_TOKEN_COOKIE_NAME, token, cookieOptions);
 
-    logger.info({ clientId: user.id, email: user.email }, "Cliente autenticado exitosamente con Google OAuth");
+    logger.info({ clientId: user.id, email: user.email }, "Cliente autenticado con Google OAuth");
 
     // Redireccionar al frontend con éxito
     res.redirect(`${process.env.CLIENT_URL}/?login=success`);

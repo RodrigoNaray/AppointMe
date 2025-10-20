@@ -1,5 +1,5 @@
 # Estado
-122/122 tareas (100%) | MVP: 100% ✅ | REBRANDING: 0% 📋 | BOOKING-UI: 0% 📋 | GOOGLE-OAUTH: 100% ✅ | HOMEPAGE: 100% ✅
+149/153 tareas (97%) | MVP: 100% ✅ | REBRANDING: 0% 📋 | BOOKING-UI: 0% 📋 | CROSS-SESSION-BUG: 99% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
@@ -17,6 +17,78 @@
 ✅ PlatformFeaturesPage: Página informativa sobre AppointMePro
 
 # Checklist Pendiente
+
+## BUG: Sesiones cruzadas admin/cliente 🐛 CRÍTICO → ✅ CORREGIDO
+### Problema Original: Cookies no se limpian en logout
+- [x] Backend - Revisar ruta logout de admin:
+  - [x] Verificar que `res.clearCookie('token')` esté presente en auth.controller.ts ✅
+  - [x] Verificar opciones de clearCookie (httpOnly, secure, sameSite, path, domain) ✅
+  - [x] Asegurar que coincidan con las opciones usadas en el login ✅
+  - **Fix aplicado:** Agregado `cookieOptions` como segundo parámetro en `res.clearCookie(ACCESS_ADMIN_TOKEN_COOKIE_NAME, cookieOptions)`
+- [x] Backend - Revisar ruta logout de cliente:
+  - [x] Verificar que `res.clearCookie('token')` esté presente en clientAuth.controller.ts ✅
+  - [x] Verificar opciones de clearCookie (httpOnly, secure, sameSite, path, domain) ✅
+  - [x] Asegurar que coincidan con las opciones usadas en el login ✅
+  - **Fix aplicado:** Agregado `cookieOptions` como segundo parámetro en `res.clearCookie(ACCESS_CLIENT_TOKEN_COOKIE_NAME, cookieOptions)`
+- [x] Frontend - Verificar llamada a logout admin:
+  - [x] Confirmar que el endpoint `/api/auth/admin/logout` se llama correctamente ✅
+  - [x] Verificar que incluye `credentials: 'include'` en el fetch ✅ (configurado globalmente en API_CONFIG)
+  - [x] Limpiar estado local del AuthContext después del logout exitoso ✅
+- [x] Frontend - Verificar llamada a logout cliente:
+  - [x] Confirmar que el endpoint `/api/auth/client/logout` se llama correctamente ✅
+  - [x] Verificar que incluye `credentials: 'include'` en el fetch ✅ (configurado globalmente en API_CONFIG)
+  - [x] Limpiar estado local del AuthContext después del logout exitoso ✅
+
+### Problema Secundario Identificado: Acceso cross-role después de logout
+**Descripción:** Al hacer login cliente + admin, logout admin permitía acceder rutas admin con sesión cliente
+**Causa raíz:** 
+1. Frontend usaba `ProtectedRoute` genérico sin verificar `authState.type`
+2. Backend permitía sesiones simultáneas admin + cliente en el mismo navegador
+
+**Solución aplicada (REFACTORIZADA - Código limpio):**
+- [x] **Frontend - RBAC (Role-Based Access Control):**
+  - Crear `AdminRoute` que verifica `authState.type === 'admin'` específicamente
+  - Crear `ClientRoute` que verifica `authState.type === 'client'` específicamente
+  - Reemplazar `ProtectedRoute` con `AdminRoute` en rutas `/admin/*`
+- [x] **Backend - Invalidación de sesión anterior en LOGIN (NO en logout):**
+  - Login admin: Invalida cookie cliente ANTES de crear sesión admin
+  - Login cliente: Invalida cookie admin ANTES de crear sesión cliente
+  - Google OAuth: Invalida cookie admin ANTES de crear sesión cliente
+  - **Previene sesiones simultáneas sin código espagueti**
+
+**Archivos modificados:**
+- `frontend/src/components/AdminRoute.tsx` (nuevo - RBAC frontend)
+- `frontend/src/components/ClientRoute.tsx` (nuevo - RBAC frontend)
+- `frontend/src/App.tsx` (import AdminRoute, aplicado a rutas admin)
+- `backend/src/modules/auth/auth.controller.ts` (clearCookie cliente en login admin)
+- `backend/src/modules/clientAuth/clientAuth.controller.ts` (clearCookie admin en login cliente + Google OAuth)
+
+### Problema Terciario: Google OAuth genera ambas cookies (adminToken + clientToken)
+**Descripción:** Después de Google OAuth login, el navegador tenía tanto adminToken como clientToken
+**Causa raíz:** `clearCookie()` con `maxAge` en opciones causa conflicto (deprecation warning Express 5.x)
+- Express ignora `maxAge` en `clearCookie` y requiere opciones EXACTAS sin él
+- Usar `cookieOptions` (con maxAge) en `clearCookie` impedía la eliminación correcta
+
+**Solución aplicada:**
+- [x] Crear `clearCookieOptions` sin `maxAge` en `auth.config.ts`
+- [x] Actualizar todos los `clearCookie()` para usar `clearCookieOptions`
+  - `auth.controller.ts`: logout admin + invalidación cliente en login
+  - `clientAuth.controller.ts`: logout cliente + invalidación admin en login + Google OAuth
+
+**Archivos modificados:**
+- `backend/src/config/auth.config.ts` (nuevo: clearCookieOptions)
+- `backend/src/modules/auth/auth.controller.ts` (usar clearCookieOptions)
+- `backend/src/modules/clientAuth/clientAuth.controller.ts` (usar clearCookieOptions)
+
+- [ ] Testing manual:
+  - [ ] Login admin → Google OAuth cliente → Verificar solo clientToken existe
+  - [ ] Login cliente → Login admin → Verificar solo adminToken existe
+  - [ ] Logout admin → Verificar adminToken eliminada
+  - [ ] Logout cliente → Verificar clientToken eliminada
+  - [x] Verificar Google OAuth invalida `adminToken` antes de crear sesión ✅
+  - [x] Verificar `AdminRoute` bloquea acceso a clientes ✅
+  - [ ] Testing manual: Login cliente → Login admin → Verificar solo existe adminToken
+  - [ ] Testing manual: Logout admin → Verificar adminToken eliminada del navegador
 
 ## REBRANDING: AppointMe → AppointMePro
 - [ ] Backend: Cambiar en package.json, README, logs, emails
@@ -260,6 +332,54 @@
 **Concepto:** Landing page directo a reservas, simulando negocio real de profesional independiente
 **Profesional ficticio:** Crear datos de ejemplo (nombre, foto, negocio, ubicación)
 **UI Reservas:** Grid de cards elegantes (NO tabla Excel) + Carrito lateral con totales
+
+## Bugs Críticos de Seguridad Corregidos ✅
+
+### Bug 1: Cookies no se limpian en logout
+**Problema:** Las cookies JWT no se limpian al hacer logout (admin y cliente)
+**Impacto:** Usuario seguía autenticado después de logout, riesgo de seguridad
+**Causa raíz identificada:** 
+- Backend: `clearCookie()` sin opciones → no coincidían con las usadas en login
+- Según OWASP y Express docs: clearCookie DEBE usar las mismas opciones (domain, path, secure, etc.)
+**Solución aplicada:**
+1. `auth.controller.ts`: Agregado `cookieOptions` como segundo parámetro en clearCookie
+2. `clientAuth.controller.ts`: Agregado `cookieOptions` como segundo parámetro en clearCookie
+3. Frontend: Verificado que `withCredentials: true` está en API_CONFIG (correcto)
+4. Frontend: Verificado limpieza de estado en AuthContext (correcto)
+**Archivos modificados:**
+- `backend/src/modules/auth/auth.controller.ts` (línea 31)
+- `backend/src/modules/clientAuth/clientAuth.controller.ts` (línea 45)
+
+### Bug 2: Sesiones cruzadas admin/cliente (OWASP A01:2021 - Broken Access Control)
+**Problema:** Login cliente + login admin + logout admin → cliente podía acceder rutas /admin/*
+**Impacto:** CRÍTICO - Escalación de privilegios, cliente con acceso a panel administrativo
+**Causa raíz identificada:**
+- Frontend: `ProtectedRoute` solo verificaba `isAuthenticated`, NO verificaba `authState.type`
+- Backend: Permitía sesiones simultáneas admin + cliente en el mismo navegador
+
+**Solución aplicada (REFACTORIZADA - Código limpio):**
+1. **Frontend - RBAC (Role-Based Access Control):**
+   - Creado `AdminRoute` con verificación `authState.type === 'admin'`
+   - Creado `ClientRoute` con verificación `authState.type === 'client'`
+   - Reemplazado `ProtectedRoute` genérico con `AdminRoute` en rutas `/admin/*`
+2. **Backend - Invalidación de sesión anterior en LOGIN (NO en logout):**
+   - Login admin: `clearCookie(ACCESS_CLIENT_TOKEN_COOKIE_NAME)` ANTES de crear sesión
+   - Login cliente: `clearCookie(ACCESS_ADMIN_TOKEN_COOKIE_NAME)` ANTES de crear sesión
+   - Google OAuth: `clearCookie(ACCESS_ADMIN_TOKEN_COOKIE_NAME)` ANTES de crear sesión
+   - **Previene sesiones simultáneas desde el origen, sin código espagueti**
+
+**Archivos modificados:**
+- `frontend/src/components/AdminRoute.tsx` (nuevo, 30 líneas - RBAC)
+- `frontend/src/components/ClientRoute.tsx` (nuevo, 30 líneas - RBAC)
+- `frontend/src/App.tsx` (import AdminRoute)
+- `backend/src/modules/auth/auth.controller.ts` (clearCookie en LOGIN, línea 20)
+- `backend/src/modules/clientAuth/clientAuth.controller.ts` (clearCookie en LOGIN + Google OAuth, líneas 35 y 320)
+
+**Justificación técnica:**
+- OWASP A01:2021: RBAC + prevención de sesiones concurrentes
+- Clean Code: Invalidación en login (punto de entrada) vs logout (punto de salida)
+- Single Responsibility: Cada login maneja solo su flujo de autenticación
+- Defense in depth: Frontend (UX) + Backend (seguridad real)
 
 ## Configuración SMTP
 Variables en backend/.env: SMTP_HOST, SMTP_PORT (587), SMTP_USER, SMTP_PASS (App Password)

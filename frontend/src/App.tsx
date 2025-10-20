@@ -5,7 +5,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import HomePage from './pages/HomePage';
 import AdminLoginPage from './pages/admin/login/AdminLoginPage';
 import PublicLayout from './layouts/PublicLayout';
-import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import NotFoundPage from './pages/NotFoundPage';
 import ServicesListPage from './pages/ServicesListPage';
 import ContactPage from './pages/ContactPage';
@@ -53,7 +53,7 @@ const router = createBrowserRouter([
     ],
   },
   {  
-    element: <ProtectedRoute />,
+    element: <AdminRoute />,
     children: [
     {
       path: '/admin',

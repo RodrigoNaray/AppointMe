@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { RegisterAdminDto, LoginAdminDto } from './auth.types';
 import * as authServices from './auth.services';
 import logger from '../../utils/logger';
-import { cookieOptions, ACCESS_ADMIN_TOKEN_COOKIE_NAME } from '../../config/auth.config';
+import { cookieOptions, clearCookieOptions, ACCESS_ADMIN_TOKEN_COOKIE_NAME, ACCESS_CLIENT_TOKEN_COOKIE_NAME } from '../../config/auth.config';
 
 
 export const loginController = async ( req: Request<{},{},LoginAdminDto>, res: Response) => {
@@ -16,10 +16,15 @@ export const loginController = async ( req: Request<{},{},LoginAdminDto>, res: R
       return res.status(401).json({message: 'Credenciales incorrecctas'})
     };
 
+    // OWASP A01:2021 - Broken Access Control Prevention:
+    // Invalidar sesión de cliente si existe ANTES de crear sesión admin
+    // Previene sesiones simultáneas que podrían causar escalación de privilegios
+    res.clearCookie(ACCESS_CLIENT_TOKEN_COOKIE_NAME, clearCookieOptions);
+
     const token = authServices.generateToken(user);
 
     res.cookie(ACCESS_ADMIN_TOKEN_COOKIE_NAME, token, cookieOptions);
-    logger.info({ userId: user.id }, 'Inicio de sesión exitoso, token generado');
+    logger.info({ userId: user.id }, 'Inicio de sesión de admin exitoso (sesión cliente invalidada si existía)');
     res.status(200).json({ message: 'Inicio de sesión exitoso'});
 
   }catch(error){
@@ -29,8 +34,9 @@ export const loginController = async ( req: Request<{},{},LoginAdminDto>, res: R
 };
 
 export const logoutController = async ( req: Request, res: Response) => {
-
-  res.clearCookie(ACCESS_ADMIN_TOKEN_COOKIE_NAME);
+  // OWASP Best Practice: clearCookie debe usar las mismas opciones que se usaron al crear la cookie (sin maxAge)
+  res.clearCookie(ACCESS_ADMIN_TOKEN_COOKIE_NAME, clearCookieOptions);
+  logger.info("Sesión de administrador cerrada");
   res.status(200).json({ message: 'Sesión cerrada exitosamente' });
 };
 
