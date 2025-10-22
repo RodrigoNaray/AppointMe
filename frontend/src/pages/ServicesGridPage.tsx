@@ -51,9 +51,9 @@ export default function ServicesGridPage() {
 
       {/* Layout Grid Responsive */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Lista de servicios con categorías (Tabs + Pagination) */}
+        {/* Lista de servicios con categorías (Tabs + Tabla + Pagination) */}
         <div className="lg:col-span-2">
-          <ServicesList itemsPerPage={9} />
+          <ServicesList itemsPerPage={12} />
         </div>
 
         {/* Carrito - Hidden en móvil (se muestra fixed bottom) */}

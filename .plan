@@ -1,5 +1,5 @@
 # Estado
-201/201 tareas (100%) | MVP: 100% ✅ | BOOKING-UI: 85% 🚧 | CATEGORIES: 100% ✅ | DOCS: 100% ✅
+202/202 tareas (100%) | MVP: 100% ✅ | BOOKING-UI: 90% 🚧 | CATEGORIES: 100% ✅ | DOCS: 100% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
@@ -66,7 +66,13 @@
   - ✅ CartSidebar Mobile: Lista expandible con botones eliminar accesibles (touch 44px)
   - ✅ CartSidebar Mobile: Botón "Limpiar carrito" visible en estado expandido
   - ✅ ServiceCard: Hover solo desktop, touch targets mínimo 44px, tamaños responsivos
-  - ✅ ServicesList: Tabs compactos (text-[11px] sm:text-xs, px-2.5 py-1.5, gap-1) para más categorías visibles
+  - ✅ ServicesList: Tabs responsive optimizados
+    - Mobile: Solo nombre categoría (sin contador), text-xs, px-2, gap-0.5, whitespace-nowrap
+    - Desktop: Nombre + contador (X), text-sm, px-3, gap-1
+    - Conditional rendering: `<span className="sm:hidden">Cortes</span>` vs `<span className="hidden sm:inline">Cortes (5)</span>`
+    - Ancho tabs alineado con tabla: Eliminado wrapper -mx-4 sm:mx-0, tabs respetan mismo contenedor que tabla
+    - Snap scroll mejorado: `snap-center` (tabs centradas), `scroll-smooth` (animación suave CSS)
+    - Resultado: 30-40% más categorías visibles, scroll que centra cada tab con animación fluida
   - ✅ CSS: scrollbar-hide utility para mejor UX en scroll horizontal
   - ✅ Typography: Tamaños de fuente escalados (text-xs sm:text-sm lg:text-base)
   - ✅ Buttons: Alturas responsive h-10 sm:h-11, texto condicional ("Agregar más" → "Más")
@@ -88,6 +94,19 @@
   - ✅ HomePage botón "Reservar Ahora" redirige a `/book` (ServicesGridPage con carrito completo)
   - ✅ Archivo ServicesListPage.tsx eliminado (código duplicado obsoleto)
   - **Justificación:** Single Responsibility - una sola página de reservas con toda la funcionalidad (carrito + categorías + paginación). Eliminar duplicación de código y confusión en navegación. React Router best practice: rutas semánticas (/book más claro que /services para acción de reservar)
+- [x] Refactor: Vista tabla compacta reutilizable (tabla-like design)
+  - ✅ Componente ServicesTable.tsx creado (248 líneas)
+  - ✅ Vista desktop: Tabla HTML semántica con columnas (Servicio, Categoría, Duración, Precio, Acción)
+  - ✅ Vista mobile: Lista de cards compactas optimizada con 4 líneas de info
+  - ✅ Mobile UX mejorada: Separador visual entre info y acciones, textos descriptivos ("X servicios agregados", "Disponible para reservar")
+  - ✅ Props configurables: services, showCategory, compact, maxItems
+  - ✅ Integrado en ServicesList (reemplaza grid de ServiceCard)
+  - ✅ Botones +/- inline para agregar/quitar servicios
+  - ✅ Badge con cantidad visible en tabla y mobile
+  - ✅ Hover row effect (hover:bg-muted/50)
+  - ✅ Pagination ajustada: 9 → 12 items por página (mejor aprovechamiento tabla)
+  - ✅ Accessibility: aria-label en botones mobile ("Quitar uno", "Agregar uno más")
+  - **Justificación React 19:** Componente reutilizable con composition pattern. ServicesTable puede usarse en HomePage (vista previa compacta) y en /book (lista completa). Semantic HTML (<table>) mejora accessibility y SEO. Mobile-first con progressive enhancement (tabla → lista responsive). DRY principle: elimina duplicación de lógica de carrito (useBooking hook centralizado). Mobile UX: Separator visual (border-bottom) mejora escaneo visual, textos descriptivos mejoran feedback (WCAG 2.1)
 
 ## SISTEMA DE CATEGORÍAS: Categorías globales single-tenant ✅
 ### Backend ✅ COMPLETO

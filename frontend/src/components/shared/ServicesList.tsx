@@ -10,25 +10,26 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import ServiceCard from '@/components/ServiceCard';
+import ServicesTable from '@/components/shared/ServicesTable';
 import type { Service, Category } from '@/types/service';
 import { API_BASE_URL } from '@/api/config';
 
 /**
- * ServicesList - Componente reutilizable con Tabs de categorías y paginación
+ * ServicesList - Componente reutilizable con Tabs de categorías y tabla de servicios
  * 
  * Mejores prácticas React 19:
  * - useMemo para cálculos costosos (filtrado + paginación)
  * - useState para estado local (servicios, categorías, página actual)
  * - useEffect para fetch de datos en mount
  * - shadcn-ui Tabs para filtros por categoría
+ * - ServicesTable para vista compacta tipo tabla (reemplaza grid de cards)
  * - Pagination cliente-side (mejor UX que server-side para datasets pequeños)
  * 
  * Arquitectura:
  * - Fetch de servicios y categorías desde API pública
  * - Filtrado por categoría seleccionada (tab activo)
- * - Paginación cliente-side con 9 servicios por página
- * - Grid responsive: 1 col móvil, 2 cols tablet, 3 cols desktop
+ * - Paginación cliente-side con servicios por página configurables
+ * - Vista tabla compacta responsive (tabla desktop, lista mobile)
  * 
  * Referencias:
  * - React 19 useMemo: https://react.dev/reference/react/useMemo
@@ -37,11 +38,11 @@ import { API_BASE_URL } from '@/api/config';
  */
 
 interface ServicesListProps {
-  /** Número de servicios por página (default: 9 para grid 3x3) */
+  /** Número de servicios por página (default: 12 para tabla compacta) */
   itemsPerPage?: number;
 }
 
-export default function ServicesList({ itemsPerPage = 9 }: ServicesListProps) {
+export default function ServicesList({ itemsPerPage = 12 }: ServicesListProps) {
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -155,28 +156,33 @@ export default function ServicesList({ itemsPerPage = 9 }: ServicesListProps) {
     <div className="space-y-4 sm:space-y-6">
       {/* Tabs de categorías */}
       <Tabs value={selectedCategory} onValueChange={handleCategoryChange}>
-        {/* TabsList con scroll horizontal optimizado para móvil */}
-        <div className="relative -mx-4 sm:mx-0">
-          <TabsList className="w-full justify-start overflow-x-auto flex px-4 sm:px-0 gap-1 scrollbar-hide">
-            <TabsTrigger value="all" className="flex-shrink-0 text-[11px] sm:text-xs px-2.5 py-1.5 sm:px-3 sm:py-2">
-              Todos ({services.length})
-            </TabsTrigger>
-            {categories.map((category) => {
-              const count = services.filter((s) => s.categoryId === category.id).length;
-              return (
-                <TabsTrigger
-                  key={category.id}
-                  value={category.id}
-                  className="flex-shrink-0 text-[11px] sm:text-xs px-2.5 py-1.5 sm:px-3 sm:py-2"
-                >
-                  {category.name} ({count})
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-        </div>
+        {/* TabsList con snap scroll y padding para scroll completo */}
+        <TabsList className="w-full justify-start overflow-x-auto flex gap-0.5 sm:gap-1 scrollbar-hide snap-x snap-mandatory scroll-smooth">
+          <TabsTrigger 
+            value="all" 
+            className="flex-shrink-0 text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 whitespace-nowrap snap-center"
+          >
+            {/* Mobile: solo "Todos" | Desktop: "Todos (X)" */}
+            <span className="sm:hidden">Todos</span>
+            <span className="hidden sm:inline">Todos ({services.length})</span>
+          </TabsTrigger>
+          {categories.map((category) => {
+            const count = services.filter((s) => s.categoryId === category.id).length;
+            return (
+              <TabsTrigger
+                key={category.id}
+                value={category.id}
+                className="flex-shrink-0 text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 whitespace-nowrap snap-center"
+              >
+                {/* Mobile: solo nombre | Desktop: nombre + contador */}
+                <span className="sm:hidden">{category.name}</span>
+                <span className="hidden sm:inline">{category.name} ({count})</span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
 
-        {/* Content no es necesario por tab, solo renderizamos el grid */}
+        {/* Content no es necesario por tab, solo renderizamos la tabla */}
         <TabsContent value={selectedCategory} className="mt-4 sm:mt-6">
           {/* Empty state para categoría sin servicios */}
           {filteredServices.length === 0 ? (
@@ -187,12 +193,11 @@ export default function ServicesList({ itemsPerPage = 9 }: ServicesListProps) {
             </div>
           ) : (
             <>
-              {/* Grid de servicios - Responsive optimizado */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {paginatedServices.map((service) => (
-                  <ServiceCard key={service.id} service={service} />
-                ))}
-              </div>
+              {/* Tabla de servicios - Responsive optimizada */}
+              <ServicesTable 
+                services={paginatedServices} 
+                showCategory={selectedCategory === 'all'}
+              />
 
               {/* Paginación (solo mostrar si hay más de 1 página) */}
               {totalPages > 1 && (
