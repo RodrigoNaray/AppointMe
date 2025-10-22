@@ -1,14 +1,42 @@
 import { Link, useSearchParams } from "react-router-dom";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useClientAuth } from "@/context/AuthContext";
+import { useBooking } from "@/context/BookingContext";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, Sparkles, ArrowRight, MapPin, Phone, Mail, Star } from "lucide-react";
+import { Calendar, Clock, Sparkles, ArrowRight, MapPin, Phone, Mail, Star, Scissors } from "lucide-react";
+import ServicesTable from "@/components/shared/ServicesTable";
+import CartSidebar from "@/components/CartSidebar";
+import type { Service } from "@/types/service";
+import { API_BASE_URL } from "@/api/config";
 
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { checkExistingSession } = useClientAuth();
+  const { cart } = useBooking();
   const hasProcessedCallback = useRef(false);
+  const [services, setServices] = useState<Service[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const hasItems = cart.length > 0;
+
+  // Fetch servicios para preview
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+        const response = await fetch(`${baseUrl}/services`);
+        if (response.ok) {
+          const data = await response.json();
+          setServices(data.filter((s: Service) => s.isActive).slice(0, 5)); // Solo 5 servicios
+        }
+      } catch (error) {
+        console.error('Error fetching services:', error);
+      } finally {
+        setLoadingServices(false);
+      }
+    };
+    fetchServices();
+  }, []);
 
   useEffect(() => {
     // Evitar procesamiento múltiple del callback
@@ -49,7 +77,7 @@ export default function HomePage() {
   }, [searchParams, setSearchParams, checkExistingSession]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen bg-background ${hasItems ? 'pb-64' : 'pb-32'} lg:pb-0`}>
       {/* Hero Section - AppointMePro Branding */}
       <section className="relative w-full px-4 py-16 sm:px-6 md:py-24 lg:py-32 lg:px-8">
         <div className="mx-auto max-w-6xl">
@@ -150,6 +178,56 @@ export default function HomePage() {
                   </span>
                 </div>
               </div>
+            </div>
+
+            {/* Sección de Servicios y Carrito - Layout 2 columnas */}
+            <div className="mb-8">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="rounded-xl bg-foreground/5 p-2">
+                  <Scissors className="h-5 w-5 text-foreground sm:h-6 sm:w-6" />
+                </div>
+                <h4 className="text-lg font-semibold text-foreground sm:text-xl">Nuestros Servicios</h4>
+              </div>
+              
+              {loadingServices ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-foreground/20 border-t-foreground" />
+                </div>
+              ) : services.length > 0 ? (
+                <>
+                  <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+                    {/* Columna 1: Lista de servicios */}
+                    <div className="rounded-2xl border border-border bg-background p-4 sm:p-6 lg:h-[450px] lg:flex lg:flex-col">
+                      <div className="lg:flex-1 lg:overflow-y-auto">
+                        <ServicesTable 
+                          services={services} 
+                          showCategory={true}
+                          compact={true}
+                        />
+                      </div>
+                      <div className="mt-4 text-center lg:flex-shrink-0">
+                        <Link to="/book" className="text-sm font-medium text-foreground hover:underline">
+                          Ver todos los servicios →
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* Columna 2: Carrito de reservas - Solo visible en desktop */}
+                    <div className="hidden lg:block rounded-2xl border border-border bg-background lg:h-[450px]">
+                      <CartSidebar onConfirmBooking={() => {
+                        toast.success('Haz clic en "Reservar Ahora" para completar tu reserva');
+                      }} />
+                    </div>
+                  </div>
+
+                  {/* Carrito Fixed Bottom - Solo móvil */}
+                  <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden border-t border-border bg-background shadow-2xl">
+                    <CartSidebar onConfirmBooking={() => {
+                      toast.success('Haz clic en "Reservar Ahora" para completar tu reserva');
+                    }} />
+                  </div>
+                </>
+              ) : null}
             </div>
 
             {/* Grid de Información */}

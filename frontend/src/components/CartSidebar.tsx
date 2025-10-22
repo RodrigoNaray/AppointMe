@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useBooking } from '@/context/BookingContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 
 /**
@@ -39,15 +40,28 @@ interface CartSidebarProps {
 
 export default function CartSidebar({ onConfirmBooking }: CartSidebarProps) {
   const { cart, totalPrice, totalDuration, removeService, clearCart } = useBooking();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const isEmpty = cart.length === 0;
 
+  // Handler para confirmar reserva
+  const handleConfirmBooking = () => {
+    // Si ya estamos en /book, ejecutar callback normal
+    if (location.pathname === '/book') {
+      onConfirmBooking();
+    } else {
+      // Si estamos en otra página (ej: HomePage), navegar a /book manteniendo carrito
+      navigate('/book');
+    }
+  };
+
   return (
-    <div className="lg:sticky lg:top-20 h-fit">
-      <Card className="border-0 lg:border lg:shadow-lg rounded-none lg:rounded-lg">
+    <div className="lg:sticky lg:top-20 h-full">
+      <Card className="border-0 lg:border lg:shadow-lg rounded-none lg:rounded-lg h-full flex flex-col">
         {/* Header - Solo visible en desktop */}
-        <CardHeader className="hidden lg:block">
+        <CardHeader className="hidden lg:block flex-shrink-0">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
@@ -59,7 +73,7 @@ export default function CartSidebar({ onConfirmBooking }: CartSidebarProps) {
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="py-3 px-4 lg:py-4 lg:px-6 space-y-3 lg:space-y-4">
+        <CardContent className="py-3 px-4 lg:py-4 lg:px-6 space-y-3 lg:space-y-4 flex-1 flex flex-col overflow-hidden">
           {isEmpty ? (
             /* Empty State - Solo desktop */
             <div className="hidden lg:block text-center py-8 text-muted-foreground">
@@ -98,7 +112,7 @@ export default function CartSidebar({ onConfirmBooking }: CartSidebarProps) {
                   ${isExpanded ? 'block' : 'hidden'} 
                   lg:block
                   space-y-2 lg:space-y-3 
-                  lg:max-h-[300px] lg:overflow-y-auto
+                  flex-1 overflow-y-auto
                   -mx-4 px-4 lg:mx-0 lg:px-0
                 `}
               >
@@ -145,7 +159,7 @@ export default function CartSidebar({ onConfirmBooking }: CartSidebarProps) {
               <Separator className="hidden lg:block" />
 
               {/* Totales - Siempre visible */}
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center justify-between gap-4 flex-shrink-0">
                 {/* Duración - Visible en desktop, oculta en móvil (está en header expandible) */}
                 <div className="hidden lg:flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
@@ -162,9 +176,9 @@ export default function CartSidebar({ onConfirmBooking }: CartSidebarProps) {
           )}
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-2 py-3 px-4 lg:py-4 lg:px-6">
+        <CardFooter className="flex flex-col gap-2 py-3 px-4 lg:py-4 lg:px-6 flex-shrink-0">
           <Button
-            onClick={onConfirmBooking}
+            onClick={handleConfirmBooking}
             disabled={isEmpty}
             className="w-full h-10 lg:h-11 text-sm lg:text-base"
             size="lg"

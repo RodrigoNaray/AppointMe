@@ -1,5 +1,5 @@
 # Estado
-202/202 tareas (100%) | MVP: 100% ✅ | BOOKING-UI: 90% 🚧 | CATEGORIES: 100% ✅ | DOCS: 100% ✅
+206/206 tareas (100%) | MVP: 100% ✅ | BOOKING-UI: 98% 🚧 | CATEGORIES: 100% ✅ | DOCS: 100% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
@@ -58,6 +58,11 @@
   - ✅ Totales: duración + precio (calculados desde context)
   - ✅ Botón "Confirmar Reserva" (disabled si vacío)
   - ✅ Botón "Limpiar carrito"
+  - ✅ Layout flexbox con altura completa: h-full + flex flex-col para ocupar 100% del contenedor padre
+  - ✅ Scroll interno optimizado: flex-1 overflow-y-auto en lista de servicios (crece dinámicamente)
+  - ✅ Header y Footer flex-shrink-0: Mantienen altura fija, solo el contenido central scrollea
+  - ✅ Navegación inteligente: onClick redirige a /book si está en HomePage, mantiene carrito
+  - **Justificación CSS Flexbox:** flex-col en Card + flex-1 en CardContent permite que el componente ocupe toda la altura del grid padre (lg:grid-cols-2). Lista de servicios con flex-1 crece dinámicamente sin max-height fijo, adaptándose al espacio disponible. Header/Footer con flex-shrink-0 mantienen tamaño constante. Solución escalable que funciona en cualquier layout (grid, flex, absolute positioning)
 - [x] Optimización Responsive Mobile-First:
   - ✅ ServicesGridPage: Fixed bottom cart en móvil con padding dinámico según estado carrito
   - ✅ ServicesGridPage: useBooking para detectar items y ajustar pb-64 (con items) vs pb-32 (vacío)
@@ -94,6 +99,24 @@
   - ✅ HomePage botón "Reservar Ahora" redirige a `/book` (ServicesGridPage con carrito completo)
   - ✅ Archivo ServicesListPage.tsx eliminado (código duplicado obsoleto)
   - **Justificación:** Single Responsibility - una sola página de reservas con toda la funcionalidad (carrito + categorías + paginación). Eliminar duplicación de código y confusión en navegación. React Router best practice: rutas semánticas (/book más claro que /services para acción de reservar)
+- [x] HomePage: Preview de servicios en sección barbero con layout 2 columnas
+  - ✅ Integrado ServicesTable en columna izquierda (50% width en desktop)
+  - ✅ Integrado CartSidebar en columna derecha (50% width en desktop)
+  - ✅ Layout responsive: Grid 2 cols desktop (`lg:grid-cols-2 lg:items-start`), stack vertical mobile
+  - ✅ Altura fija en desktop: lg:h-[450px] en ambas columnas para mantener tamaño consistente y compacto
+  - ✅ Columna servicios: Flexbox con scroll interno (flex-1 overflow-y-auto) + footer fijo
+  - ✅ Columna carrito desktop: Altura fija lg:h-[450px], hidden lg:block
+  - ✅ Carrito mobile: Fixed bottom (fixed bottom-0 left-0 right-0 z-50 lg:hidden) igual que /book
+  - ✅ Padding bottom dinámico mobile: pb-64 con items, pb-32 vacío, lg:pb-0 (previene overlap)
+  - ✅ useBooking hook: Detecta cart.length para ajustar padding dinámicamente
+  - ✅ Fetch de servicios con useState + useEffect (5 servicios máximos)
+  - ✅ Loading state con spinner animado
+  - ✅ Props ServicesTable: showCategory={true}, compact={true} para vista reducida
+  - ✅ CartSidebar con toast feedback en onConfirmBooking
+  - ✅ Cards con border + padding consistente (rounded-2xl)
+  - ✅ Link "Ver todos los servicios →" en tabla
+  - ✅ Icon Scissors + título "Nuestros Servicios"
+  - **Justificación CSS Grid + Flexbox + Mobile Pattern:** items-start previene stretch automático. Altura lg:h-[450px] asegura tamaño consistente. Flexbox interno (flex-1 overflow-y-auto) para scroll. Mobile: fixed bottom-0 replica patrón de /book (Bottom Sheet Pattern), z-50 sobre contenido, padding dinámico (pb-64 vs pb-32) previene overlap. UX consistente entre HomePage y /book
 - [x] Refactor: Vista tabla compacta reutilizable (tabla-like design)
   - ✅ Componente ServicesTable.tsx creado (248 líneas)
   - ✅ Vista desktop: Tabla HTML semántica con columnas (Servicio, Categoría, Duración, Precio, Acción)
