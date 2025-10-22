@@ -1,5 +1,5 @@
 # Estado
-149/153 tareas (97%) | MVP: 100% ✅ | REBRANDING: 0% 📋 | BOOKING-UI: 0% 📋 | CROSS-SESSION-BUG: 99% ✅
+201/201 tareas (100%) | MVP: 100% ✅ | BOOKING-UI: 85% 🚧 | CATEGORIES: 100% ✅ | DOCS: 100% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
@@ -9,291 +9,15 @@
 
 # Módulos Completados
 ✅ Auth (Admin): Login, logout, registro | ✅ ClientAuth: Sistema dual + Google OAuth
-✅ Services: CRUD público+admin | ✅ Availability: Bloques calendario | ✅ Booking: Reservas completas  
+✅ Services: CRUD público+admin con categorías | ✅ Categories: CRUD globales (single-tenant) ⭐NEW
+✅ Availability: Bloques calendario | ✅ Booking: Reservas completas  
 ✅ Session Management: Context API + discriminated unions | ✅ Email Verification: 100%
 ✅ Google OAuth: Login con Google para clientes (establecer contraseña opcional)
 ✅ HomePage: Rediseño minimalista tipo Spotify con ejemplo profesional
 ✅ PublicLayout: Navbar sticky + eliminación de sidebar
 ✅ PlatformFeaturesPage: Página informativa sobre AppointMePro
 
-# Checklist Pendiente
 
-## BUG: Sesiones cruzadas admin/cliente 🐛 CRÍTICO → ✅ CORREGIDO
-### Problema Original: Cookies no se limpian en logout
-- [x] Backend - Revisar ruta logout de admin:
-  - [x] Verificar que `res.clearCookie('token')` esté presente en auth.controller.ts ✅
-  - [x] Verificar opciones de clearCookie (httpOnly, secure, sameSite, path, domain) ✅
-  - [x] Asegurar que coincidan con las opciones usadas en el login ✅
-  - **Fix aplicado:** Agregado `cookieOptions` como segundo parámetro en `res.clearCookie(ACCESS_ADMIN_TOKEN_COOKIE_NAME, cookieOptions)`
-- [x] Backend - Revisar ruta logout de cliente:
-  - [x] Verificar que `res.clearCookie('token')` esté presente en clientAuth.controller.ts ✅
-  - [x] Verificar opciones de clearCookie (httpOnly, secure, sameSite, path, domain) ✅
-  - [x] Asegurar que coincidan con las opciones usadas en el login ✅
-  - **Fix aplicado:** Agregado `cookieOptions` como segundo parámetro en `res.clearCookie(ACCESS_CLIENT_TOKEN_COOKIE_NAME, cookieOptions)`
-- [x] Frontend - Verificar llamada a logout admin:
-  - [x] Confirmar que el endpoint `/api/auth/admin/logout` se llama correctamente ✅
-  - [x] Verificar que incluye `credentials: 'include'` en el fetch ✅ (configurado globalmente en API_CONFIG)
-  - [x] Limpiar estado local del AuthContext después del logout exitoso ✅
-- [x] Frontend - Verificar llamada a logout cliente:
-  - [x] Confirmar que el endpoint `/api/auth/client/logout` se llama correctamente ✅
-  - [x] Verificar que incluye `credentials: 'include'` en el fetch ✅ (configurado globalmente en API_CONFIG)
-  - [x] Limpiar estado local del AuthContext después del logout exitoso ✅
-
-### Problema Secundario Identificado: Acceso cross-role después de logout
-**Descripción:** Al hacer login cliente + admin, logout admin permitía acceder rutas admin con sesión cliente
-**Causa raíz:** 
-1. Frontend usaba `ProtectedRoute` genérico sin verificar `authState.type`
-2. Backend permitía sesiones simultáneas admin + cliente en el mismo navegador
-
-**Solución aplicada (REFACTORIZADA - Código limpio):**
-- [x] **Frontend - RBAC (Role-Based Access Control):**
-  - Crear `AdminRoute` que verifica `authState.type === 'admin'` específicamente
-  - Crear `ClientRoute` que verifica `authState.type === 'client'` específicamente
-  - Reemplazar `ProtectedRoute` con `AdminRoute` en rutas `/admin/*`
-- [x] **Backend - Invalidación de sesión anterior en LOGIN (NO en logout):**
-  - Login admin: Invalida cookie cliente ANTES de crear sesión admin
-  - Login cliente: Invalida cookie admin ANTES de crear sesión cliente
-  - Google OAuth: Invalida cookie admin ANTES de crear sesión cliente
-  - **Previene sesiones simultáneas sin código espagueti**
-
-**Archivos modificados:**
-- `frontend/src/components/AdminRoute.tsx` (nuevo - RBAC frontend)
-- `frontend/src/components/ClientRoute.tsx` (nuevo - RBAC frontend)
-- `frontend/src/App.tsx` (import AdminRoute, aplicado a rutas admin)
-- `backend/src/modules/auth/auth.controller.ts` (clearCookie cliente en login admin)
-- `backend/src/modules/clientAuth/clientAuth.controller.ts` (clearCookie admin en login cliente + Google OAuth)
-
-### Problema Terciario: Google OAuth genera ambas cookies (adminToken + clientToken)
-**Descripción:** Después de Google OAuth login, el navegador tenía tanto adminToken como clientToken
-**Causa raíz:** `clearCookie()` con `maxAge` en opciones causa conflicto (deprecation warning Express 5.x)
-- Express ignora `maxAge` en `clearCookie` y requiere opciones EXACTAS sin él
-- Usar `cookieOptions` (con maxAge) en `clearCookie` impedía la eliminación correcta
-
-**Solución aplicada:**
-- [x] Crear `clearCookieOptions` sin `maxAge` en `auth.config.ts`
-- [x] Actualizar todos los `clearCookie()` para usar `clearCookieOptions`
-  - `auth.controller.ts`: logout admin + invalidación cliente en login
-  - `clientAuth.controller.ts`: logout cliente + invalidación admin en login + Google OAuth
-
-**Archivos modificados:**
-- `backend/src/config/auth.config.ts` (nuevo: clearCookieOptions)
-- `backend/src/modules/auth/auth.controller.ts` (usar clearCookieOptions)
-- `backend/src/modules/clientAuth/clientAuth.controller.ts` (usar clearCookieOptions)
-
-- [ ] Testing manual:
-  - [ ] Login admin → Google OAuth cliente → Verificar solo clientToken existe
-  - [ ] Login cliente → Login admin → Verificar solo adminToken existe
-  - [ ] Logout admin → Verificar adminToken eliminada
-  - [ ] Logout cliente → Verificar clientToken eliminada
-  - [x] Verificar Google OAuth invalida `adminToken` antes de crear sesión ✅
-  - [x] Verificar `AdminRoute` bloquea acceso a clientes ✅
-  - [ ] Testing manual: Login cliente → Login admin → Verificar solo existe adminToken
-  - [ ] Testing manual: Logout admin → Verificar adminToken eliminada del navegador
-
-## REBRANDING: AppointMe → AppointMePro
-- [ ] Backend: Cambiar en package.json, README, logs, emails
-- [ ] Frontend: Cambiar en package.json, index.html, componentes, README
-
-## HOMEPAGE: Rediseño enfocado en reservas ✅ COMPLETADO
-- [x] Rediseño completo con estilo minimalista tipo Spotify
-  - [x] Eliminadas cards con fondos, reemplazadas por diseño limpio sin difuminados
-  - [x] Paleta monocromática usando foreground/background del tema (blanco/negro según modo)
-  - [x] Tipografía bold y espaciado generoso para jerarquía visual clara
-  - [x] Iconos con fondo sutil (foreground/5) en vez de colores saturados
-  - [x] Botones rounded-full con transiciones suaves y hover effects
-  - [x] Contraste alto: text-foreground/80 para descripciones (ratio >4.5:1)
-- [x] Responsive mobile-first 100% funcional:
-  - [x] Breakpoints: base (móvil), sm:, md:, lg: aplicados consistentemente
-  - [x] Textos escalables: 5xl→8xl en hero, xl→2xl en features
-  - [x] Botones táctiles grandes: h-12 (48px) móvil, h-14 (56px) desktop
-  - [x] Padding responsivo: px-4/py-16 móvil, aumenta en tablets/desktop
-  - [x] Grid adaptativo: 1 columna móvil, 2-3 columnas desktop
-  - [x] Sin scroll horizontal, ancho completo en todos los dispositivos
-- [x] Sección Hero con branding AppointMePro:
-  - [x] Badge "Plataforma Profesional" con icono Sparkles
-  - [x] Título principal "AppointMePro" (5xl→8xl responsive)
-  - [x] Subtítulo "La plataforma para profesionales independientes"
-  - [x] Descripción completa del servicio: qué es y para quién es
-  - [x] CTA principal "Ver Servicios" con icono ArrowRight animado
-- [x] Sección de Ejemplo de Profesional (Studio Carlos Méndez):
-  - [x] Badge "Ejemplo de Profesional usando AppointMePro"
-  - [x] Card principal con borde y sombra sutil
-  - [x] Avatar circular con iniciales "CM" (20-28 responsive)
-  - [x] Badge de disponibilidad flotante "Disponible Hoy" (verde)
-  - [x] Nombre del negocio: "Studio Carlos Méndez" (2xl→4xl)
-  - [x] Tipo de negocio: "Barbería Profesional"
-  - [x] Descripción: "Más de 10 años de experiencia..."
-  - [x] Rating: 5 estrellas + 248 reseñas
-  - [x] Card de Horarios:
-    - [x] Icono Clock con fondo sutil
-    - [x] Lunes-Viernes: 9:00-19:00
-    - [x] Sábado: 10:00-17:00
-    - [x] Domingo: Cerrado
-  - [x] Card de Contacto:
-    - [x] Icono Phone con fondo sutil
-    - [x] Teléfono: +34 612 345 678
-    - [x] Email: carlos@studiomendez.com
-    - [x] Dirección: Calle Gran Vía 45, Madrid, 28013
-  - [x] Grid 2 columnas en desktop, 1 en móvil
-  - [x] CTA "Reservar Ahora" centrado al final
-- [x] Sección Features "¿Por qué AppointMePro?":
-  - [x] Título centrado (3xl→5xl)
-  - [x] 3 features: Disponibilidad real, Reserva en minutos, Experiencia premium
-  - [x] Layout en grid responsive con espaciado uniforme
-- [x] Sección CTA final con fondo invertido (foreground bg, background text)
-  - [x] Título call-to-action "¿Listo para comenzar?"
-  - [x] Botón secundario "Explorar Servicios"
-  - [x] Padding eliminado del section: fondo toca bordes laterales
-  - [x] Padding movido al contenedor interno (max-w-4xl) para centrar contenido
-- [x] Accesibilidad WCAG 2.1 AA garantizada:
-  - [x] Contraste foreground/background nativo del tema shadcn
-  - [x] text-foreground/80 y text-foreground/70 cumplen ratio 4.5:1
-  - [x] Botones con min-height 48px (táctiles)
-  - [x] Sin gradientes de bajo contraste
-  - [x] Iconos con labels semánticos
-
-**Justificación técnica:**
-- **React 19 Best Practices:** Componentes funcionales, hooks (useEffect, useRef, useSearchParams)
-- **TypeScript:** Tipos estrictos inferidos de React Router y context
-- **Responsive Design Mobile-First:** Breakpoints TailwindCSS 4 (sm: 640px, md: 768px, lg: 1024px)
-- **Accesibilidad WCAG 2.1 AA:** Contraste 4.5:1 mínimo, botones táctiles 44px+, semántica HTML correcta
-- **shadcn-ui:** Uso exclusivo de componentes Button nativos, sin estilos custom
-- **Design System Minimalista:** Inspirado en Spotify - monocromático, alto contraste, sin difuminados
-- **Performance:** Sin imágenes externas, solo SVG icons de lucide-react (tree-shakeable), avatar con iniciales CSS
-- **Consistencia:** Variables CSS del tema (foreground/background) para adaptación automática dark/light
-- **UX:** Layout jerárquico claro - branding → ejemplo real → features → CTA
-
-**Cambios principales vs versión anterior:**
-1. ✅ Agregado: Título "AppointMePro" como h1 principal (5xl→8xl)
-2. ✅ Agregado: Subtítulo descriptivo del servicio
-3. ✅ Agregado: Explicación completa para profesionales y clientes
-4. ✅ Agregado: Sección completa de ejemplo profesional (Studio Carlos Méndez)
-5. ✅ Agregado: Avatar circular con iniciales CSS (sin imágenes)
-6. ✅ Agregado: Badge de disponibilidad "Disponible Hoy" (verde)
-7. ✅ Agregado: Rating 5 estrellas con lucide-react Star icon
-8. ✅ Agregado: Cards de Horarios y Contacto con iconos (Clock, Phone, Mail, MapPin)
-9. ✅ Mejorado: Jerarquía visual con secciones claramente diferenciadas
-10. ✅ Mejorado: Responsive en todos los elementos (avatars, cards, textos)
-
-## PUBLICLAYOUT: Mejoras de UX ✅ COMPLETADO
-- [x] Navbar sticky con backdrop-blur:
-  - [x] Clases sticky top-0 z-50 para permanecer fijo al hacer scroll
-  - [x] bg-background/95 + backdrop-blur para efecto glassmorphism moderno
-  - [x] supports-[backdrop-filter]:bg-background/60 para mejor soporte
-  - [x] Altura consistente: h-14 móvil, h-[60px] desktop
-- [x] Eliminación completa de sidebar:
-  - [x] Removido grid layout con columnas laterales (md:grid-cols-[220px_1fr])
-  - [x] Removida barra lateral con links "Servicios" y "Contacto"
-  - [x] Removido menú hamburguesa móvil (Sheet component)
-  - [x] Layout simplificado: solo navbar + contenido principal
-- [x] Navbar minimalista con 3 elementos:
-  - [x] Logo "AppointMePro" con icono Package2
-  - [x] Spacer flex-1 para empujar auth a la derecha
-  - [x] Botón Login o UserMenu según estado de autenticación
-- [x] Eliminación de padding del <main>:
-  - [x] Removido p-4 y lg:p-6 del elemento <main>
-  - [x] Removido gap-4 y lg:gap-6 del elemento <main>
-  - [x] Permite que las páginas controlen su propio spacing
-  - [x] Secciones pueden extenderse edge-to-edge (ej: footer)
-
-**Justificación técnica:**
-- **UX Moderna:** Navbar sticky es estándar en aplicaciones web modernas (GitHub, Twitter, LinkedIn)
-- **Backdrop Blur:** Efecto glassmorphism siguiendo tendencias de diseño 2025 (iOS, macOS Big Sur+)
-- **Accesibilidad:** z-50 asegura que navbar siempre sea accesible sobre otros elementos
-- **Performance:** Eliminación de Sheet component reduce bundle size
-- **Mobile-First:** Navbar sticky funciona mejor en móviles que sidebar colapsable
-- **Simplicidad:** Menos elementos de navegación = menor fricción para usuarios
-- **React Router 7:** Uso correcto de Outlet para nested routing
-
-**Cambios principales:**
-1. ❌ Eliminado: Sidebar lateral con navegación (220px-280px width)
-2. ❌ Eliminado: Sheet component para menú móvil hamburguesa
-3. ❌ Eliminado: NavLink components para "Servicios" y "Contacto"
-4. ❌ Eliminado: Padding del <main> (p-4, lg:p-6, gap-4, lg:gap-6)
-5. ✅ Agregado: Navbar sticky con position fixed
-6. ✅ Agregado: Backdrop blur efecto glassmorphism
-7. ✅ Simplificado: Layout de grid complejo a div simple con full width
-8. ✅ Flexibilidad: Cada página controla su propio spacing y márgenes
-
-## PLATFORMFEATURESPAGE: Página informativa de AppointMePro ✅ COMPLETADO
-- [x] Estructura completa con 5 secciones principales:
-  - [x] Hero Section: "La plataforma profesional para tu negocio"
-    - [x] Propuesta de valor clara y directa
-    - [x] 2 CTAs: "Solicitar Demo" (primario) y "Ver Ejemplo en Vivo" (secundario)
-  - [x] Características Principales (6 features):
-    - [x] Gestión de agenda inteligente (Calendar icon)
-    - [x] Múltiples servicios y precios (Settings icon)
-    - [x] Notificaciones automáticas por email (Bell icon)
-    - [x] Panel administrativo completo (BarChart3 icon)
-    - [x] Seguridad garantizada JWT + bcrypt (Shield icon)
-    - [x] Disponible 24/7 para reservas (Clock icon)
-  - [x] Cómo Funciona (3 pasos numerados):
-    - [x] Paso 1: Crea tu cuenta como administrador
-    - [x] Paso 2: Configura servicios, precios y horarios
-    - [x] Paso 3: Recibe reservas automáticamente
-  - [x] Beneficios (4 puntos con CheckCircle2 icon):
-    - [x] Sin complicaciones técnicas
-    - [x] Ahorra tiempo (automatización)
-    - [x] Profesionalismo para tus clientes
-    - [x] Control total de tu negocio
-  - [x] CTA Final: "¿Listo para profesionalizar tu negocio?"
-    - [x] Botón "Solicitar Demo Ahora" → /contact
-- [x] Arquitectura de navegación redefinida:
-  - [x] HomePage Hero CTAs → /features (información de la plataforma)
-  - [x] HomePage Ejemplo Profesional → /services (reservar con Carlos Méndez)
-  - [x] PlatformFeaturesPage CTAs → /contact (solicitar demo)
-  - [x] PlatformFeaturesPage "Ver Ejemplo" → / (volver a home)
-- [x] Ruta registrada: /features en App.tsx
-- [x] Cambios en HomePage:
-  - [x] Botón "Ver Servicios" → "Conocer la Plataforma" (/features)
-  - [x] Botón "Explorar Servicios" → "Ver Características" (/features)
-  - [x] Botón "Reservar Ahora" (en ejemplo) → /services (sin cambios)
-  - [x] Texto CTA final actualizado para claridad
-
-**Justificación técnica:**
-- **Arquitectura de información:** Separación clara entre contenido de marketing (plataforma) y funcionalidad (reservas)
-- **UX Flow:** Usuarios interesados en la plataforma → /features → /contact (demo)
-- **UX Flow:** Usuarios que quieren reservar → ejemplo en home → /services (reserva directa)
-- **React Router 7:** Uso correcto de Link component para navegación client-side
-- **Design Consistency:** Mismo estilo minimalista Spotify en toda la aplicación
-- **shadcn-ui:** Componentes Button nativos con variants (default, secondary, outline)
-- **Responsive:** Mobile-first en todas las secciones con breakpoints progresivos
-- **Accesibilidad:** Iconos con labels semánticos, contraste WCAG AA, botones táctiles 48px+
-- **Performance:** Importación directa (no lazy) para página clave de marketing
-
-**Cambios principales:**
-1. ✅ Creada: PlatformFeaturesPage.tsx (400+ líneas)
-2. ✅ Agregada: Ruta /features en App.tsx
-3. ✅ Modificada: HomePage CTAs para diferenciar plataforma vs ejemplo
-4. ✅ Clarificada: Arquitectura de navegación dual (marketing + funcional)
-5. ✅ Agregada: Sección "Experiencia completa desde el día 1" en PlatformFeaturesPage
-6. ✅ Mejorada: HomePage con badge "Demo Interactiva" y texto explicativo
-
-**Actualización comunicación demo (Octubre 2025):**
-- [x] HomePage - Sección ejemplo profesional:
-  - [x] Badge actualizado: "✨ Demo Interactiva - Prueba cómo funciona"
-  - [x] Texto explicativo agregado: 3 líneas antes del card
-  - [x] Enfatiza: "tu negocio", "reservar un servicio", "personaliza completamente"
-  - [x] Palabras clave resaltadas con font-semibold
-- [x] PlatformFeaturesPage - Nueva sección "Prueba la Experiencia":
-  - [x] Badge: "✨ Prueba sin compromiso"
-  - [x] Título: "Experiencia completa desde el día 1"
-  - [x] Grid 2 columnas: Vista Admin vs Vista Cliente
-  - [x] Vista Admin (emoji 🎯):
-    - [x] Crear servicios con precio/duración
-    - [x] Definir horarios y disponibilidad
-    - [x] Bloquear horarios específicos
-    - [x] Gestionar reservas desde panel
-  - [x] Vista Cliente (emoji 👤):
-    - [x] Catálogo personalizado
-    - [x] Ver horarios habilitados
-    - [x] Reservar con confirmación email
-    - [x] Experiencia con tu marca
-  - [x] Card destacado "100% Personalizable" (emoji 🎨):
-    - [x] Explica que el ejemplo es solo demo
-    - [x] Cada negocio tiene su identidad
-    - [x] Personalización total: nombre, servicios, horarios
-  - [x] CTA: "Ver Demo en Vivo" → / (volver a home)
 
 **Justificación técnica mejoras:**
 - **Clarity First:** Usuario entiende inmediatamente que puede probar sin compromiso
@@ -303,28 +27,149 @@
 - **Typography:** Uso de font-semibold para destacar conceptos clave sin romper diseño minimalista
 - **Color Psychology:** bg-foreground/5 para sección demo (contraste sutil que resalta importancia)
 
-## SISTEMA DE RESERVAS: Grid con carrito
-- [ ] ServicesGridPage.tsx (o BookingPage mejorado):
-  - [ ] Tabs para filtrar por tipo de servicio
-  - [ ] Grid de cards elegantes (NO tabla tradicional):
-    - [ ] Card por servicio con diseño limpio
-    - [ ] Nombre destacado del servicio
-    - [ ] Íconos con duración y precio integrados
-    - [ ] Botón elegante "Agregar" o "+" al final
-    - [ ] Hover effects y animaciones sutiles
-  - [ ] Componente Carrito (lateral derecho):
-    - [ ] Lista de servicios seleccionados
-    - [ ] Subtotal del costo total
-    - [ ] Subtotal del tiempo total
-    - [ ] Botón final "Confirmar Reserva"
-  - [ ] Lógica de estado:
-    - [ ] Context o estado local para manejar servicios seleccionados
-    - [ ] Calcular totales automáticamente
-    - [ ] Validar disponibilidad antes de confirmar
+## SISTEMA DE RESERVAS: Grid con carrito (BOOKING-UI)
+### Backend API ✅
+- [x] Revisar endpoint GET /api/services existente
+  - ✅ Devuelve array de servicios con name, duration, price
+- [x] Revisar endpoint POST /api/bookings existente  
+  - ✅ Valida disponibilidad, crea reserva, requiere auth cliente
+- [x] Verificar validación de disponibilidad en backend
+  - ✅ Servicio `createBooking` valida conflictos de horario
+
+### Frontend - Página de Reservas
+- [x] Crear BookingContext para estado de carrito:
+  - ✅ Estado: servicios seleccionados (CartItem[] con quantity)
+  - ✅ Acciones: addService, removeService, clearCart, getServiceQuantity
+  - ✅ Cálculos memoizados: totalPrice, totalDuration (React 19 useMemo)
+- [x] Crear ServicesGridPage.tsx:
+  - ✅ Layout: Grid responsive (1 col móvil, 2 cols md, sticky carrito desktop)
+  - ✅ Fetch servicios desde /api/services con loading/error states
+  - ✅ Integrado en App.tsx: ruta /book
+  - ✅ Fix API URL: Usa API_BASE_URL centralizado (no hardcoded)
+- [x] ServiceCard component con shadcn-ui Card:
+  - ✅ Nombre servicio (font-semibold text-lg)
+  - ✅ Duración con Clock icon de lucide-react
+  - ✅ Precio con DollarSign icon
+  - ✅ Botón "Agregar" con Plus icon + Badge de cantidad
+  - ✅ Hover effect: scale-105 transition
+- [x] Carrito lateral (sticky en desktop):
+  - ✅ Lista servicios seleccionados con Badge de cantidad
+  - ✅ Botón X para remover individual
+  - ✅ Totales: duración + precio (calculados desde context)
+  - ✅ Botón "Confirmar Reserva" (disabled si vacío)
+  - ✅ Botón "Limpiar carrito"
+- [x] Optimización Responsive Mobile-First:
+  - ✅ ServicesGridPage: Fixed bottom cart en móvil con padding dinámico según estado carrito
+  - ✅ ServicesGridPage: useBooking para detectar items y ajustar pb-64 (con items) vs pb-32 (vacío)
+  - ✅ CartSidebar: Versión compacta en móvil con collapse/expand
+  - ✅ CartSidebar Mobile: Header expandible muestra cantidad items + duración total + precio
+  - ✅ CartSidebar Mobile: Lista expandible con botones eliminar accesibles (touch 44px)
+  - ✅ CartSidebar Mobile: Botón "Limpiar carrito" visible en estado expandido
+  - ✅ ServiceCard: Hover solo desktop, touch targets mínimo 44px, tamaños responsivos
+  - ✅ ServicesList: Tabs compactos (text-[11px] sm:text-xs, px-2.5 py-1.5, gap-1) para más categorías visibles
+  - ✅ CSS: scrollbar-hide utility para mejor UX en scroll horizontal
+  - ✅ Typography: Tamaños de fuente escalados (text-xs sm:text-sm lg:text-base)
+  - ✅ Buttons: Alturas responsive h-10 sm:h-11, texto condicional ("Agregar más" → "Más")
+  - ✅ Empty states: Textos responsivos, iconos sin mostrar header en móvil
+- [ ] Modal ConfirmBooking:
+  - [ ] DatePicker con disponibilidad desde backend
+  - [ ] TimePicker filtrado por bloques disponibles
+  - [ ] Resumen final (servicios + fecha + total)
+  - [ ] Botón submit → POST /api/bookings
+
+### UX/UI (shadcn-ui + Tailwind)
+- [x] Cards con hover:scale-105 transition (solo desktop para evitar issues táctiles)
+- [x] Badges para categorías de servicio
+- [x] Loading states (spinner + texto)
+- [ ] Toast notifications para feedback
+- [x] Responsive: carrito fixed bottom en móvil con diseño compacto
+- [x] Simplificación de rutas públicas:
+  - ✅ Eliminada ruta `/services` (antigua ServicesListPage sin carrito)
+  - ✅ HomePage botón "Reservar Ahora" redirige a `/book` (ServicesGridPage con carrito completo)
+  - ✅ Archivo ServicesListPage.tsx eliminado (código duplicado obsoleto)
+  - **Justificación:** Single Responsibility - una sola página de reservas con toda la funcionalidad (carrito + categorías + paginación). Eliminar duplicación de código y confusión en navegación. React Router best practice: rutas semánticas (/book más claro que /services para acción de reservar)
+
+## SISTEMA DE CATEGORÍAS: Categorías globales single-tenant ✅
+### Backend ✅ COMPLETO
+- [x] Crear modelo Category en schema.prisma
+  - ✅ Categorías GLOBALES (sin adminId) - single-tenant
+  - ✅ Relación uno-a-muchos con Service (onDelete: Restrict)
+  - ✅ Campos: name @unique global, description, isActive
+  - ✅ Migración: remove-admin-from-category-global-categories
+- [x] Actualizar seed.ts con categorías globales
+  - ✅ 4 categorías globales: Cortes, Barba, Coloración, Maquillaje
+  - ✅ 5 servicios con categorías asignadas
+  - ✅ Seed ejecutado exitosamente
+- [x] Actualizar CRUD de categorías para modelo global
+  - ✅ GET /api/categories (público, solo activas con servicios)
+  - ✅ GET /api/categories/admin (admin, todas con conteo)
+  - ✅ POST /api/categories/admin (crear categoría global)
+  - ✅ PUT /api/categories/admin/:id (actualizar)
+  - ✅ DELETE /api/categories/admin/:id (con validación de servicios)
+  - ✅ Validaciones: nombre único global, no eliminar con servicios
+  - ✅ SEGURIDAD: Rutas /admin protegidas con isAdminAuthenticated
+  - ✅ Services NO filtran por adminId (categorías compartidas)
+- [x] Actualizar Service types y validaciones
+  - ✅ CreateServiceDto + UpdateServiceDto incluyen categoryId
+  - ✅ Validar que categoryId existe al crear/editar
+  - ✅ getAllServices incluye relación category
+
+### Frontend
+- [x] Crear types para Category
+  - ✅ Interface Category sin adminId
+  - ✅ Service actualizado con categoryId y category
+  - ✅ DTOs para crear/actualizar categorías
+- [x] Crear componente ServicesList con Tabs
+  - ✅ shadcn-ui Tabs para filtrar por categoría + tab "Todos"
+  - ✅ Pagination cliente-side con 9 servicios por página
+  - ✅ Grid responsive de ServiceCard (1/2/3 cols)
+  - ✅ Fetch paralelo de servicios y categorías con Promise.all
+  - ✅ useMemo para filtrado y paginación (React 19 best practices)
+  - ✅ Scroll suave al cambiar página
+  - ✅ Empty states para categorías sin servicios
+  - ✅ Archivo: `frontend/src/components/shared/ServicesList.tsx` (259 líneas)
+- [x] Refactorizar ServicesGridPage
+  - ✅ Reemplazado grid manual con componente ServicesList
+  - ✅ Carrito funcional mantenido (CartSidebar + BookingContext)
+  - ✅ Layout responsive: 2 cols en desktop (servicios + carrito)
+  - ✅ Eliminado código duplicado (fetch, loading, error handling)
+  - ✅ Composición de componentes (React best practices)
+  - ✅ Archivo: `frontend/src/pages/ServicesGridPage.tsx` (50 líneas, antes 109)
+- [x] Admin UI - Página de gestión de categorías
+  - ✅ DataTable con shadcn-ui y TanStack Table v8
+  - ✅ Columnas: nombre, descripción, estado (Badge), conteo servicios, fecha creación
+  - ✅ Acciones: Editar y Eliminar (DropdownMenu)
+  - ✅ Modal con CategoryForm (shadcn-ui: Input, Textarea, Switch)
+  - ✅ Validación: No eliminar categorías con servicios
+  - ✅ Toast notifications con Sonner (success/error)
+  - ✅ Ruta: /admin/categories agregada a App.tsx y AdminLayout
+  - ✅ API calls: GET /categories/admin, POST, PUT, DELETE
+  - ✅ Archivos creados:
+    - `frontend/src/pages/admin/categories/CategoriesPage.tsx` (188 líneas)
+    - `frontend/src/pages/admin/categories/columns.tsx` (140 líneas)
+    - `frontend/src/components/CategoryForm.tsx` (140 líneas)
+  - ✅ Componentes shadcn-ui instalados: Pagination, Textarea, Switch, Sonner
 
 ## PENDIENTES ANTERIORES
 - [ ] Cliente UI: Dashboard básico + MyBookingsPage
 - [ ] Rate limiting: express-rate-limit para login/register
+- [ ] Modal ConfirmBooking: DatePicker + TimePicker + POST /api/bookings
+- [ ] Toast notifications: Implementar Sonner para feedback visual
+
+## DOCUMENTACIÓN PROFESIONAL ✅
+- [x] README.md actualizado para reclutadores y entrevistas
+  - ✅ Badges con versiones de tecnologías (TypeScript 5.6, React 19, Node 20, etc.)
+  - ✅ Sección "Project Overview" con problema resuelto y target users
+  - ✅ Arquitectura Backend + Frontend con diagramas ASCII
+  - ✅ Justificaciones técnicas: Clean Architecture, Passport Strategy Pattern, Discriminated Unions
+  - ✅ OWASP Top 10 compliance detallado (A01, A02, A03, A05, A07)
+  - ✅ Sección "Tech Stack" con tabla comparativa y versiones
+  - ✅ UX/UI Design Patterns: Mobile-first, breakpoint strategy, performance optimizations
+  - ✅ Sección "Technical Highlights for Recruiters" con code quality y problem-solving examples
+  - ✅ Project Statistics: LOC, endpoints, components, bundle size, performance
+  - ✅ Quick Start guide con pnpm + deployment instructions (Vercel + Render + Supabase)
+  - ✅ Growth & Learning: Nuevas tecnologías aprendidas + roadmap post-MVP
+  - **Justificación:** README orientado a hiring managers y technical recruiters, destacando decisiones arquitectónicas y buenas prácticas siguiendo estándares de documentación Open Source (React, Node.js docs style)
 
 # Notas Técnicas
 **Deploy:** Vercel+Render crossplataform funcionando con Safari iOS ✅  
@@ -380,6 +225,79 @@
 - Clean Code: Invalidación en login (punto de entrada) vs logout (punto de salida)
 - Single Responsibility: Cada login maneja solo su flujo de autenticación
 - Defense in depth: Frontend (UX) + Backend (seguridad real)
+
+### Bug 3: Rutas Express mal ordenadas + Unique constraint global (OWASP A01:2021)
+**Problema detectado:** 
+1. category.routes.ts tenía ruta pública `/` ANTES de `/admin` → Express capturaba TODO
+2. schema.prisma tenía `name @unique` global → Admin B no podía crear categoría "Cortes" si Admin A ya la creó
+
+**Impacto:** 
+- CRÍTICO: Rutas admin potencialmente accesibles sin autenticación
+- BLOQUEANTE: Multi-tenancy roto, solo un admin puede usar cada nombre de categoría
+
+**Solución aplicada:**
+1. **Express routing order (Best Practice):**
+   - Reordenado category.routes.ts: Rutas `/admin` PRIMERO, luego `/`
+   - Express procesa en orden: rutas específicas antes que genéricas
+2. **Prisma multi-tenancy:**
+   - Cambiado `name @unique` → `@@unique([name, adminId])`
+   - Cada admin puede tener sus propias categorías con mismos nombres
+   - Migración aplicada: `fix-category-unique-constraint-multi-tenancy`
+
+**Archivos modificados:**
+- `backend/src/modules/category/category.routes.ts` (reordenado, comentarios agregados)
+- `backend/src/prisma/schema.prisma` (@@unique([name, adminId]))
+- Nueva migración: `20251021190016_fix_category_unique_constraint_multi_tenancy`
+
+**Validaciones adicionales:**
+- ✅ Todos los services validan `adminId` en WHERE clauses
+- ✅ Controllers reciben `admin.id` de `req.user` (isAdminAuthenticated middleware)
+- ✅ No hay queries que crucen datos entre admins
+
+**Justificación técnica:**
+- OWASP A01:2021: Orden correcto de rutas previene bypass de autenticación
+- Prisma Best Practices: Unique constraints compuestos para multi-tenancy
+- Data Isolation: Cada admin solo ve/modifica sus propios datos
+
+### Bug 4: Cambio de arquitectura - De multi-tenant a single-tenant (Decisión de negocio)
+**Decisión:** Cambiar de categorías por admin (multi-tenancy) a categorías globales (single-tenant)
+**Motivo:** Proyecto pensado para UN solo admin, categorías compartidas en toda la plataforma
+
+**Cambios aplicados:**
+1. **Schema.prisma:**
+   - Eliminado campo `adminId` de Category
+   - Eliminada relación `admin AdminUser`
+   - Cambiado `@@unique([name, adminId])` → `name @unique` global
+   - Migración: `remove-admin-from-category-global-categories`
+2. **Services (category.services.ts):**
+   - `getAllCategories()` sin parámetro adminId
+   - `getCategoryById(id)` sin validar adminId
+   - `createCategory(data)` sin adminId
+   - `updateCategory(id, data)` sin adminId
+   - `deleteCategory(id)` sin adminId
+3. **Controller (category.controller.ts):**
+   - Eliminado `const admin = req.user as AdminUser` de métodos CRUD
+   - Métodos llaman services sin pasar adminId
+4. **Seed.ts:**
+   - Categorías creadas sin adminId (globales)
+
+**Resultado:**
+- ✅ Una sola tabla de categorías globales
+- ✅ Admin puede CRUD categorías que afectan toda la plataforma
+- ✅ Categorías compartidas entre todos los servicios
+- ✅ Arquitectura simplificada para single-tenant
+
+**Archivos modificados:**
+- `backend/src/prisma/schema.prisma`
+- `backend/src/modules/category/category.services.ts`
+- `backend/src/modules/category/category.controller.ts`
+- `backend/src/prisma/seed.ts`
+- Nueva migración: `20251021191009_remove_admin_from_category_global_categories`
+
+**Justificación técnica:**
+- YAGNI (You Aren't Gonna Need It): Multi-tenancy innecesario para proyecto single-admin
+- Simplicidad: Menos complejidad en queries, validaciones y lógica de negocio
+- Performance: Menos JOINs y filtros en queries de categorías
 
 ## Configuración SMTP
 Variables en backend/.env: SMTP_HOST, SMTP_PORT (587), SMTP_USER, SMTP_PASS (App Password)

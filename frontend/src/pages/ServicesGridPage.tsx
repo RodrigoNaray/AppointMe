@@ -1,0 +1,71 @@
+import ServicesList from '@/components/shared/ServicesList';
+import CartSidebar from '@/components/CartSidebar';
+import { useBooking } from '@/context/BookingContext';
+
+/**
+ * ServicesGridPage - Página principal de reservas con categorías y carrito
+ * 
+ * Arquitectura:
+ * - ServicesList: Grid responsive con Tabs de categorías + paginación
+ * - Carrito sticky lateral en desktop
+ * - Layout: 2 columnas en desktop (servicios + carrito)
+ * 
+ * Responsive mejoras v2:
+ * - Mobile: Carrito fixed bottom con altura dinámica según contenido
+ * - Desktop: Carrito sticky a la derecha
+ * - Padding bottom dinámico: más espacio cuando hay items (carrito expandible)
+ * 
+ * React 19 best practices:
+ * - Composición de componentes reutilizables
+ * - ServicesList maneja su propio estado de datos
+ * - CartSidebar maneja estado de carrito (BookingContext)
+ * - Padding dinámico según estado (mejora UX sin overlap)
+ * 
+ * Referencias:
+ * - React Composition: https://react.dev/learn/thinking-in-react
+ * - Separation of Concerns: ServicesList = datos, CartSidebar = carrito
+ * - Mobile UX: Bottom sheet pattern para carrito en móvil
+ * - Dynamic spacing: Ajuste según contenido para evitar overlap
+ */
+
+export default function ServicesGridPage() {
+  const { cart } = useBooking();
+  const hasItems = cart.length > 0;
+
+  const handleConfirmBooking = () => {
+    // TODO: Abrir modal de confirmación con fecha/hora
+    console.log('Confirmar reserva');
+  };
+
+  return (
+    <div className={`container mx-auto px-4 py-6 sm:py-8 ${hasItems ? 'pb-64' : 'pb-32'} sm:pb-32 lg:pb-8`}>
+      {/* Header - Responsive */}
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
+          Nuestros Servicios
+        </h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Selecciona los servicios que deseas reservar
+        </p>
+      </div>
+
+      {/* Layout Grid Responsive */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Lista de servicios con categorías (Tabs + Pagination) */}
+        <div className="lg:col-span-2">
+          <ServicesList itemsPerPage={9} />
+        </div>
+
+        {/* Carrito - Hidden en móvil (se muestra fixed bottom) */}
+        <div className="hidden lg:block lg:col-span-1">
+          <CartSidebar onConfirmBooking={handleConfirmBooking} />
+        </div>
+      </div>
+
+      {/* Carrito Fixed Bottom - Solo móvil */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden border-t border-border bg-background shadow-2xl">
+        <CartSidebar onConfirmBooking={handleConfirmBooking} />
+      </div>
+    </div>
+  );
+}

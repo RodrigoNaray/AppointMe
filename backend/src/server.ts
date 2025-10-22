@@ -13,6 +13,7 @@ import healthRoutes from './modules/health/health.routes';
 import bookingRoutes, { adminBookingRoutes } from './modules/booking/booking.routes';
 import { isAdminAuthenticated } from './middlewares/isAdminAuthenticated';
 import availabilityPublicRoutes from './modules/availability/public/availability.public.routes';
+import categoryRoutes from './modules/category/category.routes';
 import compression from "compression";
 import helmet from "helmet";
 
@@ -58,6 +59,7 @@ app.use('/api/availability', availabilityPublicRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/client', clientAuthRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/categories', categoryRoutes); // Rutas públicas y admin de categorías
 app.use('/api/services', catalogRoutes);
 app.use('/api/health', healthRoutes)
 

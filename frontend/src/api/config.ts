@@ -24,7 +24,7 @@ import type { CreateAxiosDefaults } from 'axios';
  * @property headers - Headers por defecto para todas las peticiones
  */
 export const API_CONFIG: CreateAxiosDefaults = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
   withCredentials: true, // Crucial para cookies HttpOnly de sesión
   timeout: 10000, // 10 segundos
   headers: {

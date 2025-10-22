@@ -7,6 +7,7 @@ import { AdminNav } from '@/components/shared/AdminNav';
 export default function AdminLayout() {
   const navLinks = [
     { to: "/admin/services", label: "Servicios" },
+    { to: "/admin/categories", label: "Categorías" },
     { to: "/admin/availability", label: "Disponibilidad" },
     { to: "/admin/bookings", label: "Reservas" },
   ];

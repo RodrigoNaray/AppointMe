@@ -205,7 +205,7 @@ export default function HomePage() {
 
             {/* CTA del Ejemplo */}
             <div className="mt-8 flex justify-center">
-              <Link to="/services" className="w-full sm:w-auto">
+              <Link to="/book" className="w-full sm:w-auto">
                 <Button 
                   size="lg"
                   className="group h-12 w-full rounded-full bg-foreground px-8 text-base font-semibold text-background transition-all hover:bg-foreground/90 sm:h-14 sm:w-auto sm:text-lg"

@@ -63,6 +63,19 @@ model Client {
   @@index([emailChangeToken])
 }
 
+// Modelo para las Categorías de Servicios (globales para toda la plataforma)
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique // Nombre único global (ej: "Cortes", "Barba")
+  description String?   // Descripción opcional de la categoría
+  isActive    Boolean   @default(true) // Permitir desactivar categorías sin eliminarlas
+
+  services    Service[] // Relación uno-a-muchos: Una categoría tiene muchos servicios
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 // Modelo para los Servicios ofrecidos
 model Service {
   id            String    @id @default(cuid())
@@ -75,9 +88,15 @@ model Service {
   adminId     String
   admin       AdminUser @relation(fields: [adminId], references: [id])
 
+  categoryId  String    // Relación con categoría
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
   bookings    Booking[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@index([categoryId])
+  @@index([adminId])
 }
 
 // Modelo para las Reservas hechas por los clientes

@@ -7,9 +7,9 @@ import AdminLoginPage from './pages/admin/login/AdminLoginPage';
 import PublicLayout from './layouts/PublicLayout';
 import AdminRoute from './components/AdminRoute';
 import NotFoundPage from './pages/NotFoundPage';
-import ServicesListPage from './pages/ServicesListPage';
 import ContactPage from './pages/ContactPage';
 import PlatformFeaturesPage from './pages/PlatformFeaturesPage';
+import ServicesGridPage from './pages/ServicesGridPage';
 
 //--- Public routes ---//
 const LoginPage = lazy(() => import('./pages/LoginPage'))
@@ -26,6 +26,7 @@ const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage'))
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'))
 const DashboardPage = lazy(() => import('./pages/admin/dashboard/DashboardPage'))
 const ServicesPage = lazy(() => import('./pages/admin/services/ServicesPage'))
+const CategoriesPage = lazy(() => import('./pages/admin/categories/CategoriesPage'))
 const AvailabilityPage = lazy(() => import('./pages/admin/AvailabilityPage'))
 const BookingsPage = lazy(() => import('./pages/admin/bookings/BookingsPage'))
 const ProfilePage = lazy(() => import('./pages/admin/ProfilePage'))
@@ -40,7 +41,7 @@ const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: 'features', element: <PlatformFeaturesPage /> },
       { path: 'Adminlogin', element: <AdminLoginPage /> },
-      { path: 'services', element: <ServicesListPage /> },
+      { path: 'book', element: <ServicesGridPage /> },
       { path: 'contact', element: <ContactPage /> },
       { path: 'login', element: <LoginPage/> },
       { path: 'register', element: <RegisterPage/> },
@@ -61,6 +62,7 @@ const router = createBrowserRouter([
       children: [
         { index: true, element: <DashboardPage /> },
         { path: 'services', element: <ServicesPage /> },
+        { path: 'categories', element: <CategoriesPage /> },
         { path: 'availability', element: <AvailabilityPage /> }, 
         { path: 'bookings', element: <BookingsPage /> },
         { path: 'profile', element: <ProfilePage /> },

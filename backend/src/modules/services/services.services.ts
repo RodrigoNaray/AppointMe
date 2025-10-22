@@ -3,12 +3,23 @@ import logger from '../../utils/logger';
 import { CreateServiceDto, UpdateServiceDto } from './services.types';
 import { ConflictError, NotFoundError } from '../../utils/error';
 
+/**
+ * Obtiene todos los servicios con sus categorías asociadas
+ * React 19 best practice: Incluir relaciones necesarias para evitar N+1 queries
+ */
 export const getAllServices = async () => {
-  return prisma.service.findMany();
+  return prisma.service.findMany({
+    include: {
+      category: true, // Incluir información de categoría
+    },
+  });
 };
 
 export const getServiceById = async (id: string) => {
-  const service = await prisma.service.findUnique({ where: { id } });
+  const service = await prisma.service.findUnique({ 
+    where: { id },
+    include: { category: true },
+  });
 
   if (!service) {
     logger.warn({ serviceId: id }, "Intento de obtener un servicio que no existe");
@@ -17,7 +28,28 @@ export const getServiceById = async (id: string) => {
   return service;
 };
 
+/**
+ * Valida que una categoría existe y está activa
+ * @throws NotFoundError si la categoría no existe o está inactiva
+ */
+const validateCategoryExists = async (categoryId: string) => {
+  const category = await prisma.category.findUnique({ where: { id: categoryId } });
+  
+  if (!category) {
+    throw new NotFoundError(`La categoría con ID '${categoryId}' no fue encontrada.`);
+  }
+  
+  if (!category.isActive) {
+    throw new ConflictError(`La categoría '${category.name}' está desactivada.`);
+  }
+  
+  return category;
+};
+
 export const createService = async (data: CreateServiceDto, adminId: string) => {
+  // Validar que la categoría existe y está activa
+  await validateCategoryExists(data.categoryId);
+  
   const existing = await prisma.service.findFirst({ where: { name: data.name } });
   if(existing) {
     throw new ConflictError(`Ya existe un servicio con el nombre '${data.name}'`);
@@ -27,15 +59,26 @@ export const createService = async (data: CreateServiceDto, adminId: string) => 
     data: {
       ...data,
       adminId: adminId,
-    } 
+    },
+    include: { category: true },
   });
   logger.info({ serviceId: newService.id, serviceName: newService.name }, "Nuevo servicio creado");
   return newService;
 };
 
 export const updateService = async (id: string, data: UpdateServiceDto) => {
-  await getServiceById(id); 
-  const updatedService = await prisma.service.update({ where: { id }, data });
+  await getServiceById(id);
+  
+  // Si se está actualizando la categoría, validar que existe
+  if (data.categoryId) {
+    await validateCategoryExists(data.categoryId);
+  }
+  
+  const updatedService = await prisma.service.update({ 
+    where: { id }, 
+    data,
+    include: { category: true },
+  });
   logger.info({ serviceId: updatedService.id }, "Servicio actualizado correctamente");
   return updatedService;
 };
