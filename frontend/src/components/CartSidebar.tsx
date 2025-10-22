@@ -73,7 +73,45 @@ export default function CartSidebar({ onConfirmBooking }: CartSidebarProps) {
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="py-3 px-4 lg:py-4 lg:px-6 space-y-3 lg:space-y-4 flex-1 flex flex-col overflow-hidden">
+        {/* Mobile: Botón compacto cuando está vacío */}
+        {isEmpty && (
+          <div className="lg:hidden w-full py-3 px-4">
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <ShoppingCart className="h-5 w-5" />
+              <span>Tu carrito está vacío</span>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile: Botón compacto cuando está collapsed */}
+        {!isEmpty && !isExpanded && (
+          <button
+            onClick={() => setIsExpanded(true)}
+            className="lg:hidden w-full flex items-center justify-between py-3 px-4 active:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <ShoppingCart className="h-5 w-5" />
+              <div className="flex items-center gap-2 text-sm">
+                <Badge variant="secondary" className="text-xs">
+                  {cart.length}
+                </Badge>
+                <span className="text-muted-foreground">•</span>
+                <span className="font-medium">{totalDuration} min</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-lg font-bold">${totalPrice.toFixed(2)}</span>
+              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </button>
+        )}
+
+        {/* Contenido expandido */}
+        <CardContent className={`
+          ${!isEmpty && !isExpanded ? 'hidden' : isEmpty ? 'hidden lg:flex' : 'flex'} 
+          lg:flex
+          py-3 px-4 lg:py-4 lg:px-6 space-y-3 lg:space-y-4 flex-1 flex-col overflow-hidden
+        `}>
           {isEmpty ? (
             /* Empty State - Solo desktop */
             <div className="hidden lg:block text-center py-8 text-muted-foreground">
@@ -83,39 +121,34 @@ export default function CartSidebar({ onConfirmBooking }: CartSidebarProps) {
             </div>
           ) : (
             <>
-              {/* Mobile: Header expandible con totales */}
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="lg:hidden w-full flex items-center justify-between py-2 -mx-4 px-4 active:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <ShoppingCart className="h-5 w-5" />
-                  <div className="flex items-center gap-2 text-sm">
-                    <Badge variant="secondary" className="text-xs">
-                      {cart.length}
-                    </Badge>
-                    <span className="text-muted-foreground">•</span>
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{totalDuration} min</span>
-                  </div>
+              {/* Mobile: Header con botón minimizar cuando está expandido */}
+              {isExpanded && (
+                <div className="lg:hidden -mx-4 px-4 pb-2 border-b border-border">
+                  <button
+                    onClick={() => setIsExpanded(false)}
+                    className="w-full flex items-center justify-between py-2 rounded-lg hover:bg-muted/50 active:bg-muted transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <ShoppingCart className="h-5 w-5" />
+                      <div className="flex items-center gap-2 text-sm">
+                        <Badge variant="secondary" className="text-xs">
+                          {cart.length}
+                        </Badge>
+                        <span className="text-muted-foreground">•</span>
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{totalDuration} min</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span className="text-xs font-medium">Minimizar</span>
+                      <ChevronDown className="h-5 w-5" />
+                    </div>
+                  </button>
                 </div>
-                {isExpanded ? (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                )}
-              </button>
+              )}
 
-              {/* Lista de servicios - Expandible en móvil, siempre visible en desktop */}
-              <div
-                className={`
-                  ${isExpanded ? 'block' : 'hidden'} 
-                  lg:block
-                  space-y-2 lg:space-y-3 
-                  flex-1 overflow-y-auto
-                  -mx-4 px-4 lg:mx-0 lg:px-0
-                `}
-              >
+              {/* Lista de servicios - Visible cuando expandido en móvil, siempre visible en desktop */}
+              <div className="lg:block space-y-2 lg:space-y-3 flex-1 overflow-y-auto -mx-4 px-4 lg:mx-0 lg:px-0">
                 {cart.map(({ service, quantity }) => (
                   <div
                     key={service.id}
@@ -176,12 +209,18 @@ export default function CartSidebar({ onConfirmBooking }: CartSidebarProps) {
           )}
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-2 py-3 px-4 lg:py-4 lg:px-6 flex-shrink-0">
+        {/* Footer - Oculto en mobile cuando collapsed, visible siempre en desktop */}
+        <CardFooter className={`
+          ${!isExpanded ? 'hidden' : 'flex'} 
+          lg:flex
+          flex-col gap-2 py-3 px-4 lg:py-4 lg:px-6 flex-shrink-0
+        `}>
           <Button
             onClick={handleConfirmBooking}
-            disabled={isEmpty}
             className="w-full h-10 lg:h-11 text-sm lg:text-base"
             size="lg"
+            variant={isEmpty ? "outline" : "default"}
+            disabled={isEmpty}
           >
             Confirmar Reserva
           </Button>

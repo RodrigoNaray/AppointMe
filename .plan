@@ -98,6 +98,12 @@
   - ✅ Eliminada ruta `/services` (antigua ServicesListPage sin carrito)
   - ✅ HomePage botón "Reservar Ahora" redirige a `/book` (ServicesGridPage con carrito completo)
   - ✅ Archivo ServicesListPage.tsx eliminado (código duplicado obsoleto)
+- [x] CartSidebar: Botón "Confirmar Reserva" visible en desktop cuando carrito vacío
+  - ✅ Footer siempre renderizado (no conditional wrapper con `{!isEmpty && ...}`)
+  - ✅ Botón muted (variant="outline") y disabled cuando isEmpty
+  - ✅ Botón normal (variant="default") y enabled cuando !isEmpty
+  - ✅ Mantiene visibilidad responsive: hidden en mobile collapsed, flex en mobile expanded/desktop
+  - **Justificación UX:** Evita "empty space" en desktop, comunica claramente que se necesitan servicios antes de continuar. Sigue principio de "Progressive Disclosure" (React 19 + shadcn-ui best practices)
   - **Justificación:** Single Responsibility - una sola página de reservas con toda la funcionalidad (carrito + categorías + paginación). Eliminar duplicación de código y confusión en navegación. React Router best practice: rutas semánticas (/book más claro que /services para acción de reservar)
 - [x] HomePage: Preview de servicios en sección barbero con layout 2 columnas
   - ✅ Integrado ServicesTable en columna izquierda (50% width en desktop)
@@ -107,6 +113,12 @@
   - ✅ Columna servicios: Flexbox con scroll interno (flex-1 overflow-y-auto) + footer fijo
   - ✅ Columna carrito desktop: Altura fija lg:h-[450px], hidden lg:block
   - ✅ Carrito mobile: Fixed bottom (fixed bottom-0 left-0 right-0 z-50 lg:hidden) igual que /book
+  - ✅ Carrito mobile vacío: Botón compacto muestra "Tu carrito está vacío" con icono (py-3 px-4, mismo tamaño que collapsed)
+  - ✅ CardContent oculto en mobile cuando vacío: `hidden lg:flex` previene espacio innecesario
+  - ✅ Carrito mobile collapsed: Botón compacto muestra cantidad + duración + precio + ChevronUp
+  - ✅ Carrito mobile expandido: Header con botón minimizar más visible (texto "Minimizar", border-bottom, rounded-lg, hover:bg-muted/50)
+  - ✅ Footer wrapper !isEmpty: Oculta botón "Confirmar Reserva" en mobile cuando isEmpty
+  - ✅ Estado isExpanded: Controla collapsed (botón compacto) vs expanded (carrito completo)
   - ✅ Padding bottom dinámico mobile: pb-64 con items, pb-32 vacío, lg:pb-0 (previene overlap)
   - ✅ useBooking hook: Detecta cart.length para ajustar padding dinámicamente
   - ✅ Fetch de servicios con useState + useEffect (5 servicios máximos)
@@ -116,7 +128,7 @@
   - ✅ Cards con border + padding consistente (rounded-2xl)
   - ✅ Link "Ver todos los servicios →" en tabla
   - ✅ Icon Scissors + título "Nuestros Servicios"
-  - **Justificación CSS Grid + Flexbox + Mobile Pattern:** items-start previene stretch automático. Altura lg:h-[450px] asegura tamaño consistente. Flexbox interno (flex-1 overflow-y-auto) para scroll. Mobile: fixed bottom-0 replica patrón de /book (Bottom Sheet Pattern), z-50 sobre contenido, padding dinámico (pb-64 vs pb-32) previene overlap. UX consistente entre HomePage y /book
+  - **Justificación CSS Grid + Flexbox + Mobile Pattern:** items-start previene stretch automático. Altura lg:h-[450px] asegura tamaño consistente. Flexbox interno (flex-1 overflow-y-auto) para scroll. Mobile: fixed bottom-0 replica patrón de /book (Bottom Sheet Pattern), z-50 sobre contenido, padding dinámico previene overlap. Collapsed state: botón compacto 60px altura con resumen (cantidad, duración, precio) + ChevronUp para expandir. Expanded state: carrito completo con header minimizable (ChevronDown), lista scrolleable, footer con botón confirmar. UX: Minimizar libera espacio en pantalla, usuario expande cuando necesita ver/editar items. React state management: isExpanded controla visibilidad condicional de secciones. Accesibilidad: botones con áreas táctiles 44px+, feedback visual con active:bg-muted/50
 - [x] Refactor: Vista tabla compacta reutilizable (tabla-like design)
   - ✅ Componente ServicesTable.tsx creado (248 líneas)
   - ✅ Vista desktop: Tabla HTML semántica con columnas (Servicio, Categoría, Duración, Precio, Acción)
