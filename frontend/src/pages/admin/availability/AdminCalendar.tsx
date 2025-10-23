@@ -44,9 +44,9 @@ const EventCard = ({ event }: { event: CalendarEvent }) => {
   };
 
   return (
-    <div className={`p-1 rounded text-xs border ${getEventColor(event.type)}`}>
-      <p className="font-semibold truncate">{event.title}</p>
-      <p className="text-xs opacity-80">
+    <div className={`p-0.5 sm:p-1 rounded text-[8px] sm:text-xs border ${getEventColor(event.type)}`}>
+      <p className="font-semibold truncate leading-tight">{event.title}</p>
+      <p className="text-[7px] sm:text-xs opacity-80 leading-tight">
         {format(new Date(event.start), "HH:mm")} -{" "}
         {format(new Date(event.end), "HH:mm")}
       </p>
@@ -119,11 +119,11 @@ export function AdminCalendar() {
             })
           );
           return (
-            <div key={index} className="flex border-b min-h-[60px]">
-              <div className="w-20 text-right pr-4 pt-2 text-sm text-muted-foreground">
+            <div key={index} className="flex border-b min-h-[50px] sm:min-h-[60px]">
+              <div className="w-12 sm:w-20 text-right pr-2 sm:pr-4 pt-2 text-[10px] sm:text-sm text-muted-foreground">
                 {format(hour, "HH:mm")}
               </div>
-              <div className="flex-1 border-l p-2 space-y-2">
+              <div className="flex-1 border-l p-1 sm:p-2 space-y-1 sm:space-y-2">
                 {hourEvents.map((event) => (
                   <EventCard key={event.start.toString()} event={event} />
                 ))}
@@ -144,10 +144,10 @@ export function AdminCalendar() {
         {weekDays.map((day) => (
           <div
             key={`header-${day.toString()}`}
-            className="p-3 text-center font-semibold border-b border-r bg-muted/50"
+            className="p-1 sm:p-3 text-center font-semibold border-b border-r bg-muted/50"
           >
-            <p className="text-sm">{format(day, "EEE", { locale: es })}</p>
-            <p className="text-lg">{format(day, "d")}</p>
+            <p className="text-[10px] sm:text-sm">{format(day, "EEEEE", { locale: es })}</p>
+            <p className="text-sm sm:text-lg">{format(day, "d")}</p>
           </div>
         ))}
         {/* Celdas de contenido de cada día */}
@@ -158,12 +158,17 @@ export function AdminCalendar() {
           return (
             <div
               key={day.toString()}
-              className="p-3 border-b border-r min-h-[582px]"
+              className="p-1 sm:p-3 border-b border-r min-h-[400px] sm:min-h-[582px]"
             >
-              <div className="space-y-1">
-                {dayEvents.map((event) => (
+              <div className="space-y-0.5 sm:space-y-1">
+                {dayEvents.slice(0, 3).map((event) => (
                   <EventCard key={event.start.toString()} event={event} />
                 ))}
+                {dayEvents.length > 3 && (
+                  <div className="text-[8px] sm:text-[10px] text-muted-foreground text-center">
+                    +{dayEvents.length - 3}
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -181,18 +186,19 @@ export function AdminCalendar() {
 
     return (
       <div className="grid grid-cols-7 border-t border-l">
-        {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((day) => (
+        {["L", "M", "X", "J", "V", "S", "D"].map((day, index) => (
           <div
             key={day}
-            className="p-3 text-center font-semibold border-b border-r bg-muted/50"
+            className="p-1 sm:p-3 text-center font-semibold border-b border-r bg-muted/50 text-[10px] sm:text-sm"
           >
-            {day}
+            <span className="sm:hidden">{day}</span>
+            <span className="hidden sm:inline">{["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][index]}</span>
           </div>
         ))}
         {Array.from({ length: startingDayIndex }).map((_, i) => (
           <div
             key={`empty-${i}`}
-            className="border-b border-r min-h-[120px]"
+            className="border-b border-r min-h-[80px] sm:min-h-[120px]"
           ></div>
         ))}
         {daysInMonth.map((day) => {
@@ -202,13 +208,18 @@ export function AdminCalendar() {
           return (
             <div
               key={day.toString()}
-              className="p-3 border-b border-r min-h-[120px]"
+              className="p-1 sm:p-3 border-b border-r min-h-[80px] sm:min-h-[120px]"
             >
-              <div className="font-bold text-sm">{format(day, "d")}</div>
-              <div className="space-y-1 mt-1">
-                {dayEvents.map((event) => (
+              <div className="font-bold text-[10px] sm:text-sm">{format(day, "d")}</div>
+              <div className="space-y-0.5 sm:space-y-1 mt-0.5 sm:mt-1">
+                {dayEvents.slice(0, 2).map((event) => (
                   <EventCard key={event.start.toString()} event={event} />
                 ))}
+                {dayEvents.length > 2 && (
+                  <div className="text-[8px] sm:text-[10px] text-muted-foreground">
+                    +{dayEvents.length - 2} más
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -250,42 +261,50 @@ export function AdminCalendar() {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6">
+    <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
       <Card>
-        <CardHeader className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex flex-col items-center md:items-start">
-            <CardTitle className="text-xl capitalize">
+        <CardHeader className="flex flex-col gap-3 sm:gap-4 p-4 sm:p-6">
+          {/* Título */}
+          <div className="flex flex-col items-center sm:items-start">
+            <CardTitle className="text-lg sm:text-xl capitalize text-center sm:text-left">
               {getViewTitle()}
             </CardTitle>
             {currentView === "day" && (
-              <p className="text-sm text-muted-foreground mt-1">Vista diaria</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Vista diaria</p>
             )}
           </div>
-          <div className="flex items-center gap-4">
+          
+          {/* Controles - Stack en mobile, row en desktop */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
+            {/* Tabs de vista */}
             <Tabs
               value={currentView}
               onValueChange={(value) => setCurrentView(value as ViewType)}
+              className="w-full sm:w-auto"
             >
-              <TabsList>
-                <TabsTrigger value="day">
-                  <List className="h-4 w-4 mr-2" />
-                  Día
+              <TabsList className="w-full sm:w-auto grid grid-cols-3">
+                <TabsTrigger value="day" className="text-xs sm:text-sm">
+                  <List className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Día</span>
                 </TabsTrigger>
-                <TabsTrigger value="week">
-                  <Grid className="h-4 w-4 mr-2" />
-                  Semana
+                <TabsTrigger value="week" className="text-xs sm:text-sm">
+                  <Grid className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Semana</span>
                 </TabsTrigger>
-                <TabsTrigger value="month">
-                  <Square className="h-4 w-4 mr-2" />
-                  Mes
+                <TabsTrigger value="month" className="text-xs sm:text-sm">
+                  <Square className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Mes</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="flex items-center gap-2">
+            
+            {/* Navegación */}
+            <div className="flex items-center justify-center gap-2 w-full sm:w-auto sm:ml-auto">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => navigateDate("prev")}
+                className="flex-1 sm:flex-none"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -293,6 +312,7 @@ export function AdminCalendar() {
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentDate(new Date())}
+                className="flex-1 sm:flex-none text-xs sm:text-sm"
               >
                 Hoy
               </Button>
@@ -300,6 +320,7 @@ export function AdminCalendar() {
                 variant="outline"
                 size="sm"
                 onClick={() => navigateDate("next")}
+                className="flex-1 sm:flex-none"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -307,8 +328,8 @@ export function AdminCalendar() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="h-[750px] overflow-auto">
-            <div className="p-6">{renderCurrentView()}</div>
+          <div className="h-[600px] sm:h-[750px] overflow-auto">
+            <div className="p-3 sm:p-6">{renderCurrentView()}</div>
           </div>
         </CardContent>
       </Card>

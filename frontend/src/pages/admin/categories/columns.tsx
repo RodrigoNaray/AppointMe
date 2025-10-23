@@ -43,21 +43,22 @@ export const createCategoryColumns = ({
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2 sm:px-4"
         >
-          Nombre
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <span className="text-xs sm:text-sm">Nombre</span>
+          <ArrowUpDown className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
       )
     },
-    cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+    cell: ({ row }) => <div className="font-medium text-xs sm:text-sm">{row.getValue("name")}</div>,
   },
   {
     accessorKey: "description",
-    header: "Descripción",
+    header: () => <span className="text-xs sm:text-sm">Descripción</span>,
     cell: ({ row }) => {
       const description = row.getValue("description") as string | null;
       return (
-        <div className="max-w-[300px] truncate text-muted-foreground">
+        <div className="max-w-[150px] sm:max-w-[300px] truncate text-muted-foreground text-xs sm:text-sm">
           {description || "Sin descripción"}
         </div>
       );
@@ -65,11 +66,11 @@ export const createCategoryColumns = ({
   },
   {
     accessorKey: "isActive",
-    header: "Estado",
+    header: () => <span className="text-xs sm:text-sm">Estado</span>,
     cell: ({ row }) => {
       const isActive = row.getValue("isActive") as boolean;
       return (
-        <Badge variant={isActive ? "default" : "secondary"}>
+        <Badge variant={isActive ? "default" : "secondary"} className="text-xs">
           {isActive ? "Activa" : "Inactiva"}
         </Badge>
       );
@@ -77,10 +78,10 @@ export const createCategoryColumns = ({
   },
   {
     accessorKey: "_count",
-    header: () => <div className="text-right">Servicios</div>,
+    header: () => <div className="text-right text-xs sm:text-sm">Servicios</div>,
     cell: ({ row }) => {
       const count = row.original._count?.services || 0;
-      return <div className="text-right font-medium">{count}</div>;
+      return <div className="text-right font-medium text-xs sm:text-sm">{count}</div>;
     },
   },
   {
@@ -90,22 +91,24 @@ export const createCategoryColumns = ({
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2 sm:px-4"
         >
-          Creada
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <span className="text-xs sm:text-sm">Creada</span>
+          <ArrowUpDown className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
       )
     },
     cell: ({ row }) => {
       const date = new Date(row.getValue("createdAt"));
       const formatted = new Intl.DateTimeFormat("es-UY", {
-        dateStyle: "medium",
+        dateStyle: "short",
       }).format(date);
-      return <div className="text-muted-foreground">{formatted}</div>;
+      return <div className="text-muted-foreground text-xs sm:text-sm">{formatted}</div>;
     },
   },
   {
     id: "actions",
+    header: () => <div className="text-right text-xs sm:text-sm">Acciones</div>,
     cell: ({ row }) => {
       const category = row.original;
 
@@ -113,24 +116,24 @@ export const createCategoryColumns = ({
         <div className="text-right">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
+              <Button variant="ghost" className="h-7 w-7 sm:h-8 sm:w-8 p-0">
                 <span className="sr-only">Abrir menú</span>
-                <MoreHorizontal className="h-4 w-4" />
+                <MoreHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(category)}>
+              <DropdownMenuItem onClick={() => onEdit(category)} className="text-xs sm:text-sm">
                 Editar Categoría
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => onDelete(category.id)} 
-                className="text-red-500 focus:bg-red-50 focus:text-red-600"
+                className="text-xs sm:text-sm text-red-500 focus:bg-red-50 focus:text-red-600"
                 disabled={(category._count?.services ?? 0) > 0}
               >
                 Borrar Categoría
               </DropdownMenuItem>
-              {category._count?.services && category._count.services > 0 && (
-                <div className="px-2 py-1.5 text-xs text-muted-foreground">
+              {(category._count?.services ?? 0) > 0 && (
+                <div className="px-2 py-1.5 text-[10px] sm:text-xs text-muted-foreground">
                   No se puede eliminar (tiene servicios)
                 </div>
               )}

@@ -14,6 +14,8 @@ El proyecto mantiene un archivo `.plan` en el repositorio, que actúa como **ún
 5. Siempre devuelve el archivo `.plan` **completo y actualizado**, sobrescribiendo la versión anterior.  
 6. No colocar resumenes o cosasa que no sean exclusivamente nuevas tareas o completar con una cruz las tareas pendientes.
 7. Hacer exclusivamente codigo limpio y escalable pensando en software mantenible a largo plazo. No se pueden hacer parches bajo ningun concepto, solo soluciones escalables.
+8. Siempre debo respetar la estructura del codigo, respetando las practicas del proyecto y reutilizadno las funciones que ya hay, salvo que eso sea 100% imposible.
+9. Toda la UI generada debe ser responsive e intuitiva de usar.
 
 ### Reglas
 - **No sobrecargues el `.plan`**: escribe lo mínimo necesario para que otra IA o humano pueda continuar sin perder contexto.  
@@ -45,6 +47,7 @@ Tus responsabilidades son:
 6. No colocar resumenes o cosasa que no sean exclusivamente nuevas tareas o completar con una cruz las tareas pendientes.
 7. Hacer exclusivamente codigo limpio y escalable pensando en software mantenible a largo plazo. No se pueden hacer parches bajo ningun concepto, solo soluciones escalables.
 8. Siempre debo respetar la estructura del codigo, respetando las practicas del proyecto y reutilizadno las funciones que ya hay, salvo que eso sea 100% imposible.
+9. Toda la UI generada debe ser responsive e intuitiva de usar.
 
 Reglas:
 - Reviso siempre las fuentes de docuemntacion para Octubre de 2025, las busco de nuevo siempre.

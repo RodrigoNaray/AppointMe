@@ -1,6 +1,12 @@
 // frontend/src/components/ServiceForm.tsx
 import { useState, FormEvent, useEffect } from 'react';
-import { CreateServiceDto, UpdateServiceDto, Service } from '../types/service';
+import { CreateServiceDto, UpdateServiceDto, Service, Category } from '../types/service';
+import apiClient from '@/api/client';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 
 interface ServiceFormProps {
   onSubmit: (data: CreateServiceDto | UpdateServiceDto) => void;
@@ -13,6 +19,24 @@ export default function ServiceForm({ onSubmit, onCancel, initialData }: Service
   const [description, setDescription] = useState('');
   const [durationMinutes, setDuration] = useState(60);
   const [price, setPrice] = useState(1000);
+  const [categoryId, setCategoryId] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  // Fetch categorías activas
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await apiClient.get<Category[]>('categories/admin');
+        setCategories(response.data.filter((cat) => cat.isActive));
+      } catch (err) {
+        console.error('Error al cargar categorías:', err);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // useEffect para poblar el formulario si recibimos datos iniciales
   useEffect(() => {
@@ -21,43 +45,98 @@ export default function ServiceForm({ onSubmit, onCancel, initialData }: Service
       setDescription(initialData.description || '');
       setDuration(initialData.durationMinutes);
       setPrice(initialData.price);
+      setCategoryId(initialData.categoryId);
     }
   }, [initialData]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    onSubmit({ name, description, durationMinutes: Number(durationMinutes), price: Number(price) });
+    if (!categoryId) {
+      alert('Por favor selecciona una categoría');
+      return;
+    }
+    onSubmit({ 
+      categoryId,
+      name, 
+      description, 
+      durationMinutes: Number(durationMinutes), 
+      price: Number(price) 
+    });
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Selector de Categoría */}
+      <div className="space-y-2">
+        <Label htmlFor="category">Categoría *</Label>
+        <Select value={categoryId} onValueChange={setCategoryId} disabled={loadingCategories}>
+          <SelectTrigger id="category">
+            <SelectValue placeholder={loadingCategories ? "Cargando..." : "Selecciona una categoría"} />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Input para el Nombre */}
-      <div className="mb-4">
-        <label htmlFor="name" className="block text-gray-700 mb-2">Nombre del Servicio</label>
-        <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 border rounded-lg" required />
+      <div className="space-y-2">
+        <Label htmlFor="name">Nombre del Servicio *</Label>
+        <Input 
+          type="text" 
+          id="name" 
+          value={name} 
+          onChange={(e) => setName(e.target.value)} 
+          required 
+        />
       </div>
       
       {/* Input para la Descripción */}
-      <div className="mb-4">
-        <label htmlFor="description" className="block text-gray-700 mb-2">Descripción</label>
-        <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full px-3 py-2 border rounded-lg" />
+      <div className="space-y-2">
+        <Label htmlFor="description">Descripción</Label>
+        <Textarea 
+          id="description" 
+          value={description} 
+          onChange={(e) => setDescription(e.target.value)} 
+          rows={3}
+        />
       </div>
 
       {/* Inputs para Duración y Precio */}
-      <div className="flex gap-4 mb-4">
-        <div className='w-1/2'>
-          <label htmlFor="duration" className="block text-gray-700 mb-2">Duración (min)</label>
-          <input type="number" id="duration" value={durationMinutes} onChange={(e) => setDuration(Number(e.target.value))} className="w-full px-3 py-2 border rounded-lg" required />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="duration">Duración (min) *</Label>
+          <Input 
+            type="number" 
+            id="duration" 
+            value={durationMinutes} 
+            onChange={(e) => setDuration(Number(e.target.value))} 
+            required 
+          />
         </div>
-        <div className='w-1/2'>
-          <label htmlFor="price" className="block text-gray-700 mb-2">Precio</label>
-          <input type="number" id="price" value={price} onChange={(e) => setPrice(Number(e.target.value))} className="w-full px-3 py-2 border rounded-lg" required />
+        <div className="space-y-2">
+          <Label htmlFor="price">Precio *</Label>
+          <Input 
+            type="number" 
+            id="price" 
+            value={price} 
+            onChange={(e) => setPrice(Number(e.target.value))} 
+            required 
+          />
         </div>
       </div>
 
-      <div className="flex justify-end gap-4 mt-6">
-        <button type="button" onClick={onCancel} className="px-4 py-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200">Cancelar</button>
-        <button type="submit" className="px-4 py-2 rounded-lg text-white bg-gray-800 hover:bg-gray-900">Guardar Cambios</button>
+      <div className="flex justify-end gap-4 pt-4">
+        <Button type="button" onClick={onCancel} variant="outline">
+          Cancelar
+        </Button>
+        <Button type="submit">
+          Guardar Cambios
+        </Button>
       </div>
     </form>
   );

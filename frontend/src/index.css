@@ -114,8 +114,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
   body {
     @apply bg-background text-foreground;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
   }
 }
 

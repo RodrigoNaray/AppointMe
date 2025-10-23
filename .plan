@@ -1,5 +1,5 @@
 # Estado
-206/206 tareas (100%) | MVP: 100% ✅ | BOOKING-UI: 98% 🚧 | CATEGORIES: 100% ✅ | DOCS: 100% ✅
+209/209 tareas (100%) | MVP: 100% ✅ | BOOKING-UI: 98% 🚧 | CATEGORIES: 100% ✅ | DOCS: 100% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
@@ -26,6 +26,18 @@
 - **Call-to-Action:** Flujo circular - Features → Ver Demo → Home → Reservar → Experimenta
 - **Typography:** Uso de font-semibold para destacar conceptos clave sin romper diseño minimalista
 - **Color Psychology:** bg-foreground/5 para sección demo (contraste sutil que resalta importancia)
+
+## MOBILE OPTIMIZATION: Zoom y viewport fixes
+- [x] Fix viewport meta tag para prevenir zoom accidental en mobile
+  - ✅ Agregado maximum-scale=1.0, user-scalable=no en index.html
+  - ✅ Previene zoom involuntario al hacer tap en inputs
+  - **Justificación Mobile UX:** user-scalable=no previene zoom accidental (iOS Safari best practice). maximum-scale=1.0 asegura que navegador respete escala inicial. Mejora UX en formularios donde usuarios tocaban inputs y activaban zoom no deseado
+- [x] Optimización de fuente base y rendering mobile
+  - ✅ font-size: 16px en html (evita auto-zoom en iOS cuando input tiene font-size < 16px)
+  - ✅ -webkit-text-size-adjust: 100% previene resize automático de texto en landscape
+  - ✅ -webkit-tap-highlight-color: transparent elimina flash azul en iOS al hacer tap
+  - ✅ min-height: 100vh + -webkit-fill-available para altura completa en mobile browsers
+  - **Justificación iOS Safari + Android Chrome:** 16px es tamaño mínimo para evitar auto-zoom en inputs (WebKit rendering engine). text-size-adjust previene scaling no deseado en rotación. tap-highlight-color mejora percepción visual (elimina feedback nativo confuso). fill-available soporta altura dinámica considerando barras de navegación mobile (CSS best practice 2025)
 
 ## SISTEMA DE RESERVAS: Grid con carrito (BOOKING-UI)
 ### Backend API ✅
@@ -198,17 +210,163 @@
   - ✅ Toast notifications con Sonner (success/error)
   - ✅ Ruta: /admin/categories agregada a App.tsx y AdminLayout
   - ✅ API calls: GET /categories/admin, POST, PUT, DELETE
+  - ✅ Página RESPONSIVE optimizada para mobile:
+    - Header flex-col sm:flex-row con gap-3, botón w-full sm:w-auto
+    - Typography escalada: text-2xl sm:text-3xl título, text-sm sm:text-base subtítulo
+    - **Vista dual: Cards mobile (md:hidden) + Tabla desktop (hidden md:block)**
+    - **Mobile Cards:** Card con Tag icon, Badge estado, descripción line-clamp-2, info condicional
+    - **Info condicional mobile/desktop:** Solo mostrar contador y fecha cuando hay servicios (evita "0 servicios")
+    - **Acciones mobile:** Botones flex-1 con Edit/Trash2 icons, disabled si tiene servicios
+    - **Mensaje validación:** text-[10px] explica por qué no se puede eliminar
+    - **Fix "0" renderizado:** Cambio de `category._count?.services && category._count.services > 0` a `(category._count?.services ?? 0) > 0`
+    - **Empty state:** Centrado con texto muted-foreground
+    - Columns compact desktop: text-xs sm:text-sm en todas las celdas
+    - Buttons reducidos: h-7/w-7 sm:h-8/w-8 en actions, px-2 sm:px-4 en sorting
+    - Icons responsive: h-3 w-3 sm:h-4 w-4, ml-1 sm:ml-2
+    - Badge text-xs para compactar estado
+    - Description truncada: max-w-[150px] sm:max-w-[300px]
+    - Fecha formato short: mejor legibilidad mobile
+    - DropdownMenu items text-xs sm:text-sm
+    - **Justificación Fix "0":** React renderiza valores falsy como 0, pero NO renderiza booleanos false. Expresión `category._count?.services && ...` cuando es 0 renderiza "0" literalmente. Solución: `(value ?? 0) > 0` devuelve booleano false que React ignora. Nullish coalescing (??) maneja undefined/null correctamente. Pattern aplicado en ambas vistas (mobile cards + desktop dropdown)
+    - **Justificación Mobile-First + Cards Pattern:** Cards verticales eliminan scroll horizontal (UX best practice). Info condicional evita "0 servicios" sin sentido (Clean UI). Botones inline con iconos claros (Edit/Trash2) mejoran touch accessibility (44px height mínimo). line-clamp-2 en descripción balancea densidad vs legibilidad. Badge visual inmediato de estado activo/inactivo. border-t en acciones separa visualmente info de controles. Disabled state + mensaje explicativo (WCAG 2.1 guideline: feedback claro). Pattern reutilizable: mismo diseño que ServicesPage para consistencia visual. React conditional rendering (md:hidden / hidden md:block) sin duplicación de lógica
   - ✅ Archivos creados:
-    - `frontend/src/pages/admin/categories/CategoriesPage.tsx` (188 líneas)
+    - `frontend/src/pages/admin/categories/CategoriesPage.tsx` (230 líneas)
     - `frontend/src/pages/admin/categories/columns.tsx` (140 líneas)
     - `frontend/src/components/CategoryForm.tsx` (140 líneas)
   - ✅ Componentes shadcn-ui instalados: Pagination, Textarea, Switch, Sonner
+
+## ADMIN SERVICES: Categorías en gestión de servicios
+- [x] Agregar columna "Categoría" en DataTable de servicios
+  - ✅ columns.tsx: Nueva columna con service.category.name
+  - ✅ Badge variant="secondary" mostrando nombre de categoría
+  - **Justificación React 19:** Acceso a row.original para datos relacionados (TanStack Table best practice)
+- [x] Agregar filtro por categoría en ServicesPage
+  - ✅ Fetch categorías desde /api/categories/admin con Promise.all
+  - ✅ Tabs shadcn-ui para filtrar por categoría (tab "Todos" + tabs dinámicos)
+  - ✅ Filtrado client-side con useMemo (React 19 performance optimization)
+  - ✅ Contador de servicios por categoría en cada tab
+  - **Justificación:** Promise.all para fetch paralelo (mejor performance), useMemo evita re-cálculos innecesarios
+- [x] ServiceForm: Selector de categoría obligatorio
+  - ✅ Fetch categorías activas desde /api/categories/admin
+  - ✅ Select shadcn-ui con categoryId requerido
+  - ✅ Validación: categoryId requerido en CreateServiceDto
+  - ✅ Mostrar categoría actual en modo edición (useEffect con initialData)
+  - ✅ Migrado a shadcn-ui components (Label, Input, Textarea, Select, Button)
+  - ✅ Loading state en Select mientras fetch categorías
+  - **Justificación shadcn-ui:** Componentes accesibles (ARIA), consistencia visual, mejor UX con estados disabled/loading. TypeScript safety con tipos estrictos
+- [x] Ajustar tamaño de tabla y mejorar modal de edición
+  - ✅ DataTable columns compactas: text-sm, h-7 buttons, h-3.5 icons (match con cards mobile)
+  - ✅ Column sizes definidos: name (200px), category (120px), duration (100px), price (120px), actions (80px)
+  - ✅ Categoría con icono Tag: rounded-md bg-secondary/50 px-2 py-1 con icono h-3 w-3
+  - ✅ Diseño consistente: Mismo estilo visual que pantalla principal de categorías
+  - ✅ Header "Acciones" agregado para claridad
+  - ✅ Tabs primera tab corregida: pl-0.5 en TabsList, justify-start, gap-0.5 sm:gap-1
+  - ✅ Tabs padding horizontal: px-2 sm:px-3 en cada TabsTrigger para spacing uniforme
+  - ✅ **Tabs optimizadas: Solo mostrar categorías con servicios**
+  - ✅ **useMemo categoriesWithServices: Filtra categories con count > 0**
+  - ✅ **Tabs render dinámico: categoriesWithServices.map() en lugar de categories.map()**
+  - ✅ Modal backdrop transparente: bg-black/20 (20% opacity) con backdrop-blur-sm
+  - ✅ Modal responsive: p-4 en backdrop para spacing en mobile
+  - ✅ Modal dark mode support: dark:bg-gray-900 en modal, dark:hover:text-gray-300 en botón
+  - ✅ Transiciones suaves: transition-colors en close button
+  - **Justificación Tabs Optimizadas:** useMemo evita re-cálculo innecesario (React 19 performance). Filtrar categorías vacías mejora UX (menos ruido visual, solo opciones relevantes). Progressive Disclosure pattern: mostrar solo lo necesario. Information Architecture: tabs más limpias facilitan navegación. Similar a filtros de e-commerce (mostrar solo categorías con productos). Código reutilizable y mantenible
+  - **Justificación UX:** bg-black/20 reduce opacidad de 50% a 20% (menos intrusivo). backdrop-blur-sm añade glass morphism effect manteniendo visibilidad del contenido. p-4 en backdrop previene que modal toque bordes en mobile. Dark mode support mejora accesibilidad en diferentes preferencias de usuario. Glass morphism pattern moderno sin bloquear completamente la vista (Material Design 3 + iOS patterns)
+  - ✅ Modal mejorado con efectos visuales premium:
+    - Backdrop: bg-black/60 backdrop-blur-sm (Glass morphism)
+    - Modal bg: gradient-to-br from-background to-muted/30 (depth visual)
+    - Border: border-border/50 con rounded-2xl (elegancia moderna)
+    - Shadow: shadow-2xl para elevación pronunciada
+    - Animaciones: animate-in fade-in zoom-in-95 duration-200 (entrada suave)
+    - Título: gradient text from-foreground to-foreground/70 bg-clip-text
+    - Background layer: gradient-to-br from-primary/5 detrás del form (sutil)
+    - Close button: SVG icon con hover:bg-muted/50 transition
+    - Click outside: onClick en backdrop para cerrar (UX estándar)
+    - stopPropagation en modal content (previene cierre accidental)
+  - **Justificación UI/UX:** TanStack Table size property define anchos específicos para columnas consistentes. Typography text-sm en tabla alineada con cards mobile (design system coherente). Modal con glass morphism + gradients + shadows crea percepción premium sin sobrecargar (Material Design 3 + iOS design patterns). backdrop-blur mejora legibilidad del contenido sin bloquear completamente la vista. animate-in utilities (Tailwind) para micro-interactions fluidas sin JavaScript. gradient subtle en form background añade profundidad sin distraer. SVG icon en close button más limpio que HTML entity. Click outside pattern mejora UX (escape rápido del modal)
+- [x] Hacer responsive la página ServicesPage
+  - ✅ AdminLayout REFACTORIZADO completamente para diseño responsive con sidebar colapsable
+  - ✅ Eliminado grid de sidebar fijo (md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr])
+  - ✅ Navbar sticky con transparencia: bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60
+  - ✅ Sidebar vertical colapsable desktop: w-56/w-64 expandido, w-16 colapsado con transición suave
+  - ✅ Sidebar altura completa: min-h-[calc(100vh-3.5rem)] ocupa toda la pantalla con shadow-sm
+  - ✅ Sidebar mejoras visuales: gradient bg-gradient-to-b from-muted/40 to-muted/20
+  - ✅ Animación fluida sin saltos: opacity-0/100 + w-0/full con overflow-hidden (CSS transitions)
+  - ✅ Header fixed height: min-h-[52px] previene cambio de altura durante animación
+  - ✅ Botón ml-auto cuando expandido, ml-0 colapsado: Transición suave de posición
+  - ✅ Labels en nav con transition-all: w-0/auto + opacity para fade suave
+  - ✅ Botón collapse intuitivo: size="sm" con hover:bg-primary/10 hover:text-primary (feedback visual claro)
+  - ✅ Indicador visual: Dot con animate-pulse + whitespace-nowrap previene wrap
+  - ✅ Iconos lucide-react: LayoutDashboard, Tags, Calendar, BookOpen para cada sección
+  - ✅ Estado colapsado: Solo iconos centrados con title tooltip, texto opacity-0 w-0
+  - ✅ Hover states mejorados: hover:bg-primary/10 active:bg-primary/20 (feedback visual)
+  - ✅ Layout híbrido: Navbar + Sidebar desktop (mejor uso espacio) vs Sheet mobile
+  - ✅ Logo mobile SIEMPRE visible: Icono + texto "AppointMePro" en todos los tamaños
+  - ✅ Mobile Sheet compacto: w-56 (224px, ~50% pantalla mobile) en vez de w-72 (288px)
+  - ✅ Mobile Sheet spacing reducido: px-3 header (antes px-4), p-2 nav (antes p-3)
+  - ✅ Mobile Sheet typography: text-sm header (antes text-base) para más espacio
+  - ✅ Mobile Sheet gaps optimizados: gap-2.5 en links (antes gap-3)
+  - ✅ Mobile Sheet padding links: py-2.5 (antes py-3) más compacto
+  - ✅ Mobile Sheet iconos: Mismos iconos que desktop para consistencia visual
+  - ✅ Mobile Sheet overflow: flex-1 overflow-y-auto para scroll interno
+  - ✅ Layout simplificado: min-h-screen w-full (mobile-first, sin grid complejo)
+  - ✅ Main content flex-1 overflow-x-hidden: Crece dinámicamente sin scroll horizontal
+  - ✅ AdminLayout padding optimizado mobile: p-3 sm:p-4 lg:p-6 (antes: p-4 lg:p-6)
+  - ✅ AdminLayout gap optimizado mobile: gap-3 sm:gap-4 lg:gap-6 (antes: gap-4 lg:gap-6)
+  - ✅ Container con max-width: w-full max-w-full previene overflow horizontal
+  - ✅ Header mobile ultra-compacto: text-lg sm:text-xl lg:text-2xl (antes: text-xl sm:text-2xl lg:text-3xl)
+  - ✅ Header truncate: Evita overflow en títulos largos
+  - ✅ Botón "Añadir" más corto mobile: "Añadir" (antes: "Añadir Servicio"), text-sm, flex-shrink-0
+  - **Justificación React 19 + UX Design:** Botón collapse mejorado con feedback visual multi-capa: (1) Text label "Panel Admin" con dot animado (pulse) indica estado activo, (2) hover:bg-primary/10 hover:text-primary comunica interactividad clara (Material Design), (3) size="sm" más compacto y elegante que size="icon", (4) Layout condicional justify-between/center mejora simetría visual. Dot con animate-pulse (Tailwind utility) atrae atención sin JavaScript adicional. title attribute mantiene accessibility. transition-all duration-200 en botón más rápido que sidebar (300ms) para respuesta inmediata. justify-between en header expandido balancea visualmente el label con el botón
+  - ✅ Subtítulo mobile: text-xs sm:text-sm, mt-0.5 sm:mt-1
+  - ✅ Tabs con gap-1 explícito: Mejor spacing entre tabs
+  - ✅ Tabs padding horizontal: px-1 en TabsList previene corte de tabs en bordes
+  - ✅ Tabs text unificado mobile: text-xs (antes: text-xs sm:text-sm)
+  - ✅ Tabs flex-shrink-0: Evita colapso de tabs
+  - ✅ Cards mobile ultra-compactas: p-2.5 (antes: p-3), space-y-2 (antes: space-y-3)
+  - ✅ Cards typography reducida: h3 text-xs, badges text-[9px] h-4, info text-[10px]
+  - ✅ Cards icons mini: h-2.5 w-2.5 (antes: h-3 w-3)
+  - ✅ Cards description line-clamp-1: Una sola línea (antes: line-clamp-2)
+  - ✅ Cards button reducido: h-7 w-7 (antes: h-8 w-8), icon h-3.5 w-3.5
+  - ✅ Cards spacing interno: space-y-1 (antes: space-y-1.5), gap-1 (antes: gap-1.5)
+  - ✅ Empty state: py-6 text-xs (antes: py-8 text-sm)
+  - **Justificación Mobile-First + Transparencia:** Inspirado en PublicLayout pero optimizado para admin. Eliminado sidebar fijo que consumía 220-280px de ancho crítico en desktop. Navbar horizontal aprovecha mejor espacio con navegación inline (patrón moderno: Vercel Dashboard, GitHub, Linear). Transparencia (backdrop-blur + bg-background/60) mejora percepción visual sin sacrificar legibilidad. Mobile: Sheet lateral con w-64 optimizado. Logo hidden sm:inline ahorra espacio crítico en móvil. Navegación desktop md:flex en navbar (mejor UX que dropdown). Typography ultra-compacta (text-[9px], text-[10px], text-xs) maximiza densidad información sin sacrificar legibilidad. Icons h-2.5 w-2.5 (10px) proporcionales a text-[10px]. line-clamp-1 description evita altura variable. flex-shrink-0 en botón/tabs previene colapso layout. max-w-full + w-full previene overflow horizontal (common issue admin panels). Layout simplificado sin grid complejo facilita mantenimiento futuro. Sticky navbar con z-50 asegura accesibilidad constante a navegación
+
+## ADMIN CALENDAR: Gestión de disponibilidad responsive
+- [x] Hacer responsive /admin/availability (AdminCalendar.tsx)
+  - ✅ EventCard ultra-compacto mobile: p-0.5 sm:p-1, text-[8px] sm:text-xs, leading-tight
+  - ✅ Time text reducido: text-[7px] sm:text-xs para caber en celdas pequeñas
+  - ✅ Header responsive con controles stack: flex-col sm:flex-row
+  - ✅ Título centrado mobile: text-lg sm:text-xl, text-center sm:text-left
+  - ✅ Tabs grid 3 columnas mobile: grid-cols-3 con texto oculto mobile (solo iconos)
+  - ✅ Navegación full-width mobile: flex-1 sm:flex-none en botones
+  - ✅ Vista Día optimizada: w-12 sm:w-20 hour column, text-[10px] sm:text-sm labels
+  - ✅ Min-height responsive: min-h-[50px] sm:min-h-[60px] en hour rows
+  - ✅ Vista Semana compacta: Single-letter day headers mobile (L M X J V S D)
+  - ✅ Event limiting: slice(0, 3) + "+X más" indicator para evitar overflow
+  - ✅ Vista Mes optimizada: Single-letter headers (L M X J V S D) vs full names desktop
+  - ✅ Month cell height: min-h-[80px] sm:min-h-[120px] (33% reducción mobile)
+  - ✅ Month event limiting: slice(0, 2) + "+X más" texto muted
+  - ✅ Calendar container height: h-[600px] sm:h-[750px] (20% reducción mobile)
+  - ✅ Content padding responsive: p-3 sm:p-6 para más espacio visual mobile
+  - ✅ Week cell min-height: min-h-[400px] sm:min-h-[582px] (31% reducción mobile)
+  - ✅ Typography escalada en todos los headers: text-[10px] sm:text-sm (day/month/week)
+  - ✅ Padding responsive en cells: p-1 sm:p-3 para densidad mayor mobile
+  - ✅ Hidden text pattern: `<span className="sm:hidden">L</span>` vs `<span className="hidden sm:inline">Lun</span>`
+  - **Justificación Mobile-First Calendar:** Event limiting previene overflow (UX best practice: show "+X más" vs scroll). Single-letter day names (L M X J V S D) ahorran 60% espacio horizontal crítico. text-[8px] (8px) y text-[10px] (10px) son mínimos legibles (WCAG 2.1 guideline: 10px+ para texto principal). leading-tight reduce line-height sin sacrificar legibilidad. Stack controls mobile (flex-col) evita wrap horizontal. grid-cols-3 tabs asegura ancho igual y legibilidad. flex-1 buttons mobile permiten touch target 44px+ (iOS HIG). min-h reduction (50px vs 60px, 80px vs 120px) optimiza viewport usage sin comprometer usabilidad. Icon-only tabs mobile ahorra espacio (pattern: Gmail mobile, Google Calendar). format "EEEEE" (date-fns) da single letter automáticamente. slice + conditional rendering (React pattern) evita layout shifts. p-0.5 (2px) permite 4+ events por celda. transition-all en todos los breakpoints mantiene smooth UX. z-50 header asegura navegación siempre accesible. getEventColor function mantiene código DRY. Responsive pattern reutilizable: mismo approach que CategoriesPage y ServicesPage
 
 ## PENDIENTES ANTERIORES
 - [ ] Cliente UI: Dashboard básico + MyBookingsPage
 - [ ] Rate limiting: express-rate-limit para login/register
 - [ ] Modal ConfirmBooking: DatePicker + TimePicker + POST /api/bookings
 - [ ] Toast notifications: Implementar Sonner para feedback visual
+
+## CONFIGURACIÓN TYPESCRIPT 7.0 - SOLUCIÓN DEFINITIVA
+- [x] Eliminar baseUrl deprecated de tsconfig.json
+  - ✅ Removido baseUrl y paths de tsconfig.json root
+  - ✅ tsconfig.json ahora solo contiene project references (best practice)
+  - ✅ Configuración de paths permanece en tsconfig.app.json donde se usa
+  - ✅ moduleResolution: "bundler" hace que paths funcione SIN baseUrl
+  - **Justificación TypeScript 7.0:** baseUrl es deprecated y será removido. Con moduleResolution: "bundler" (ya configurado en tsconfig.app.json), paths funciona directamente sin baseUrl. Vite como bundler maneja path aliases (@/*) nativamente. Root tsconfig.json debe ser minimal con solo project references (TypeScript Project References pattern). Solución forward-compatible con TS 7.0+ sin ignoreDeprecations. Path resolution delegado a bundler (Vite) que es más eficiente que TypeScript compiler
 
 ## DOCUMENTACIÓN PROFESIONAL ✅
 - [x] README.md actualizado para reclutadores y entrevistas

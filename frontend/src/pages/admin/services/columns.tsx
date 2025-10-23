@@ -2,7 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Service } from "@/types/service" 
-import { ArrowUpDown, MoreHorizontal } from "lucide-react" 
+import { ArrowUpDown, MoreHorizontal, Tag } from "lucide-react" 
 
 import { Button } from "@/components/ui/button"
 import {
@@ -26,17 +26,39 @@ export const createServiceColumns = ({ onEdit, onDelete }: ServiceColumnActionsP
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2"
         >
           Nombre
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
         </Button>
       )
     },
-    cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+    cell: ({ row }) => <div className="font-medium text-sm px-2">{row.getValue("name")}</div>,
+    size: 200,
+  },
+  {
+    accessorKey: "category",
+    header: "Categoría",
+    cell: ({ row }) => {
+      const category = row.original.category;
+      return (
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 rounded-md bg-secondary/50 px-2 py-1">
+            <Tag className="h-3 w-3 text-muted-foreground" />
+            <span className="text-xs font-medium">
+              {category?.name || 'Sin categoría'}
+            </span>
+          </div>
+        </div>
+      );
+    },
+    size: 120,
   },
   {
     accessorKey: "durationMinutes",
-    header: "Duración (min)",
+    header: "Duración",
+    cell: ({ row }) => <div className="text-sm">{row.getValue("durationMinutes")} min</div>,
+    size: 100,
   },
   {
     accessorKey: "price",
@@ -48,12 +70,14 @@ export const createServiceColumns = ({ onEdit, onDelete }: ServiceColumnActionsP
         currency: "UYU",
       }).format(amount)
 
-      return <div className="text-right font-medium">{formatted}</div>
+      return <div className="text-right font-medium text-sm">{formatted}</div>
     },
+    size: 120,
   },
   
   {
     id: "actions",
+    header: () => <div className="text-right">Acciones</div>,
     cell: ({ row }) => {
       const service = row.original 
 
@@ -61,9 +85,9 @@ export const createServiceColumns = ({ onEdit, onDelete }: ServiceColumnActionsP
         <div className="text-right">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
+              <Button variant="ghost" className="h-7 w-7 p-0">
                 <span className="sr-only">Abrir menú</span>
-                <MoreHorizontal className="h-4 w-4" />
+                <MoreHorizontal className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -78,5 +102,6 @@ export const createServiceColumns = ({ onEdit, onDelete }: ServiceColumnActionsP
         </div>
       )
     },
+    size: 80,
   },
 ]

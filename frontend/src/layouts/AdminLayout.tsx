@@ -1,89 +1,149 @@
 import { Link, Outlet } from 'react-router-dom';
-import { Menu, Package2 } from "lucide-react"
+import { Menu, Package2, ChevronLeft, ChevronRight, LayoutDashboard, Tags, Calendar, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { AdminNav } from '@/components/shared/AdminNav';
+import { useState } from 'react';
 
 export default function AdminLayout() {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   const navLinks = [
-    { to: "/admin/services", label: "Servicios" },
-    { to: "/admin/categories", label: "Categorías" },
-    { to: "/admin/availability", label: "Disponibilidad" },
-    { to: "/admin/bookings", label: "Reservas" },
+    { to: "/admin/services", label: "Servicios", icon: LayoutDashboard },
+    { to: "/admin/categories", label: "Categorías", icon: Tags },
+    { to: "/admin/availability", label: "Disponibilidad", icon: Calendar },
+    { to: "/admin/bookings", label: "Reservas", icon: BookOpen },
   ];
 
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-muted/40 md:block">
-        <div className="flex h-full max-h-screen flex-col gap-2">
-          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link to="/admin" className="flex items-center gap-2 font-semibold">
-              <Package2 className="h-6 w-6" />
-              <span>AppointMePro</span>
-            </Link>
-          </div>
-          <div className="flex-1">
-            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              {navLinks.map(link => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </div>
-      </div>
-
-
-      <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="shrink-0 md:hidden" 
-              >
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
-              <nav className="grid gap-2 text-lg font-medium">
-                <Link
-                  to="#"
-                  className="flex items-center gap-2 text-lg font-semibold mb-4"
-                >
-                  <Package2 className="h-6 w-6" />
-                  <span>AppointMe</span>
-                </Link>
-                {navLinks.map(link => (
+    <div className="min-h-screen w-full">
+      {/* Navbar Sticky con transparencia */}
+      <header className="sticky top-0 z-50 flex h-14 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:h-[60px] lg:px-6">
+        {/* Mobile Menu - A la izquierda */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="shrink-0 md:hidden" 
+            >
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle navigation menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="flex flex-col w-56 p-0">
+            <div className="flex items-center gap-2 h-14 px-3 border-b bg-muted/30">
+              <Package2 className="h-5 w-5 text-primary" />
+              <span className="font-semibold text-sm">AppointMePro</span>
+            </div>
+            <nav className="flex flex-col gap-1 p-2 flex-1 overflow-y-auto">
+              {navLinks.map(link => {
+                const Icon = link.icon;
+                return (
                   <Link
                     key={link.to}
                     to={link.to}
-                    className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/10 active:bg-primary/20 transition-all"
                   >
-                    {link.label}
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span>{link.label}</span>
                   </Link>
-                ))}
-              </nav>
-            </SheetContent>
-          </Sheet>
+                );
+              })}
+            </nav>
+          </SheetContent>
+        </Sheet>
 
-          <div className="w-full flex-1">
+        {/* Logo - Visible en mobile y desktop */}
+        <Link to="/admin" className="flex items-center gap-2 font-semibold">
+          <Package2 className="h-6 w-6" />
+          <span>AppointMePro</span>
+        </Link>
 
+        {/* Spacer para empujar AdminNav a la derecha */}
+        <div className="flex-1"></div>
+
+        {/* User Menu */}
+        <AdminNav />
+      </header>
+
+      {/* Layout con Sidebar Desktop */}
+      <div className="flex min-h-[calc(100vh-3.5rem)] lg:min-h-[calc(100vh-3.75rem)]">
+        {/* Sidebar Desktop - Vertical a la izquierda */}
+        <aside 
+          className={`
+            hidden md:flex md:flex-col md:border-r md:shadow-sm
+            transition-all duration-300 ease-in-out
+            ${isCollapsed ? 'md:w-16' : 'md:w-56 lg:w-64'}
+            bg-gradient-to-b from-muted/40 to-muted/20
+          `}
+        >
+          {/* Botón collapse/expand - Mejorado con animación suave */}
+          <div className="flex items-center p-3 border-b min-h-[52px]">
+            <div 
+              className={`
+                flex items-center gap-2 overflow-hidden
+                transition-all duration-300 ease-in-out
+                ${isCollapsed ? 'w-0 opacity-0' : 'w-full opacity-100'}
+              `}
+            >
+              <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0 animate-pulse" />
+              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                Panel Admin
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className={`
+                h-8 w-8 flex-shrink-0 hover:bg-primary/10 hover:text-primary
+                transition-all duration-200
+                ${isCollapsed ? 'ml-0' : 'ml-auto'}
+              `}
+              title={isCollapsed ? 'Expandir menú' : 'Colapsar menú'}
+            >
+              {isCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </Button>
           </div>
 
+          <nav className="flex flex-col gap-1 p-3 flex-1 overflow-y-auto">
+            {navLinks.map(link => {
+              const Icon = link.icon;
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`
+                    flex items-center gap-3 rounded-lg px-3 py-2.5 
+                    text-sm font-medium text-muted-foreground 
+                    hover:text-foreground hover:bg-primary/10 
+                    active:bg-primary/20 transition-all
+                    ${isCollapsed ? 'justify-center' : ''}
+                  `}
+                  title={isCollapsed ? link.label : ''}
+                >
+                  <Icon className="h-4 w-4 flex-shrink-0" />
+                  <span 
+                    className={`
+                      truncate transition-all duration-300 ease-in-out
+                      ${isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}
+                    `}
+                  >
+                    {link.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+        </aside>
 
-          <AdminNav />
-        </header>
-
-
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+        {/* Main Content */}
+        <main className="flex-1 flex flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:gap-6 lg:p-6 overflow-x-hidden">
           <Outlet /> 
         </main>
       </div>
