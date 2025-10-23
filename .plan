@@ -1,5 +1,5 @@
 # Estado
-209/209 tareas (100%) | MVP: 100% ✅ | BOOKING-UI: 98% 🚧 | CATEGORIES: 100% ✅ | DOCS: 100% ✅
+210/210 tareas (100%) | MVP: 100% ✅ | BOOKING-UI: 100% ✅ | CATEGORIES: 100% ✅ | DOCS: 100% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
@@ -353,6 +353,18 @@
   - ✅ Padding responsive en cells: p-1 sm:p-3 para densidad mayor mobile
   - ✅ Hidden text pattern: `<span className="sm:hidden">L</span>` vs `<span className="hidden sm:inline">Lun</span>`
   - **Justificación Mobile-First Calendar:** Event limiting previene overflow (UX best practice: show "+X más" vs scroll). Single-letter day names (L M X J V S D) ahorran 60% espacio horizontal crítico. text-[8px] (8px) y text-[10px] (10px) son mínimos legibles (WCAG 2.1 guideline: 10px+ para texto principal). leading-tight reduce line-height sin sacrificar legibilidad. Stack controls mobile (flex-col) evita wrap horizontal. grid-cols-3 tabs asegura ancho igual y legibilidad. flex-1 buttons mobile permiten touch target 44px+ (iOS HIG). min-h reduction (50px vs 60px, 80px vs 120px) optimiza viewport usage sin comprometer usabilidad. Icon-only tabs mobile ahorra espacio (pattern: Gmail mobile, Google Calendar). format "EEEEE" (date-fns) da single letter automáticamente. slice + conditional rendering (React pattern) evita layout shifts. p-0.5 (2px) permite 4+ events por celda. transition-all en todos los breakpoints mantiene smooth UX. z-50 header asegura navegación siempre accesible. getEventColor function mantiene código DRY. Responsive pattern reutilizable: mismo approach que CategoriesPage y ServicesPage
+
+## BOOKING UI - Fixes
+- [x] Fix: ServiceCard creciendo con carrito en /book
+  - ✅ CartSidebar desktop: lg:h-full adapta a contenedor padre (450px)
+  - ✅ CartSidebar mobile: max-h-[60vh] altura máxima (60% viewport)
+  - ✅ Card: Mobile max-h-[60vh], Desktop lg:h-full (adapta a padre)
+  - ✅ HomePage: Contenedor lg:h-[450px] respetado por CartSidebar
+  - ✅ ServicesGridPage: Contenedor lg:h-[450px] mismo comportamiento que HomePage
+  - ✅ Altura consistente: Ambas páginas usan 450px para carrito desktop
+  - ✅ CardContent: min-h-0 para permitir scroll con flexbox
+  - ✅ CartSidebar: overflow-y-auto solo en lista de servicios (flex-1)
+  - **Justificación CSS Flexbox + altura consistente:** Desktop: lg:h-full permite que Card se adapte a contenedor padre con lg:h-[450px] en AMBAS páginas (HomePage y ServicesGridPage). Mobile: max-h-[60vh] limita a 60% viewport. min-h-0 en CardContent permite flexbox shrink. overflow-y-auto en lista con flex-1 permite scroll interno. Altura 450px óptima: caben 4-5 servicios sin scroll, equilibrio entre visibilidad y compacidad. Solución escalable: componente reutilizable controlado por contenedor padre, sin lógica condicional interna. Pattern: Single Responsibility (CartSidebar solo renderiza, padre controla dimensiones)
 
 ## PENDIENTES ANTERIORES
 - [ ] Cliente UI: Dashboard básico + MyBookingsPage

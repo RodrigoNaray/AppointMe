@@ -59,7 +59,7 @@ export default function CartSidebar({ onConfirmBooking }: CartSidebarProps) {
 
   return (
     <div className="lg:sticky lg:top-20 h-full">
-      <Card className="border-0 lg:border lg:shadow-lg rounded-none lg:rounded-lg h-full flex flex-col">
+      <Card className="border-0 lg:border lg:shadow-lg rounded-none lg:rounded-lg flex flex-col max-h-[60vh] lg:max-h-none lg:h-full">
         {/* Header - Solo visible en desktop */}
         <CardHeader className="hidden lg:block flex-shrink-0">
           <CardTitle className="flex items-center justify-between">
@@ -110,7 +110,7 @@ export default function CartSidebar({ onConfirmBooking }: CartSidebarProps) {
         <CardContent className={`
           ${!isEmpty && !isExpanded ? 'hidden' : isEmpty ? 'hidden lg:flex' : 'flex'} 
           lg:flex
-          py-3 px-4 lg:py-4 lg:px-6 space-y-3 lg:space-y-4 flex-1 flex-col overflow-hidden
+          py-3 px-4 lg:py-4 lg:px-6 space-y-3 lg:space-y-4 flex-1 flex-col overflow-hidden min-h-0
         `}>
           {isEmpty ? (
             /* Empty State - Solo desktop */

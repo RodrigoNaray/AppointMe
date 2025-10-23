@@ -50,14 +50,14 @@ export default function ServicesGridPage() {
       </div>
 
       {/* Layout Grid Responsive */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:items-start">
         {/* Lista de servicios con categorías (Tabs + Tabla + Pagination) */}
         <div className="lg:col-span-2">
           <ServicesList itemsPerPage={12} />
         </div>
 
         {/* Carrito - Hidden en móvil (se muestra fixed bottom) */}
-        <div className="hidden lg:block lg:col-span-1">
+        <div className="hidden lg:block lg:col-span-1 lg:h-[450px]">
           <CartSidebar onConfirmBooking={handleConfirmBooking} />
         </div>
       </div>
