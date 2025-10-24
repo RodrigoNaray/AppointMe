@@ -3,12 +3,23 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useBooking } from '@/context/BookingContext';
+import { 
+  useBookingStore, 
+  selectCart, 
+  selectTotalPrice, 
+  selectTotalDuration, 
+  selectRemoveService, 
+  selectClearCart 
+} from '@/stores/bookingStore';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 
 /**
  * CartSidebar - Carrito lateral sticky con resumen de servicios seleccionados
+ * 
+ * Navegación inteligente según ubicación:
+ * - En HomePage (/): Redirige a /book para completar selección
+ * - En ServicesGridPage (/book): Redirige a /book/calendar para elegir fecha
  * 
  * Mejoras Mobile v2:
  * - Expandible en móvil para ver/eliminar servicios
@@ -35,26 +46,35 @@ import { useState } from 'react';
  */
 
 interface CartSidebarProps {
-  onConfirmBooking: () => void;
+  // Props futuras si se necesitan
 }
 
-export default function CartSidebar({ onConfirmBooking }: CartSidebarProps) {
-  const { cart, totalPrice, totalDuration, removeService, clearCart } = useBooking();
+export default function CartSidebar({}: CartSidebarProps) {
+  // Zustand store con selectores granulares
+  const cart = useBookingStore(selectCart);
+  const totalPrice = useBookingStore(selectTotalPrice);
+  const totalDuration = useBookingStore(selectTotalDuration);
+  const removeService = useBookingStore(selectRemoveService);
+  const clearCart = useBookingStore(selectClearCart);
+  
   const navigate = useNavigate();
   const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const isEmpty = cart.length === 0;
 
-  // Handler para confirmar reserva
+  // Handler para confirmar reserva - navegación inteligente según ubicación
   const handleConfirmBooking = () => {
-    // Si ya estamos en /book, ejecutar callback normal
-    if (location.pathname === '/book') {
-      onConfirmBooking();
-    } else {
-      // Si estamos en otra página (ej: HomePage), navegar a /book manteniendo carrito
+    if (isEmpty) return;
+    
+    // En HomePage (/): Ir a /book para completar selección
+    if (location.pathname === '/') {
       navigate('/book');
+      return;
     }
+    
+    // En ServicesGridPage (/book): Ir a /book/calendar para elegir fecha
+    navigate('/book/calendar');
   };
 
   return (

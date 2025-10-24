@@ -2,7 +2,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useClientAuth } from "@/context/AuthContext";
-import { useBooking } from "@/context/BookingContext";
+import { useBookingStore, selectCart } from "@/stores/bookingStore";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, Sparkles, ArrowRight, MapPin, Phone, Mail, Star, Scissors } from "lucide-react";
 import ServicesTable from "@/components/shared/ServicesTable";
@@ -13,7 +13,7 @@ import { API_BASE_URL } from "@/api/config";
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { checkExistingSession } = useClientAuth();
-  const { cart } = useBooking();
+  const cart = useBookingStore(selectCart);
   const hasProcessedCallback = useRef(false);
   const [services, setServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
@@ -214,17 +214,13 @@ export default function HomePage() {
 
                     {/* Columna 2: Carrito de reservas - Solo visible en desktop */}
                     <div className="hidden lg:block rounded-2xl border border-border bg-background lg:h-[450px]">
-                      <CartSidebar onConfirmBooking={() => {
-                        toast.success('Haz clic en "Reservar Ahora" para completar tu reserva');
-                      }} />
+                      <CartSidebar />
                     </div>
                   </div>
 
                   {/* Carrito Fixed Bottom - Solo móvil */}
                   <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden border-t border-border bg-background shadow-2xl">
-                    <CartSidebar onConfirmBooking={() => {
-                      toast.success('Haz clic en "Reservar Ahora" para completar tu reserva');
-                    }} />
+                    <CartSidebar />
                   </div>
                 </>
               ) : null}

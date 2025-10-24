@@ -1,11 +1,12 @@
 # Estado
-210/210 tareas (100%) | MVP: 100% ✅ | BOOKING-UI: 100% ✅ | CATEGORIES: 100% ✅ | DOCS: 100% ✅
+264/276 tareas (96%) | MVP: 96% 🚧 | BOOKING-FLOW: 90% � | ZUSTAND-MIGRATION: 100% ✅ | CATEGORIES: 100% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
 **Frontend:** React 19 + TypeScript + Vite + TailwindCSS 4 + shadcn-ui + React Router 7
 **Deploy:** Vercel (frontend) + Render (backend) + Supabase (DB) ✅ FUNCIONANDO
 **Auth:** JWT HttpOnly cookies (sameSite:'lax' para Safari) + Discriminated unions
+**Estado:** Context API (AuthContext + BookingContext) → **MIGRAR A ZUSTAND** (NUEVO)
 
 # Módulos Completados
 ✅ Auth (Admin): Login, logout, registro | ✅ ClientAuth: Sistema dual + Google OAuth
@@ -17,516 +18,124 @@
 ✅ PublicLayout: Navbar sticky + eliminación de sidebar
 ✅ PlatformFeaturesPage: Página informativa sobre AppointMePro
 
+## PROBLEMA CRÍTICO: Pérdida de estado en login
+**Issue:** Login redirige a "/" y limpia carrito + flujo de reserva
+**Causa raíz:** Context API no persiste entre navegaciones/recargas
+**Decisión arquitectura:** Zustand con arquitectura Redux-ready
+**Justificación:**
+- Zustand: Resuelve problema AHORA (persistencia + menos boilerplate)
+- Redux-ready: Arquitectura modular preparada para migración futura
+- Migración Zustand→Redux: 6/10 complejidad, factible si se necesita
+- Escalabilidad: Si proyecto crece a multi-tenant/real-time, migrar a Redux en 1 semana
+**Referencias:** Zustand docs 2025, Redux migration guides, React state best practices 2025
 
+## MIGRACIÓN A ZUSTAND (ARQUITECTURA REDUX-READY)
+### Fase 1: Setup + BookingStore ✅
+- [x] Instalar Zustand: `pnpm add zustand` → v5.0.8
+  - **Justificación:** Última versión estable (Oct 2025), persist middleware v4 built-in
+- [x] Crear /stores/bookingStore.ts (arquitectura modular)
+  - Actions separadas: addService, removeService, clearCart (patrón Redux-like)
+  - Selectors granulares exportados: selectCart, selectTotalPrice, selectTotalDuration
+  - Persist middleware con localStorage (key: 'appointme-booking-storage')
+  - TypeScript strict: Interfaces CartItem + BookingState
+  - **Justificación Zustand:** Immer automático (mutaciones seguras), DevTools compatible
+- [x] Actualizar BookingCalendarPage: useBookingStore con selectores
+- [x] Actualizar ServicesGridPage: useBookingStore(selectCart)
+- [x] Actualizar CartSidebar: useBookingStore con 6 selectores
+- [x] Actualizar ServiceCard: useBookingStore con selectores + getServiceQuantity
+- [x] Actualizar HomePage: useBookingStore(selectCart)
+- [x] Actualizar ServicesTable: useBookingStore (componente compartido)
+- [x] Testing manual: Verificar persistencia
+  - ✅ Carrito persiste en localStorage post-reload
+  - ✅ Carrito persiste entre navegaciones
+  - ✅ **FIX:** clearCart() en logout (admin + client) para nueva sesión limpia
+  - **Justificación UX:** Reservas != e-commerce, nueva sesión = nuevo flujo de reserva
+- [x] Eliminar BookingContext.tsx
+- [x] Eliminar BookingProvider en main.tsx
 
-**Justificación técnica mejoras:**
-- **Clarity First:** Usuario entiende inmediatamente que puede probar sin compromiso
-- **Dual Perspective:** Muestra ambas vistas (admin + cliente) para entender flujo completo
-- **Credibility:** Usar emojis estratégicamente para hacer contenido más accesible sin perder profesionalismo
-- **Call-to-Action:** Flujo circular - Features → Ver Demo → Home → Reservar → Experimenta
-- **Typography:** Uso de font-semibold para destacar conceptos clave sin romper diseño minimalista
-- **Color Psychology:** bg-foreground/5 para sección demo (contraste sutil que resalta importancia)
+### Fase 2: AuthStore
+- [ ] Crear /stores/authStore.ts (patrón Redux-like)
+  - Actions separadas: loginAdmin, loginClient, logout, checkSession
+  - Selectors: selectUser, selectIsAuthenticated, selectAuthType
+  - sessionStorage para auth (NO localStorage por seguridad OWASP)
+  - Discriminated unions mantenidas (AuthState type)
+- [ ] Actualizar LoginPage: useAuthStore
+- [ ] Actualizar RegisterPage: useAuthStore
+- [ ] Actualizar AdminLayout: useAuthStore  
+- [ ] Actualizar PublicLayout/UserMenu: useAuthStore
+- [ ] Testing: Login → reload → session persiste
+- [ ] Eliminar AuthContext.tsx + AuthProvider en main.tsx
 
-## MOBILE OPTIMIZATION: Zoom y viewport fixes
-- [x] Fix viewport meta tag para prevenir zoom accidental en mobile
-  - ✅ Agregado maximum-scale=1.0, user-scalable=no en index.html
-  - ✅ Previene zoom involuntario al hacer tap en inputs
-  - **Justificación Mobile UX:** user-scalable=no previene zoom accidental (iOS Safari best practice). maximum-scale=1.0 asegura que navegador respete escala inicial. Mejora UX en formularios donde usuarios tocaban inputs y activaban zoom no deseado
-- [x] Optimización de fuente base y rendering mobile
-  - ✅ font-size: 16px en html (evita auto-zoom en iOS cuando input tiene font-size < 16px)
-  - ✅ -webkit-text-size-adjust: 100% previene resize automático de texto en landscape
-  - ✅ -webkit-tap-highlight-color: transparent elimina flash azul en iOS al hacer tap
-  - ✅ min-height: 100vh + -webkit-fill-available para altura completa en mobile browsers
-  - **Justificación iOS Safari + Android Chrome:** 16px es tamaño mínimo para evitar auto-zoom en inputs (WebKit rendering engine). text-size-adjust previene scaling no deseado en rotación. tap-highlight-color mejora percepción visual (elimina feedback nativo confuso). fill-available soporta altura dinámica considerando barras de navegación mobile (CSS best practice 2025)
+### Fase 3: returnUrl flow (post-migración)
+- [ ] BookingCalendarPage: Guardar returnUrl en bookingStore
+- [ ] LoginPage: Leer returnUrl de bookingStore post-login
+- [ ] Navigate con estado preservado (carrito + fecha + hora)
 
-## SISTEMA DE RESERVAS: Grid con carrito (BOOKING-UI)
-### Backend API ✅
-- [x] Revisar endpoint GET /api/services existente
-  - ✅ Devuelve array de servicios con name, duration, price
-- [x] Revisar endpoint POST /api/bookings existente  
-  - ✅ Valida disponibilidad, crea reserva, requiere auth cliente
-- [x] Verificar validación de disponibilidad en backend
-  - ✅ Servicio `createBooking` valida conflictos de horario
+## SETUP INICIAL PARA TESTING
+### Configuración Admin: Horarios de disponibilidad (REQUISITO para testing /book/calendar)
+- [x] Verificar AdminUser.schedule existe en DB (WeeklySchedule JSON)
+  - ✅ Campo schedule Json? en schema.prisma línea 26
+  - **Justificación Prisma:** Json type permite esquemas flexibles (WeeklySchedule puede evolucionar)
+- [x] Seed inicial: AdminUser con schedule default (Lun-Vie 09:00-18:00)
+  - ✅ seed.ts líneas 26-34: schedule completo con 7 días
+  - ✅ Default: Lun-Jue 09:00-18:00, Vie 09:00-17:00, Mié 09:00-13:00
+  - ✅ Sáb-Dom deshabilitados (isActive: false)
+  - **Justificación:** Seed idempotente (upsert), horarios realistas para negocio
+- [x] Panel Admin: Verificar /admin/availability funcional
+  - ✅ Ruta registrada en App.tsx línea 68
+  - ✅ AvailabilityPage.tsx existe (302 líneas)
+  - ✅ Componente AdminCalendar implementado
+- [ ] Configurar horarios de prueba vía AvailabilityPage
+  - **ACCIÓN MANUAL:** Login admin → /admin/availability → Verificar horarios cargados
+  - **ACCIÓN MANUAL:** Habilitar días (toggle isActive si necesario)
+  - **Nota:** Si schedule ya tiene días activos (seed default), SKIP este paso
+- [ ] Testing manual: Verificar GET /api/availability/month retorna días
+  - **ACCIÓN MANUAL:** Abrir DevTools → Network
+  - **ACCIÓN MANUAL:** Navegar a /book/calendar con servicios en carrito
+  - **ACCIÓN MANUAL:** Verificar request: GET /api/availability/month?month=2025-10&totalDuration=X
+  - **ACCIÓN MANUAL:** Verificar response: string[] con fechas YYYY-MM-DD
+  - **Esperado:** Array con días habilitados del mes actual
+  - **Si falla:** Verificar backend logs, AdminUser.schedule en DB, horarios activos
 
-### Frontend - Página de Reservas
-- [x] Crear BookingContext para estado de carrito:
-  - ✅ Estado: servicios seleccionados (CartItem[] con quantity)
-  - ✅ Acciones: addService, removeService, clearCart, getServiceQuantity
-  - ✅ Cálculos memoizados: totalPrice, totalDuration (React 19 useMemo)
-- [x] Crear ServicesGridPage.tsx:
-  - ✅ Layout: Grid responsive (1 col móvil, 2 cols md, sticky carrito desktop)
-  - ✅ Fetch servicios desde /api/services con loading/error states
-  - ✅ Integrado en App.tsx: ruta /book
-  - ✅ Fix API URL: Usa API_BASE_URL centralizado (no hardcoded)
-- [x] ServiceCard component con shadcn-ui Card:
-  - ✅ Nombre servicio (font-semibold text-lg)
-  - ✅ Duración con Clock icon de lucide-react
-  - ✅ Precio con DollarSign icon
-  - ✅ Botón "Agregar" con Plus icon + Badge de cantidad
-  - ✅ Hover effect: scale-105 transition
-- [x] Carrito lateral (sticky en desktop):
-  - ✅ Lista servicios seleccionados con Badge de cantidad
-  - ✅ Botón X para remover individual
-  - ✅ Totales: duración + precio (calculados desde context)
-  - ✅ Botón "Confirmar Reserva" (disabled si vacío)
-  - ✅ Botón "Limpiar carrito"
-  - ✅ Layout flexbox con altura completa: h-full + flex flex-col para ocupar 100% del contenedor padre
-  - ✅ Scroll interno optimizado: flex-1 overflow-y-auto en lista de servicios (crece dinámicamente)
-  - ✅ Header y Footer flex-shrink-0: Mantienen altura fija, solo el contenido central scrollea
-  - ✅ Navegación inteligente: onClick redirige a /book si está en HomePage, mantiene carrito
-  - **Justificación CSS Flexbox:** flex-col en Card + flex-1 en CardContent permite que el componente ocupe toda la altura del grid padre (lg:grid-cols-2). Lista de servicios con flex-1 crece dinámicamente sin max-height fijo, adaptándose al espacio disponible. Header/Footer con flex-shrink-0 mantienen tamaño constante. Solución escalable que funciona en cualquier layout (grid, flex, absolute positioning)
-- [x] Optimización Responsive Mobile-First:
-  - ✅ ServicesGridPage: Fixed bottom cart en móvil con padding dinámico según estado carrito
-  - ✅ ServicesGridPage: useBooking para detectar items y ajustar pb-64 (con items) vs pb-32 (vacío)
-  - ✅ CartSidebar: Versión compacta en móvil con collapse/expand
-  - ✅ CartSidebar Mobile: Header expandible muestra cantidad items + duración total + precio
-  - ✅ CartSidebar Mobile: Lista expandible con botones eliminar accesibles (touch 44px)
-  - ✅ CartSidebar Mobile: Botón "Limpiar carrito" visible en estado expandido
-  - ✅ ServiceCard: Hover solo desktop, touch targets mínimo 44px, tamaños responsivos
-  - ✅ ServicesList: Tabs responsive optimizados
-    - Mobile: Solo nombre categoría (sin contador), text-xs, px-2, gap-0.5, whitespace-nowrap
-    - Desktop: Nombre + contador (X), text-sm, px-3, gap-1
-    - Conditional rendering: `<span className="sm:hidden">Cortes</span>` vs `<span className="hidden sm:inline">Cortes (5)</span>`
-    - Ancho tabs alineado con tabla: Eliminado wrapper -mx-4 sm:mx-0, tabs respetan mismo contenedor que tabla
-    - Snap scroll mejorado: `snap-center` (tabs centradas), `scroll-smooth` (animación suave CSS)
-    - Resultado: 30-40% más categorías visibles, scroll que centra cada tab con animación fluida
-  - ✅ CSS: scrollbar-hide utility para mejor UX en scroll horizontal
-  - ✅ Typography: Tamaños de fuente escalados (text-xs sm:text-sm lg:text-base)
-  - ✅ Buttons: Alturas responsive h-10 sm:h-11, texto condicional ("Agregar más" → "Más")
-  - ✅ Empty states: Textos responsivos, iconos sin mostrar header en móvil
-- [ ] Modal ConfirmBooking:
-  - [ ] DatePicker con disponibilidad desde backend
-  - [ ] TimePicker filtrado por bloques disponibles
-  - [ ] Resumen final (servicios + fecha + total)
-  - [ ] Botón submit → POST /api/bookings
+## FLUJO DE RESERVA COMPLETO (BOOKING-FLOW)
+### Paso 1: Selección de servicios ✅
+- [x] ServicesGridPage con carrito funcional
+- [x] BookingContext maneja estado
+- [x] CartSidebar navegación inteligente
 
-### UX/UI (shadcn-ui + Tailwind)
-- [x] Cards con hover:scale-105 transition (solo desktop para evitar issues táctiles)
-- [x] Badges para categorías de servicio
-- [x] Loading states (spinner + texto)
-- [ ] Toast notifications para feedback
-- [x] Responsive: carrito fixed bottom en móvil con diseño compacto
-- [x] Simplificación de rutas públicas:
-  - ✅ Eliminada ruta `/services` (antigua ServicesListPage sin carrito)
-  - ✅ HomePage botón "Reservar Ahora" redirige a `/book` (ServicesGridPage con carrito completo)
-  - ✅ Archivo ServicesListPage.tsx eliminado (código duplicado obsoleto)
-- [x] CartSidebar: Botón "Confirmar Reserva" visible en desktop cuando carrito vacío
-  - ✅ Footer siempre renderizado (no conditional wrapper con `{!isEmpty && ...}`)
-  - ✅ Botón muted (variant="outline") y disabled cuando isEmpty
-  - ✅ Botón normal (variant="default") y enabled cuando !isEmpty
-  - ✅ Mantiene visibilidad responsive: hidden en mobile collapsed, flex en mobile expanded/desktop
-  - **Justificación UX:** Evita "empty space" en desktop, comunica claramente que se necesitan servicios antes de continuar. Sigue principio de "Progressive Disclosure" (React 19 + shadcn-ui best practices)
-  - **Justificación:** Single Responsibility - una sola página de reservas con toda la funcionalidad (carrito + categorías + paginación). Eliminar duplicación de código y confusión en navegación. React Router best practice: rutas semánticas (/book más claro que /services para acción de reservar)
-- [x] HomePage: Preview de servicios en sección barbero con layout 2 columnas
-  - ✅ Integrado ServicesTable en columna izquierda (50% width en desktop)
-  - ✅ Integrado CartSidebar en columna derecha (50% width en desktop)
-  - ✅ Layout responsive: Grid 2 cols desktop (`lg:grid-cols-2 lg:items-start`), stack vertical mobile
-  - ✅ Altura fija en desktop: lg:h-[450px] en ambas columnas para mantener tamaño consistente y compacto
-  - ✅ Columna servicios: Flexbox con scroll interno (flex-1 overflow-y-auto) + footer fijo
-  - ✅ Columna carrito desktop: Altura fija lg:h-[450px], hidden lg:block
-  - ✅ Carrito mobile: Fixed bottom (fixed bottom-0 left-0 right-0 z-50 lg:hidden) igual que /book
-  - ✅ Carrito mobile vacío: Botón compacto muestra "Tu carrito está vacío" con icono (py-3 px-4, mismo tamaño que collapsed)
-  - ✅ CardContent oculto en mobile cuando vacío: `hidden lg:flex` previene espacio innecesario
-  - ✅ Carrito mobile collapsed: Botón compacto muestra cantidad + duración + precio + ChevronUp
-  - ✅ Carrito mobile expandido: Header con botón minimizar más visible (texto "Minimizar", border-bottom, rounded-lg, hover:bg-muted/50)
-  - ✅ Footer wrapper !isEmpty: Oculta botón "Confirmar Reserva" en mobile cuando isEmpty
-  - ✅ Estado isExpanded: Controla collapsed (botón compacto) vs expanded (carrito completo)
-  - ✅ Padding bottom dinámico mobile: pb-64 con items, pb-32 vacío, lg:pb-0 (previene overlap)
-  - ✅ useBooking hook: Detecta cart.length para ajustar padding dinámicamente
-  - ✅ Fetch de servicios con useState + useEffect (5 servicios máximos)
-  - ✅ Loading state con spinner animado
-  - ✅ Props ServicesTable: showCategory={true}, compact={true} para vista reducida
-  - ✅ CartSidebar con toast feedback en onConfirmBooking
-  - ✅ Cards con border + padding consistente (rounded-2xl)
-  - ✅ Link "Ver todos los servicios →" en tabla
-  - ✅ Icon Scissors + título "Nuestros Servicios"
-  - **Justificación CSS Grid + Flexbox + Mobile Pattern:** items-start previene stretch automático. Altura lg:h-[450px] asegura tamaño consistente. Flexbox interno (flex-1 overflow-y-auto) para scroll. Mobile: fixed bottom-0 replica patrón de /book (Bottom Sheet Pattern), z-50 sobre contenido, padding dinámico previene overlap. Collapsed state: botón compacto 60px altura con resumen (cantidad, duración, precio) + ChevronUp para expandir. Expanded state: carrito completo con header minimizable (ChevronDown), lista scrolleable, footer con botón confirmar. UX: Minimizar libera espacio en pantalla, usuario expande cuando necesita ver/editar items. React state management: isExpanded controla visibilidad condicional de secciones. Accesibilidad: botones con áreas táctiles 44px+, feedback visual con active:bg-muted/50
-- [x] Refactor: Vista tabla compacta reutilizable (tabla-like design)
-  - ✅ Componente ServicesTable.tsx creado (248 líneas)
-  - ✅ Vista desktop: Tabla HTML semántica con columnas (Servicio, Categoría, Duración, Precio, Acción)
-  - ✅ Vista mobile: Lista de cards compactas optimizada con 4 líneas de info
-  - ✅ Mobile UX mejorada: Separador visual entre info y acciones, textos descriptivos ("X servicios agregados", "Disponible para reservar")
-  - ✅ Props configurables: services, showCategory, compact, maxItems
-  - ✅ Integrado en ServicesList (reemplaza grid de ServiceCard)
-  - ✅ Botones +/- inline para agregar/quitar servicios
-  - ✅ Badge con cantidad visible en tabla y mobile
-  - ✅ Hover row effect (hover:bg-muted/50)
-  - ✅ Pagination ajustada: 9 → 12 items por página (mejor aprovechamiento tabla)
-  - ✅ Accessibility: aria-label en botones mobile ("Quitar uno", "Agregar uno más")
-  - **Justificación React 19:** Componente reutilizable con composition pattern. ServicesTable puede usarse en HomePage (vista previa compacta) y en /book (lista completa). Semantic HTML (<table>) mejora accessibility y SEO. Mobile-first con progressive enhancement (tabla → lista responsive). DRY principle: elimina duplicación de lógica de carrito (useBooking hook centralizado). Mobile UX: Separator visual (border-bottom) mejora escaneo visual, textos descriptivos mejoran feedback (WCAG 2.1)
+### Paso 2 + 3: Calendario + horarios ✅
+- [x] Backend: GET /api/availability/month
+- [x] Backend: Fix timezone parsing (parse date-fns vs new Date)
+- [x] BookingCalendarPage fusionada
+- [x] Auto-select primera fecha
+- [x] Fetch slots automático
+- [x] Fix: Calendar month prop (navegación meses)
+- [x] Debug logging frontend + backend
 
-## SISTEMA DE CATEGORÍAS: Categorías globales single-tenant ✅
-### Backend ✅ COMPLETO
-- [x] Crear modelo Category en schema.prisma
-  - ✅ Categorías GLOBALES (sin adminId) - single-tenant
-  - ✅ Relación uno-a-muchos con Service (onDelete: Restrict)
-  - ✅ Campos: name @unique global, description, isActive
-  - ✅ Migración: remove-admin-from-category-global-categories
-- [x] Actualizar seed.ts con categorías globales
-  - ✅ 4 categorías globales: Cortes, Barba, Coloración, Maquillaje
-  - ✅ 5 servicios con categorías asignadas
-  - ✅ Seed ejecutado exitosamente
-- [x] Actualizar CRUD de categorías para modelo global
-  - ✅ GET /api/categories (público, solo activas con servicios)
-  - ✅ GET /api/categories/admin (admin, todas con conteo)
-  - ✅ POST /api/categories/admin (crear categoría global)
-  - ✅ PUT /api/categories/admin/:id (actualizar)
-  - ✅ DELETE /api/categories/admin/:id (con validación de servicios)
-  - ✅ Validaciones: nombre único global, no eliminar con servicios
-  - ✅ SEGURIDAD: Rutas /admin protegidas con isAdminAuthenticated
-  - ✅ Services NO filtran por adminId (categorías compartidas)
-- [x] Actualizar Service types y validaciones
-  - ✅ CreateServiceDto + UpdateServiceDto incluyen categoryId
-  - ✅ Validar que categoryId existe al crear/editar
-  - ✅ getAllServices incluye relación category
+### Paso 4: Autenticación con returnUrl (BLOQUEADO - requiere Zustand)
+- [ ] LoginPage: Detectar returnUrl query param
+- [ ] Después login: navigate(returnUrl) preservando params
+- [ ] RegisterPage: Mismo comportamiento
+- **BLOQUEADO:** Requiere persistencia de carrito (migrar a Zustand primero)
 
-### Frontend
-- [x] Crear types para Category
-  - ✅ Interface Category sin adminId
-  - ✅ Service actualizado con categoryId y category
-  - ✅ DTOs para crear/actualizar categorías
-- [x] Crear componente ServicesList con Tabs
-  - ✅ shadcn-ui Tabs para filtrar por categoría + tab "Todos"
-  - ✅ Pagination cliente-side con 9 servicios por página
-  - ✅ Grid responsive de ServiceCard (1/2/3 cols)
-  - ✅ Fetch paralelo de servicios y categorías con Promise.all
-  - ✅ useMemo para filtrado y paginación (React 19 best practices)
-  - ✅ Scroll suave al cambiar página
-  - ✅ Empty states para categorías sin servicios
-  - ✅ Archivo: `frontend/src/components/shared/ServicesList.tsx` (259 líneas)
-- [x] Refactorizar ServicesGridPage
-  - ✅ Reemplazado grid manual con componente ServicesList
-  - ✅ Carrito funcional mantenido (CartSidebar + BookingContext)
-  - ✅ Layout responsive: 2 cols en desktop (servicios + carrito)
-  - ✅ Eliminado código duplicado (fetch, loading, error handling)
-  - ✅ Composición de componentes (React best practices)
-  - ✅ Archivo: `frontend/src/pages/ServicesGridPage.tsx` (50 líneas, antes 109)
-- [x] Admin UI - Página de gestión de categorías
-  - ✅ DataTable con shadcn-ui y TanStack Table v8
-  - ✅ Columnas: nombre, descripción, estado (Badge), conteo servicios, fecha creación
-  - ✅ Acciones: Editar y Eliminar (DropdownMenu)
-  - ✅ Modal con CategoryForm (shadcn-ui: Input, Textarea, Switch)
-  - ✅ Validación: No eliminar categorías con servicios
-  - ✅ Toast notifications con Sonner (success/error)
-  - ✅ Ruta: /admin/categories agregada a App.tsx y AdminLayout
-  - ✅ API calls: GET /categories/admin, POST, PUT, DELETE
-  - ✅ Página RESPONSIVE optimizada para mobile:
-    - Header flex-col sm:flex-row con gap-3, botón w-full sm:w-auto
-    - Typography escalada: text-2xl sm:text-3xl título, text-sm sm:text-base subtítulo
-    - **Vista dual: Cards mobile (md:hidden) + Tabla desktop (hidden md:block)**
-    - **Mobile Cards:** Card con Tag icon, Badge estado, descripción line-clamp-2, info condicional
-    - **Info condicional mobile/desktop:** Solo mostrar contador y fecha cuando hay servicios (evita "0 servicios")
-    - **Acciones mobile:** Botones flex-1 con Edit/Trash2 icons, disabled si tiene servicios
-    - **Mensaje validación:** text-[10px] explica por qué no se puede eliminar
-    - **Fix "0" renderizado:** Cambio de `category._count?.services && category._count.services > 0` a `(category._count?.services ?? 0) > 0`
-    - **Empty state:** Centrado con texto muted-foreground
-    - Columns compact desktop: text-xs sm:text-sm en todas las celdas
-    - Buttons reducidos: h-7/w-7 sm:h-8/w-8 en actions, px-2 sm:px-4 en sorting
-    - Icons responsive: h-3 w-3 sm:h-4 w-4, ml-1 sm:ml-2
-    - Badge text-xs para compactar estado
-    - Description truncada: max-w-[150px] sm:max-w-[300px]
-    - Fecha formato short: mejor legibilidad mobile
-    - DropdownMenu items text-xs sm:text-sm
-    - **Justificación Fix "0":** React renderiza valores falsy como 0, pero NO renderiza booleanos false. Expresión `category._count?.services && ...` cuando es 0 renderiza "0" literalmente. Solución: `(value ?? 0) > 0` devuelve booleano false que React ignora. Nullish coalescing (??) maneja undefined/null correctamente. Pattern aplicado en ambas vistas (mobile cards + desktop dropdown)
-    - **Justificación Mobile-First + Cards Pattern:** Cards verticales eliminan scroll horizontal (UX best practice). Info condicional evita "0 servicios" sin sentido (Clean UI). Botones inline con iconos claros (Edit/Trash2) mejoran touch accessibility (44px height mínimo). line-clamp-2 en descripción balancea densidad vs legibilidad. Badge visual inmediato de estado activo/inactivo. border-t en acciones separa visualmente info de controles. Disabled state + mensaje explicativo (WCAG 2.1 guideline: feedback claro). Pattern reutilizable: mismo diseño que ServicesPage para consistencia visual. React conditional rendering (md:hidden / hidden md:block) sin duplicación de lógica
-  - ✅ Archivos creados:
-    - `frontend/src/pages/admin/categories/CategoriesPage.tsx` (230 líneas)
-    - `frontend/src/pages/admin/categories/columns.tsx` (140 líneas)
-    - `frontend/src/components/CategoryForm.tsx` (140 líneas)
-  - ✅ Componentes shadcn-ui instalados: Pagination, Textarea, Switch, Sonner
+### Paso 5: Verificación teléfono (opcional - Fase 2)
+- [ ] Backend: phoneVerified en Client model
+- [ ] POST /client/phone/send-code + /verify
+- [ ] PhoneVerificationPage UI
+- [ ] Twilio integration
 
-## ADMIN SERVICES: Categorías en gestión de servicios
-- [x] Agregar columna "Categoría" en DataTable de servicios
-  - ✅ columns.tsx: Nueva columna con service.category.name
-  - ✅ Badge variant="secondary" mostrando nombre de categoría
-  - **Justificación React 19:** Acceso a row.original para datos relacionados (TanStack Table best practice)
-- [x] Agregar filtro por categoría en ServicesPage
-  - ✅ Fetch categorías desde /api/categories/admin con Promise.all
-  - ✅ Tabs shadcn-ui para filtrar por categoría (tab "Todos" + tabs dinámicos)
-  - ✅ Filtrado client-side con useMemo (React 19 performance optimization)
-  - ✅ Contador de servicios por categoría en cada tab
-  - **Justificación:** Promise.all para fetch paralelo (mejor performance), useMemo evita re-cálculos innecesarios
-- [x] ServiceForm: Selector de categoría obligatorio
-  - ✅ Fetch categorías activas desde /api/categories/admin
-  - ✅ Select shadcn-ui con categoryId requerido
-  - ✅ Validación: categoryId requerido en CreateServiceDto
-  - ✅ Mostrar categoría actual en modo edición (useEffect con initialData)
-  - ✅ Migrado a shadcn-ui components (Label, Input, Textarea, Select, Button)
-  - ✅ Loading state en Select mientras fetch categorías
-  - **Justificación shadcn-ui:** Componentes accesibles (ARIA), consistencia visual, mejor UX con estados disabled/loading. TypeScript safety con tipos estrictos
-- [x] Ajustar tamaño de tabla y mejorar modal de edición
-  - ✅ DataTable columns compactas: text-sm, h-7 buttons, h-3.5 icons (match con cards mobile)
-  - ✅ Column sizes definidos: name (200px), category (120px), duration (100px), price (120px), actions (80px)
-  - ✅ Categoría con icono Tag: rounded-md bg-secondary/50 px-2 py-1 con icono h-3 w-3
-  - ✅ Diseño consistente: Mismo estilo visual que pantalla principal de categorías
-  - ✅ Header "Acciones" agregado para claridad
-  - ✅ Tabs primera tab corregida: pl-0.5 en TabsList, justify-start, gap-0.5 sm:gap-1
-  - ✅ Tabs padding horizontal: px-2 sm:px-3 en cada TabsTrigger para spacing uniforme
-  - ✅ **Tabs optimizadas: Solo mostrar categorías con servicios**
-  - ✅ **useMemo categoriesWithServices: Filtra categories con count > 0**
-  - ✅ **Tabs render dinámico: categoriesWithServices.map() en lugar de categories.map()**
-  - ✅ Modal backdrop transparente: bg-black/20 (20% opacity) con backdrop-blur-sm
-  - ✅ Modal responsive: p-4 en backdrop para spacing en mobile
-  - ✅ Modal dark mode support: dark:bg-gray-900 en modal, dark:hover:text-gray-300 en botón
-  - ✅ Transiciones suaves: transition-colors en close button
-  - **Justificación Tabs Optimizadas:** useMemo evita re-cálculo innecesario (React 19 performance). Filtrar categorías vacías mejora UX (menos ruido visual, solo opciones relevantes). Progressive Disclosure pattern: mostrar solo lo necesario. Information Architecture: tabs más limpias facilitan navegación. Similar a filtros de e-commerce (mostrar solo categorías con productos). Código reutilizable y mantenible
-  - **Justificación UX:** bg-black/20 reduce opacidad de 50% a 20% (menos intrusivo). backdrop-blur-sm añade glass morphism effect manteniendo visibilidad del contenido. p-4 en backdrop previene que modal toque bordes en mobile. Dark mode support mejora accesibilidad en diferentes preferencias de usuario. Glass morphism pattern moderno sin bloquear completamente la vista (Material Design 3 + iOS patterns)
-  - ✅ Modal mejorado con efectos visuales premium:
-    - Backdrop: bg-black/60 backdrop-blur-sm (Glass morphism)
-    - Modal bg: gradient-to-br from-background to-muted/30 (depth visual)
-    - Border: border-border/50 con rounded-2xl (elegancia moderna)
-    - Shadow: shadow-2xl para elevación pronunciada
-    - Animaciones: animate-in fade-in zoom-in-95 duration-200 (entrada suave)
-    - Título: gradient text from-foreground to-foreground/70 bg-clip-text
-    - Background layer: gradient-to-br from-primary/5 detrás del form (sutil)
-    - Close button: SVG icon con hover:bg-muted/50 transition
-    - Click outside: onClick en backdrop para cerrar (UX estándar)
-    - stopPropagation en modal content (previene cierre accidental)
-  - **Justificación UI/UX:** TanStack Table size property define anchos específicos para columnas consistentes. Typography text-sm en tabla alineada con cards mobile (design system coherente). Modal con glass morphism + gradients + shadows crea percepción premium sin sobrecargar (Material Design 3 + iOS design patterns). backdrop-blur mejora legibilidad del contenido sin bloquear completamente la vista. animate-in utilities (Tailwind) para micro-interactions fluidas sin JavaScript. gradient subtle en form background añade profundidad sin distraer. SVG icon en close button más limpio que HTML entity. Click outside pattern mejora UX (escape rápido del modal)
-- [x] Hacer responsive la página ServicesPage
-  - ✅ AdminLayout REFACTORIZADO completamente para diseño responsive con sidebar colapsable
-  - ✅ Eliminado grid de sidebar fijo (md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr])
-  - ✅ Navbar sticky con transparencia: bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60
-  - ✅ Sidebar vertical colapsable desktop: w-56/w-64 expandido, w-16 colapsado con transición suave
-  - ✅ Sidebar altura completa: min-h-[calc(100vh-3.5rem)] ocupa toda la pantalla con shadow-sm
-  - ✅ Sidebar mejoras visuales: gradient bg-gradient-to-b from-muted/40 to-muted/20
-  - ✅ Animación fluida sin saltos: opacity-0/100 + w-0/full con overflow-hidden (CSS transitions)
-  - ✅ Header fixed height: min-h-[52px] previene cambio de altura durante animación
-  - ✅ Botón ml-auto cuando expandido, ml-0 colapsado: Transición suave de posición
-  - ✅ Labels en nav con transition-all: w-0/auto + opacity para fade suave
-  - ✅ Botón collapse intuitivo: size="sm" con hover:bg-primary/10 hover:text-primary (feedback visual claro)
-  - ✅ Indicador visual: Dot con animate-pulse + whitespace-nowrap previene wrap
-  - ✅ Iconos lucide-react: LayoutDashboard, Tags, Calendar, BookOpen para cada sección
-  - ✅ Estado colapsado: Solo iconos centrados con title tooltip, texto opacity-0 w-0
-  - ✅ Hover states mejorados: hover:bg-primary/10 active:bg-primary/20 (feedback visual)
-  - ✅ Layout híbrido: Navbar + Sidebar desktop (mejor uso espacio) vs Sheet mobile
-  - ✅ Logo mobile SIEMPRE visible: Icono + texto "AppointMePro" en todos los tamaños
-  - ✅ Mobile Sheet compacto: w-56 (224px, ~50% pantalla mobile) en vez de w-72 (288px)
-  - ✅ Mobile Sheet spacing reducido: px-3 header (antes px-4), p-2 nav (antes p-3)
-  - ✅ Mobile Sheet typography: text-sm header (antes text-base) para más espacio
-  - ✅ Mobile Sheet gaps optimizados: gap-2.5 en links (antes gap-3)
-  - ✅ Mobile Sheet padding links: py-2.5 (antes py-3) más compacto
-  - ✅ Mobile Sheet iconos: Mismos iconos que desktop para consistencia visual
-  - ✅ Mobile Sheet overflow: flex-1 overflow-y-auto para scroll interno
-  - ✅ Layout simplificado: min-h-screen w-full (mobile-first, sin grid complejo)
-  - ✅ Main content flex-1 overflow-x-hidden: Crece dinámicamente sin scroll horizontal
-  - ✅ AdminLayout padding optimizado mobile: p-3 sm:p-4 lg:p-6 (antes: p-4 lg:p-6)
-  - ✅ AdminLayout gap optimizado mobile: gap-3 sm:gap-4 lg:gap-6 (antes: gap-4 lg:gap-6)
-  - ✅ Container con max-width: w-full max-w-full previene overflow horizontal
-  - ✅ Header mobile ultra-compacto: text-lg sm:text-xl lg:text-2xl (antes: text-xl sm:text-2xl lg:text-3xl)
-  - ✅ Header truncate: Evita overflow en títulos largos
-  - ✅ Botón "Añadir" más corto mobile: "Añadir" (antes: "Añadir Servicio"), text-sm, flex-shrink-0
-  - **Justificación React 19 + UX Design:** Botón collapse mejorado con feedback visual multi-capa: (1) Text label "Panel Admin" con dot animado (pulse) indica estado activo, (2) hover:bg-primary/10 hover:text-primary comunica interactividad clara (Material Design), (3) size="sm" más compacto y elegante que size="icon", (4) Layout condicional justify-between/center mejora simetría visual. Dot con animate-pulse (Tailwind utility) atrae atención sin JavaScript adicional. title attribute mantiene accessibility. transition-all duration-200 en botón más rápido que sidebar (300ms) para respuesta inmediata. justify-between en header expandido balancea visualmente el label con el botón
-  - ✅ Subtítulo mobile: text-xs sm:text-sm, mt-0.5 sm:mt-1
-  - ✅ Tabs con gap-1 explícito: Mejor spacing entre tabs
-  - ✅ Tabs padding horizontal: px-1 en TabsList previene corte de tabs en bordes
-  - ✅ Tabs text unificado mobile: text-xs (antes: text-xs sm:text-sm)
-  - ✅ Tabs flex-shrink-0: Evita colapso de tabs
-  - ✅ Cards mobile ultra-compactas: p-2.5 (antes: p-3), space-y-2 (antes: space-y-3)
-  - ✅ Cards typography reducida: h3 text-xs, badges text-[9px] h-4, info text-[10px]
-  - ✅ Cards icons mini: h-2.5 w-2.5 (antes: h-3 w-3)
-  - ✅ Cards description line-clamp-1: Una sola línea (antes: line-clamp-2)
-  - ✅ Cards button reducido: h-7 w-7 (antes: h-8 w-8), icon h-3.5 w-3.5
-  - ✅ Cards spacing interno: space-y-1 (antes: space-y-1.5), gap-1 (antes: gap-1.5)
-  - ✅ Empty state: py-6 text-xs (antes: py-8 text-sm)
-  - **Justificación Mobile-First + Transparencia:** Inspirado en PublicLayout pero optimizado para admin. Eliminado sidebar fijo que consumía 220-280px de ancho crítico en desktop. Navbar horizontal aprovecha mejor espacio con navegación inline (patrón moderno: Vercel Dashboard, GitHub, Linear). Transparencia (backdrop-blur + bg-background/60) mejora percepción visual sin sacrificar legibilidad. Mobile: Sheet lateral con w-64 optimizado. Logo hidden sm:inline ahorra espacio crítico en móvil. Navegación desktop md:flex en navbar (mejor UX que dropdown). Typography ultra-compacta (text-[9px], text-[10px], text-xs) maximiza densidad información sin sacrificar legibilidad. Icons h-2.5 w-2.5 (10px) proporcionales a text-[10px]. line-clamp-1 description evita altura variable. flex-shrink-0 en botón/tabs previene colapso layout. max-w-full + w-full previene overflow horizontal (common issue admin panels). Layout simplificado sin grid complejo facilita mantenimiento futuro. Sticky navbar con z-50 asegura accesibilidad constante a navegación
+### Paso 6: Confirmación reserva
+- [ ] BookingConfirmPage (/book/confirm)
+- [ ] Query params: date + time
+- [ ] Resumen: servicios + fecha + hora + totales
+- [ ] POST /api/bookings
+- [ ] Success: clearCart + navigate(/profile o /bookings)
+- [ ] Error handling: 409 conflicto, 400 validación
 
-## ADMIN CALENDAR: Gestión de disponibilidad responsive
-- [x] Hacer responsive /admin/availability (AdminCalendar.tsx)
-  - ✅ EventCard ultra-compacto mobile: p-0.5 sm:p-1, text-[8px] sm:text-xs, leading-tight
-  - ✅ Time text reducido: text-[7px] sm:text-xs para caber en celdas pequeñas
-  - ✅ Header responsive con controles stack: flex-col sm:flex-row
-  - ✅ Título centrado mobile: text-lg sm:text-xl, text-center sm:text-left
-  - ✅ Tabs grid 3 columnas mobile: grid-cols-3 con texto oculto mobile (solo iconos)
-  - ✅ Navegación full-width mobile: flex-1 sm:flex-none en botones
-  - ✅ Vista Día optimizada: w-12 sm:w-20 hour column, text-[10px] sm:text-sm labels
-  - ✅ Min-height responsive: min-h-[50px] sm:min-h-[60px] en hour rows
-  - ✅ Vista Semana compacta: Single-letter day headers mobile (L M X J V S D)
-  - ✅ Event limiting: slice(0, 3) + "+X más" indicator para evitar overflow
-  - ✅ Vista Mes optimizada: Single-letter headers (L M X J V S D) vs full names desktop
-  - ✅ Month cell height: min-h-[80px] sm:min-h-[120px] (33% reducción mobile)
-  - ✅ Month event limiting: slice(0, 2) + "+X más" texto muted
-  - ✅ Calendar container height: h-[600px] sm:h-[750px] (20% reducción mobile)
-  - ✅ Content padding responsive: p-3 sm:p-6 para más espacio visual mobile
-  - ✅ Week cell min-height: min-h-[400px] sm:min-h-[582px] (31% reducción mobile)
-  - ✅ Typography escalada en todos los headers: text-[10px] sm:text-sm (day/month/week)
-  - ✅ Padding responsive en cells: p-1 sm:p-3 para densidad mayor mobile
-  - ✅ Hidden text pattern: `<span className="sm:hidden">L</span>` vs `<span className="hidden sm:inline">Lun</span>`
-  - **Justificación Mobile-First Calendar:** Event limiting previene overflow (UX best practice: show "+X más" vs scroll). Single-letter day names (L M X J V S D) ahorran 60% espacio horizontal crítico. text-[8px] (8px) y text-[10px] (10px) son mínimos legibles (WCAG 2.1 guideline: 10px+ para texto principal). leading-tight reduce line-height sin sacrificar legibilidad. Stack controls mobile (flex-col) evita wrap horizontal. grid-cols-3 tabs asegura ancho igual y legibilidad. flex-1 buttons mobile permiten touch target 44px+ (iOS HIG). min-h reduction (50px vs 60px, 80px vs 120px) optimiza viewport usage sin comprometer usabilidad. Icon-only tabs mobile ahorra espacio (pattern: Gmail mobile, Google Calendar). format "EEEEE" (date-fns) da single letter automáticamente. slice + conditional rendering (React pattern) evita layout shifts. p-0.5 (2px) permite 4+ events por celda. transition-all en todos los breakpoints mantiene smooth UX. z-50 header asegura navegación siempre accesible. getEventColor function mantiene código DRY. Responsive pattern reutilizable: mismo approach que CategoriesPage y ServicesPage
-
-## BOOKING UI - Fixes
-- [x] Fix: ServiceCard creciendo con carrito en /book
-  - ✅ CartSidebar desktop: lg:h-full adapta a contenedor padre (450px)
-  - ✅ CartSidebar mobile: max-h-[60vh] altura máxima (60% viewport)
-  - ✅ Card: Mobile max-h-[60vh], Desktop lg:h-full (adapta a padre)
-  - ✅ HomePage: Contenedor lg:h-[450px] respetado por CartSidebar
-  - ✅ ServicesGridPage: Contenedor lg:h-[450px] mismo comportamiento que HomePage
-  - ✅ Altura consistente: Ambas páginas usan 450px para carrito desktop
-  - ✅ CardContent: min-h-0 para permitir scroll con flexbox
-  - ✅ CartSidebar: overflow-y-auto solo en lista de servicios (flex-1)
-  - **Justificación CSS Flexbox + altura consistente:** Desktop: lg:h-full permite que Card se adapte a contenedor padre con lg:h-[450px] en AMBAS páginas (HomePage y ServicesGridPage). Mobile: max-h-[60vh] limita a 60% viewport. min-h-0 en CardContent permite flexbox shrink. overflow-y-auto en lista con flex-1 permite scroll interno. Altura 450px óptima: caben 4-5 servicios sin scroll, equilibrio entre visibilidad y compacidad. Solución escalable: componente reutilizable controlado por contenedor padre, sin lógica condicional interna. Pattern: Single Responsibility (CartSidebar solo renderiza, padre controla dimensiones)
-
-## PENDIENTES ANTERIORES
-- [ ] Cliente UI: Dashboard básico + MyBookingsPage
-- [ ] Rate limiting: express-rate-limit para login/register
-- [ ] Modal ConfirmBooking: DatePicker + TimePicker + POST /api/bookings
-- [ ] Toast notifications: Implementar Sonner para feedback visual
-
-## CONFIGURACIÓN TYPESCRIPT 7.0 - SOLUCIÓN DEFINITIVA
-- [x] Eliminar baseUrl deprecated de tsconfig.json
-  - ✅ Removido baseUrl y paths de tsconfig.json root
-  - ✅ tsconfig.json ahora solo contiene project references (best practice)
-  - ✅ Configuración de paths permanece en tsconfig.app.json donde se usa
-  - ✅ moduleResolution: "bundler" hace que paths funcione SIN baseUrl
-  - **Justificación TypeScript 7.0:** baseUrl es deprecated y será removido. Con moduleResolution: "bundler" (ya configurado en tsconfig.app.json), paths funciona directamente sin baseUrl. Vite como bundler maneja path aliases (@/*) nativamente. Root tsconfig.json debe ser minimal con solo project references (TypeScript Project References pattern). Solución forward-compatible con TS 7.0+ sin ignoreDeprecations. Path resolution delegado a bundler (Vite) que es más eficiente que TypeScript compiler
-
-## DOCUMENTACIÓN PROFESIONAL ✅
-- [x] README.md actualizado para reclutadores y entrevistas
-  - ✅ Badges con versiones de tecnologías (TypeScript 5.6, React 19, Node 20, etc.)
-  - ✅ Sección "Project Overview" con problema resuelto y target users
-  - ✅ Arquitectura Backend + Frontend con diagramas ASCII
-  - ✅ Justificaciones técnicas: Clean Architecture, Passport Strategy Pattern, Discriminated Unions
-  - ✅ OWASP Top 10 compliance detallado (A01, A02, A03, A05, A07)
-  - ✅ Sección "Tech Stack" con tabla comparativa y versiones
-  - ✅ UX/UI Design Patterns: Mobile-first, breakpoint strategy, performance optimizations
-  - ✅ Sección "Technical Highlights for Recruiters" con code quality y problem-solving examples
-  - ✅ Project Statistics: LOC, endpoints, components, bundle size, performance
-  - ✅ Quick Start guide con pnpm + deployment instructions (Vercel + Render + Supabase)
-  - ✅ Growth & Learning: Nuevas tecnologías aprendidas + roadmap post-MVP
-  - **Justificación:** README orientado a hiring managers y technical recruiters, destacando decisiones arquitectónicas y buenas prácticas siguiendo estándares de documentación Open Source (React, Node.js docs style)
-
-# Notas Técnicas
-**Deploy:** Vercel+Render crossplataform funcionando con Safari iOS ✅  
-**Google OAuth:** Usuarios pueden establecer contraseña sin requerir actual, no pueden cambiar email ✅
-**Concepto:** Landing page directo a reservas, simulando negocio real de profesional independiente
-**Profesional ficticio:** Crear datos de ejemplo (nombre, foto, negocio, ubicación)
-**UI Reservas:** Grid de cards elegantes (NO tabla Excel) + Carrito lateral con totales
-
-## Bugs Críticos de Seguridad Corregidos ✅
-
-### Bug 1: Cookies no se limpian en logout
-**Problema:** Las cookies JWT no se limpian al hacer logout (admin y cliente)
-**Impacto:** Usuario seguía autenticado después de logout, riesgo de seguridad
-**Causa raíz identificada:** 
-- Backend: `clearCookie()` sin opciones → no coincidían con las usadas en login
-- Según OWASP y Express docs: clearCookie DEBE usar las mismas opciones (domain, path, secure, etc.)
-**Solución aplicada:**
-1. `auth.controller.ts`: Agregado `cookieOptions` como segundo parámetro en clearCookie
-2. `clientAuth.controller.ts`: Agregado `cookieOptions` como segundo parámetro en clearCookie
-3. Frontend: Verificado que `withCredentials: true` está en API_CONFIG (correcto)
-4. Frontend: Verificado limpieza de estado en AuthContext (correcto)
-**Archivos modificados:**
-- `backend/src/modules/auth/auth.controller.ts` (línea 31)
-- `backend/src/modules/clientAuth/clientAuth.controller.ts` (línea 45)
-
-### Bug 2: Sesiones cruzadas admin/cliente (OWASP A01:2021 - Broken Access Control)
-**Problema:** Login cliente + login admin + logout admin → cliente podía acceder rutas /admin/*
-**Impacto:** CRÍTICO - Escalación de privilegios, cliente con acceso a panel administrativo
-**Causa raíz identificada:**
-- Frontend: `ProtectedRoute` solo verificaba `isAuthenticated`, NO verificaba `authState.type`
-- Backend: Permitía sesiones simultáneas admin + cliente en el mismo navegador
-
-**Solución aplicada (REFACTORIZADA - Código limpio):**
-1. **Frontend - RBAC (Role-Based Access Control):**
-   - Creado `AdminRoute` con verificación `authState.type === 'admin'`
-   - Creado `ClientRoute` con verificación `authState.type === 'client'`
-   - Reemplazado `ProtectedRoute` genérico con `AdminRoute` en rutas `/admin/*`
-2. **Backend - Invalidación de sesión anterior en LOGIN (NO en logout):**
-   - Login admin: `clearCookie(ACCESS_CLIENT_TOKEN_COOKIE_NAME)` ANTES de crear sesión
-   - Login cliente: `clearCookie(ACCESS_ADMIN_TOKEN_COOKIE_NAME)` ANTES de crear sesión
-   - Google OAuth: `clearCookie(ACCESS_ADMIN_TOKEN_COOKIE_NAME)` ANTES de crear sesión
-   - **Previene sesiones simultáneas desde el origen, sin código espagueti**
-
-**Archivos modificados:**
-- `frontend/src/components/AdminRoute.tsx` (nuevo, 30 líneas - RBAC)
-- `frontend/src/components/ClientRoute.tsx` (nuevo, 30 líneas - RBAC)
-- `frontend/src/App.tsx` (import AdminRoute)
-- `backend/src/modules/auth/auth.controller.ts` (clearCookie en LOGIN, línea 20)
-- `backend/src/modules/clientAuth/clientAuth.controller.ts` (clearCookie en LOGIN + Google OAuth, líneas 35 y 320)
-
-**Justificación técnica:**
-- OWASP A01:2021: RBAC + prevención de sesiones concurrentes
-- Clean Code: Invalidación en login (punto de entrada) vs logout (punto de salida)
-- Single Responsibility: Cada login maneja solo su flujo de autenticación
-- Defense in depth: Frontend (UX) + Backend (seguridad real)
-
-### Bug 3: Rutas Express mal ordenadas + Unique constraint global (OWASP A01:2021)
-**Problema detectado:** 
-1. category.routes.ts tenía ruta pública `/` ANTES de `/admin` → Express capturaba TODO
-2. schema.prisma tenía `name @unique` global → Admin B no podía crear categoría "Cortes" si Admin A ya la creó
-
-**Impacto:** 
-- CRÍTICO: Rutas admin potencialmente accesibles sin autenticación
-- BLOQUEANTE: Multi-tenancy roto, solo un admin puede usar cada nombre de categoría
-
-**Solución aplicada:**
-1. **Express routing order (Best Practice):**
-   - Reordenado category.routes.ts: Rutas `/admin` PRIMERO, luego `/`
-   - Express procesa en orden: rutas específicas antes que genéricas
-2. **Prisma multi-tenancy:**
-   - Cambiado `name @unique` → `@@unique([name, adminId])`
-   - Cada admin puede tener sus propias categorías con mismos nombres
-   - Migración aplicada: `fix-category-unique-constraint-multi-tenancy`
-
-**Archivos modificados:**
-- `backend/src/modules/category/category.routes.ts` (reordenado, comentarios agregados)
-- `backend/src/prisma/schema.prisma` (@@unique([name, adminId]))
-- Nueva migración: `20251021190016_fix_category_unique_constraint_multi_tenancy`
-
-**Validaciones adicionales:**
-- ✅ Todos los services validan `adminId` en WHERE clauses
-- ✅ Controllers reciben `admin.id` de `req.user` (isAdminAuthenticated middleware)
-- ✅ No hay queries que crucen datos entre admins
-
-**Justificación técnica:**
-- OWASP A01:2021: Orden correcto de rutas previene bypass de autenticación
-- Prisma Best Practices: Unique constraints compuestos para multi-tenancy
-- Data Isolation: Cada admin solo ve/modifica sus propios datos
-
-### Bug 4: Cambio de arquitectura - De multi-tenant a single-tenant (Decisión de negocio)
-**Decisión:** Cambiar de categorías por admin (multi-tenancy) a categorías globales (single-tenant)
-**Motivo:** Proyecto pensado para UN solo admin, categorías compartidas en toda la plataforma
-
-**Cambios aplicados:**
-1. **Schema.prisma:**
-   - Eliminado campo `adminId` de Category
-   - Eliminada relación `admin AdminUser`
-   - Cambiado `@@unique([name, adminId])` → `name @unique` global
-   - Migración: `remove-admin-from-category-global-categories`
-2. **Services (category.services.ts):**
-   - `getAllCategories()` sin parámetro adminId
-   - `getCategoryById(id)` sin validar adminId
-   - `createCategory(data)` sin adminId
-   - `updateCategory(id, data)` sin adminId
-   - `deleteCategory(id)` sin adminId
-3. **Controller (category.controller.ts):**
-   - Eliminado `const admin = req.user as AdminUser` de métodos CRUD
-   - Métodos llaman services sin pasar adminId
-4. **Seed.ts:**
-   - Categorías creadas sin adminId (globales)
-
-**Resultado:**
-- ✅ Una sola tabla de categorías globales
-- ✅ Admin puede CRUD categorías que afectan toda la plataforma
-- ✅ Categorías compartidas entre todos los servicios
-- ✅ Arquitectura simplificada para single-tenant
-
-**Archivos modificados:**
-- `backend/src/prisma/schema.prisma`
-- `backend/src/modules/category/category.services.ts`
-- `backend/src/modules/category/category.controller.ts`
-- `backend/src/prisma/seed.ts`
-- Nueva migración: `20251021191009_remove_admin_from_category_global_categories`
-
-**Justificación técnica:**
-- YAGNI (You Aren't Gonna Need It): Multi-tenancy innecesario para proyecto single-admin
-- Simplicidad: Menos complejidad en queries, validaciones y lógica de negocio
-- Performance: Menos JOINs y filtros en queries de categorías
-
-## Configuración SMTP
-Variables en backend/.env: SMTP_HOST, SMTP_PORT (587), SMTP_USER, SMTP_PASS (App Password)
-
-## Scripts
-- `npm run dev` - Ejecutar backend+frontend
-- `npm run create:admin` - Crear admin
-- `npm run prisma:generate` - Regenerar Prisma client
+## PENDIENTES POST-MVP
+- [ ] Cliente UI: MyBookingsPage con lista de reservas
+- [ ] Admin: Vista de reservas por día/semana
+- [ ] Rate limiting login/register
+- [ ] Toast notifications (Sonner)
+- [ ] Breadcrumb navigation
+- [ ] Progress stepper UI

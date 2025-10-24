@@ -10,6 +10,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import ContactPage from './pages/ContactPage';
 import PlatformFeaturesPage from './pages/PlatformFeaturesPage';
 import ServicesGridPage from './pages/ServicesGridPage';
+import BookingCalendarPage from './pages/BookingCalendarPage';
 
 //--- Public routes ---//
 const LoginPage = lazy(() => import('./pages/LoginPage'))
@@ -42,6 +43,7 @@ const router = createBrowserRouter([
       { path: 'features', element: <PlatformFeaturesPage /> },
       { path: 'Adminlogin', element: <AdminLoginPage /> },
       { path: 'book', element: <ServicesGridPage /> },
+      { path: 'book/calendar', element: <BookingCalendarPage /> },
       { path: 'contact', element: <ContactPage /> },
       { path: 'login', element: <LoginPage/> },
       { path: 'register', element: <RegisterPage/> },

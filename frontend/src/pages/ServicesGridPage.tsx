@@ -1,6 +1,6 @@
 import ServicesList from '@/components/shared/ServicesList';
 import CartSidebar from '@/components/CartSidebar';
-import { useBooking } from '@/context/BookingContext';
+import { useBookingStore, selectCart } from '@/stores/bookingStore';
 
 /**
  * ServicesGridPage - Página principal de reservas con categorías y carrito
@@ -29,13 +29,8 @@ import { useBooking } from '@/context/BookingContext';
  */
 
 export default function ServicesGridPage() {
-  const { cart } = useBooking();
+  const cart = useBookingStore(selectCart);
   const hasItems = cart.length > 0;
-
-  const handleConfirmBooking = () => {
-    // TODO: Abrir modal de confirmación con fecha/hora
-    console.log('Confirmar reserva');
-  };
 
   return (
     <div className={`container mx-auto px-4 py-6 sm:py-8 ${hasItems ? 'pb-64' : 'pb-32'} sm:pb-32 lg:pb-8`}>
@@ -58,13 +53,13 @@ export default function ServicesGridPage() {
 
         {/* Carrito - Hidden en móvil (se muestra fixed bottom) */}
         <div className="hidden lg:block lg:col-span-1 lg:h-[450px]">
-          <CartSidebar onConfirmBooking={handleConfirmBooking} />
+          <CartSidebar />
         </div>
       </div>
 
       {/* Carrito Fixed Bottom - Solo móvil */}
       <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden border-t border-border bg-background shadow-2xl">
-        <CartSidebar onConfirmBooking={handleConfirmBooking} />
+        <CartSidebar />
       </div>
     </div>
   );

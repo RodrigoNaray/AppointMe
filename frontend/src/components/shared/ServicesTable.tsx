@@ -2,10 +2,11 @@ import { Clock, Plus, Minus, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Service } from '@/types/service';
-import { useBooking } from '@/context/BookingContext';
+import { useBookingStore, selectAddService, selectRemoveService } from '@/stores/bookingStore';
 
 /**
  * ServicesTable - Componente tabla compacta reutilizable para mostrar servicios
+ * Migrado a Zustand store
  * 
  * Diseño tabla-like optimizado para:
  * - HomePage: Vista previa de servicios del profesional
@@ -37,7 +38,10 @@ export default function ServicesTable({
   compact = false,
   maxItems 
 }: ServicesTableProps) {
-  const { addService, removeService, getServiceQuantity } = useBooking();
+  const addService = useBookingStore(selectAddService);
+  const removeService = useBookingStore(selectRemoveService);
+  const getServiceQuantity = (serviceId: string) => 
+    useBookingStore.getState().getServiceQuantity(serviceId);
   
   // Limitar servicios si se especifica maxItems
   const displayServices = maxItems ? services.slice(0, maxItems) : services;

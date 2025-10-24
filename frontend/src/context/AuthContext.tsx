@@ -1,6 +1,7 @@
 import { createContext, useState, useContext, ReactNode, useEffect, useMemo, useCallback, useRef } from 'react';
 import apiClient from '../api/client';
 import clientAuthService from '../api/clientAuth';
+import { useBookingStore } from '../stores/bookingStore';
 import type { 
   LoginDto, 
   RegisterDto, 
@@ -100,6 +101,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Solo limpiar si era admin autenticado
       if (authState.type === 'admin') {
         setAuthState({ type: null, user: null, isAuthenticated: false });
+        // Limpiar carrito al cerrar sesión (mejora UX: nueva sesión = carrito limpio)
+        useBookingStore.getState().clearCart();
       }
     }
   }, [authState.type]);
@@ -145,6 +148,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Solo limpiar si era cliente autenticado
       if (authState.type === 'client') {
         setAuthState({ type: null, user: null, isAuthenticated: false });
+        // Limpiar carrito al cerrar sesión (mejora UX: nueva sesión = carrito limpio)
+        useBookingStore.getState().clearCart();
       }
     }
   }, [authState.type]);

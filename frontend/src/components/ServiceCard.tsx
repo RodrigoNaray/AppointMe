@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Service } from '@/types/service';
-import { useBooking } from '@/context/BookingContext';
+import { useBookingStore, selectAddService, selectRemoveService } from '@/stores/bookingStore';
 
 /**
  * ServiceCard - Card de shadcn-ui para mostrar servicio con opción de agregar al carrito
@@ -28,8 +28,9 @@ interface ServiceCardProps {
 }
 
 export default function ServiceCard({ service }: ServiceCardProps) {
-  const { addService, removeService, getServiceQuantity } = useBooking();
-  const quantity = getServiceQuantity(service.id);
+  const addService = useBookingStore(selectAddService);
+  const removeService = useBookingStore(selectRemoveService);
+  const quantity = useBookingStore((state) => state.getServiceQuantity(service.id));
 
   return (
     <Card className="group lg:hover:scale-105 transition-transform duration-200 lg:hover:shadow-lg h-full flex flex-col">
