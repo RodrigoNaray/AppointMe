@@ -79,7 +79,7 @@ export default function HomePage() {
   return (
     <div className={`min-h-screen bg-background ${hasItems ? 'pb-64' : 'pb-32'} lg:pb-0`}>
       {/* Hero Section - AppointMePro Branding */}
-      <section className="relative w-full px-4 py-16 sm:px-6 md:py-24 lg:py-32 lg:px-8">
+      <section className="relative w-full px-4 py-8 sm:px-6 md:py-12 lg:py-16 lg:px-8">
         <div className="mx-auto max-w-6xl">
           {/* Badge */}
           <div className="mb-6 flex justify-center sm:justify-start">
@@ -104,19 +104,6 @@ export default function HomePage() {
             AppointMePro conecta a profesionales independientes con sus clientes de forma simple y eficiente. 
             Gestiona tu agenda, muestra tus servicios y permite que tus clientes reserven en segundos, sin llamadas ni complicaciones.
           </p>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-            <Link to="/features" className="w-full sm:w-auto">
-              <Button 
-                size="lg" 
-                className="group h-12 w-full rounded-full bg-foreground px-8 text-base font-semibold text-background transition-all hover:bg-foreground/90 sm:h-14 sm:w-auto sm:text-lg"
-              >
-                Conocer la Plataforma
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 sm:h-5 sm:w-5" />
-              </Button>
-            </Link>
-          </div>
         </div>
       </section>
 
