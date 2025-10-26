@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuthStore, selectAuthState, selectIsLoading } from '../stores/authStore';
 
 /**
  * ClientRoute - Ruta protegida específica para clientes
@@ -14,7 +14,8 @@ import { useAuth } from '../context/AuthContext';
  * Implementa verificación de autorización basada en roles
  */
 export default function ClientRoute() {
-  const { authState, isLoading } = useAuth();
+  const authState = useAuthStore(selectAuthState);
+  const isLoading = useAuthStore(selectIsLoading);
 
   if (isLoading) {
     return (

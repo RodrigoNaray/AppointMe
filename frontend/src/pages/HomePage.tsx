@@ -1,8 +1,9 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { useClientAuth } from "@/context/AuthContext";
+import { useAuthStore, selectCheckSession } from "@/stores/authStore";
 import { useBookingStore, selectCart } from "@/stores/bookingStore";
+import { useOAuthStore, selectGetReturnUrl, selectClearReturnUrl } from "@/stores/oauthStore";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, Sparkles, ArrowRight, MapPin, Phone, Mail, Star, Scissors } from "lucide-react";
 import ServicesTable from "@/components/shared/ServicesTable";
@@ -11,9 +12,12 @@ import type { Service } from "@/types/service";
 import { API_BASE_URL } from "@/api/config";
 
 export default function HomePage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { checkExistingSession } = useClientAuth();
+  const checkSession = useAuthStore(selectCheckSession);
   const cart = useBookingStore(selectCart);
+  const getReturnUrl = useOAuthStore(selectGetReturnUrl);
+  const clearReturnUrl = useOAuthStore(selectClearReturnUrl);
   const hasProcessedCallback = useRef(false);
   const [services, setServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
@@ -50,11 +54,25 @@ export default function HomePage() {
       hasProcessedCallback.current = true;
       
       // Verificar la sesión después del login con Google
-      checkExistingSession();
-      toast.success('¡Bienvenido! Has iniciado sesión con Google');
+      checkSession();
       
-      // Limpiar los parámetros de la URL
-      setSearchParams({});
+      // Leer returnUrl desde oauthStore (sessionStorage)
+      const savedReturnUrl = getReturnUrl();
+      
+      if (savedReturnUrl) {
+        console.log('[HomePage] Redirecting to saved returnUrl:', savedReturnUrl);
+        // Limpiar returnUrl del store
+        clearReturnUrl();
+        // Limpiar query params
+        setSearchParams({});
+        // Redirigir a la página guardada
+        toast.success('¡Bienvenido! Has iniciado sesión con Google');
+        navigate(savedReturnUrl);
+      } else {
+        // No hay returnUrl, mostrar toast y quedarnos en home
+        toast.success('¡Bienvenido! Has iniciado sesión con Google');
+        setSearchParams({});
+      }
     } else if (errorParam) {
       hasProcessedCallback.current = true;
       
@@ -74,7 +92,7 @@ export default function HomePage() {
       // Limpiar los parámetros de la URL
       setSearchParams({});
     }
-  }, [searchParams, setSearchParams, checkExistingSession]);
+  }, [searchParams, setSearchParams, checkSession]);
 
   return (
     <div className={`min-h-screen bg-background ${hasItems ? 'pb-64' : 'pb-32'} lg:pb-0`}>

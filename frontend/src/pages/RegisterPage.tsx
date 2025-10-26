@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import toast from 'react-hot-toast';
 import { clientAuthService } from "@/api/clientAuth";
+import { useOAuthStore, selectSaveReturnUrl } from "@/stores/oauthStore";
 import type { RegisterDto } from "@/types/auth";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,8 @@ function GoogleIcon({ className }: { className?: string }) {
 
 export default function RegisterPage() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const saveReturnUrl = useOAuthStore(selectSaveReturnUrl);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
@@ -36,6 +39,9 @@ export default function RegisterPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [passwordFeedback, setPasswordFeedback] = useState<PasswordFeedback[]>([]);
     const [showBalloon, setShowBalloon] = useState(false);
+
+    // Leer returnUrl de query params
+    const returnUrl = searchParams.get('returnUrl');
 
     const passwordCriteria = [
         { label: "Al menos 8 caracteres", test: (pw: string) => pw.length >= 8 },
@@ -90,10 +96,12 @@ export default function RegisterPage() {
                     duration: 5000,
                 });
                 
-                // Redirigir a una página de confirmación o login
-                setTimeout(() => {
+                // Redirigir inmediatamente
+                if (returnUrl) {
+                    navigate(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+                } else {
                     navigate('/login');
-                }, 2000);
+                }
             } else {
                 toast.error(result.message || 'Error en el registro');
                 setErrorMessage(result.message || 'Error en el registro');
@@ -107,9 +115,16 @@ export default function RegisterPage() {
     };
 
     const handleGoogleLogin = () => {
+        // Guardar returnUrl en sessionStorage (Zustand) antes de redirect
+        // OWASP: sessionStorage expira al cerrar tab, no vulnerable a XSS persistente
+        if (returnUrl) {
+            saveReturnUrl(returnUrl);
+        }
+        
         // Redireccionar al backend para iniciar el flujo de OAuth
-        // Remover el trailing slash de VITE_API_BASE_URL si existe
-        const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ;
+        const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '');
+        
+        console.log('[RegisterPage] Redirecting to Google OAuth, returnUrl saved in sessionStorage');
         window.location.href = `${apiUrl}/auth/client/google`;
     };
 
@@ -242,7 +257,10 @@ export default function RegisterPage() {
                     
                     <p className="mt-4 text-center text-sm">
                         ¿Ya tienes una cuenta?{" "}
-                        <Link to="/login" className="text-blue-500 hover:underline">
+                        <Link 
+                            to={returnUrl ? `/login?returnUrl=${encodeURIComponent(returnUrl)}` : "/login"} 
+                            className="text-blue-500 hover:underline"
+                        >
                             Inicia sesión aquí
                         </Link>
                     </p>

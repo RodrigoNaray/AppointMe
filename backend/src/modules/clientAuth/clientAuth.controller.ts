@@ -310,6 +310,9 @@ export const changePasswordController = async (req: Request, res: Response) => {
  * Controller para manejar el callback de Google OAuth
  * OWASP A02:2021: El usuario ya fue autenticado por Passport
  * Genera JWT y establece cookie HttpOnly
+ * 
+ * Nota: returnUrl se maneja en el frontend usando sessionStorage (Zustand oauthStore)
+ * El frontend guarda returnUrl antes de redirect a Google, y lo lee al volver
  */
 export const googleCallbackController = (req: Request, res: Response) => {
   try {
@@ -332,7 +335,8 @@ export const googleCallbackController = (req: Request, res: Response) => {
 
     logger.info({ clientId: user.id, email: user.email }, "Cliente autenticado con Google OAuth");
 
-    // Redireccionar al frontend con éxito
+    // Redireccionar al frontend home con flag de éxito
+    // El frontend (HomePage) leerá returnUrl desde oauthStore (sessionStorage)
     res.redirect(`${process.env.CLIENT_URL}/?login=success`);
   } catch (error: any) {
     logger.error(error, "Error en callback de Google OAuth");

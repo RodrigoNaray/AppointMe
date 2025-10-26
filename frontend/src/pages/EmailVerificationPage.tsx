@@ -44,10 +44,8 @@ export default function EmailVerificationPage() {
             message: result.message
           });
           
-          // Redirigir al login después de 3 segundos
-          setTimeout(() => {
-            navigate('/login');
-          }, 3000);
+          // Redirigir inmediatamente al login
+          navigate('/login');
         } else {
           setVerificationState({
             status: 'error',

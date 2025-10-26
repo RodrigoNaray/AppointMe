@@ -18,7 +18,7 @@ import { useBookingStore, selectCart } from '@/stores/bookingStore';
  * React 19 best practices:
  * - Composición de componentes reutilizables
  * - ServicesList maneja su propio estado de datos
- * - CartSidebar maneja estado de carrito (BookingContext)
+ * - CartSidebar maneja estado de carrito (Zustand bookingStore)
  * - Padding dinámico según estado (mejora UX sin overlap)
  * 
  * Referencias:

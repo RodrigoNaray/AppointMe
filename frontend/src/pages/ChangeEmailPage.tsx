@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Mail, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { clientAuthService } from '@/api/clientAuth';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore, selectAuthState } from '@/stores/authStore';
 
 /**
  * Componente para solicitar cambio de email (usuario autenticado)
@@ -13,7 +13,7 @@ import { useAuth } from '@/context/AuthContext';
  * Reutiliza estructura de ResendVerificationPage
  */
 export default function ChangeEmailPage() {
-  const { authState } = useAuth();
+  const authState = useAuthStore(selectAuthState);
   const [newEmail, setNewEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

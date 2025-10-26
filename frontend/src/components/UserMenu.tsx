@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore, selectAuthState, selectLogoutClient } from '@/stores/authStore';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -19,11 +19,13 @@ import toast from 'react-hot-toast';
  * Menú dropdown para usuarios autenticados siguiendo mejores prácticas:
  * - React 19: Composición de componentes sin prop drilling
  * - shadcn-ui: Componentes accesibles (ARIA) y responsive
- * - TypeScript: Type-safe con discriminated unions del AuthContext
+ * - TypeScript: Type-safe con discriminated unions del AuthStore
+ * - Zustand: Gestión de estado global con persist middleware
  * - UX: Toast notifications para feedback inmediato
  */
 export default function UserMenu() {
-  const { authState, logoutClient } = useAuth();
+  const authState = useAuthStore(selectAuthState);
+  const logoutClient = useAuthStore(selectLogoutClient);
   const navigate = useNavigate();
 
   // Solo renderizar si hay usuario autenticado de tipo cliente

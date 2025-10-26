@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { useAdminAuth } from '../../../context/AuthContext';
+import { useAuthStore, selectLoginAdmin } from '@/stores/authStore';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button"; 
 import { Input } from "@/components/ui/input";   
@@ -11,7 +11,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const { loginAdmin } = useAdminAuth(); 
+  const loginAdmin = useAuthStore(selectLoginAdmin);
   const navigate = useNavigate(); 
 
   const handleSubmit = async (e: FormEvent) => {

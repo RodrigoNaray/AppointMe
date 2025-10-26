@@ -31,6 +31,7 @@ clientAuthRoutes.post('/change-password', isClientAuthenticated, controller.chan
 
 // Rutas de Google OAuth 2.0
 // OWASP A02:2021: CSRF protection mediante state parameter (manejado por passport)
+// Nota: returnUrl se maneja en frontend con sessionStorage (Zustand oauthStore)
 clientAuthRoutes.get(
   '/google',
   passport.authenticate('google', { 

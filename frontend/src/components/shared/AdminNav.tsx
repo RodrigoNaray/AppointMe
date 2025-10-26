@@ -1,4 +1,4 @@
-import { useAuth } from "@/context/AuthContext";
+import { useAuthStore, selectUser, selectLogout } from "@/stores/authStore";
 import { Avatar, AvatarFallback} from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +13,8 @@ import {
 import { Link } from "react-router-dom";
 
 export function AdminNav() {
-  const { user, logout } = useAuth();
+  const user = useAuthStore(selectUser);
+  const logout = useAuthStore(selectLogout);
 
   return (
     <DropdownMenu>

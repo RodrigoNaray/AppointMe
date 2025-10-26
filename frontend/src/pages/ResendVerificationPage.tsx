@@ -4,14 +4,14 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { clientAuthService } from '@/api/clientAuth';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore, selectAuthState } from '@/stores/authStore';
 
 /**
  * Componente para reenviar email de verificación (usuario autenticado)
  * OWASP A01:2021 - Requiere autenticación, no acepta email del usuario
  */
 export default function ResendVerificationPage() {
-  const { authState } = useAuth();
+  const authState = useAuthStore(selectAuthState);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);

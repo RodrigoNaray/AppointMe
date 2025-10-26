@@ -48,6 +48,7 @@ Tus responsabilidades son:
 7. Hacer exclusivamente codigo limpio y escalable pensando en software mantenible a largo plazo. No se pueden hacer parches bajo ningun concepto, solo soluciones escalables.
 8. Siempre debo respetar la estructura del codigo, respetando las practicas del proyecto y reutilizadno las funciones que ya hay, salvo que eso sea 100% imposible.
 9. Toda la UI generada debe ser responsive e intuitiva de usar.
+10. Revisar las mejores practicas para owasp en octubre 2025 y confirmar que las aplicas en lo que estas desarrollando
 
 Reglas:
 - Reviso siempre las fuentes de docuemntacion para Octubre de 2025, las busco de nuevo siempre.

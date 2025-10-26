@@ -1,4 +1,4 @@
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore, selectAuthState } from '@/stores/authStore';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import { Mail, User, Calendar, Lock } from 'lucide-react';
  * - UX: Información clara del usuario + acciones rápidas
  */
 export default function ClientProfilePage() {
-  const { authState } = useAuth();
+  const authState = useAuthStore(selectAuthState);
   const navigate = useNavigate();
 
   // Redireccionar si no está autenticado

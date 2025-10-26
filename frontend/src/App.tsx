@@ -1,7 +1,8 @@
-import {lazy} from 'react'
+import {lazy, useEffect} from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { useAuthStore, selectCheckSession } from './stores/authStore';
 import HomePage from './pages/HomePage';
 import AdminLoginPage from './pages/admin/login/AdminLoginPage';
 import PublicLayout from './layouts/PublicLayout';
@@ -11,6 +12,7 @@ import ContactPage from './pages/ContactPage';
 import PlatformFeaturesPage from './pages/PlatformFeaturesPage';
 import ServicesGridPage from './pages/ServicesGridPage';
 import BookingCalendarPage from './pages/BookingCalendarPage';
+import BookingConfirmPage from './pages/BookingConfirmPage';
 
 //--- Public routes ---//
 const LoginPage = lazy(() => import('./pages/LoginPage'))
@@ -44,6 +46,7 @@ const router = createBrowserRouter([
       { path: 'Adminlogin', element: <AdminLoginPage /> },
       { path: 'book', element: <ServicesGridPage /> },
       { path: 'book/calendar', element: <BookingCalendarPage /> },
+      { path: 'book/confirm', element: <BookingConfirmPage /> },
       { path: 'contact', element: <ContactPage /> },
       { path: 'login', element: <LoginPage/> },
       { path: 'register', element: <RegisterPage/> },
@@ -80,6 +83,13 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
+  const checkSession = useAuthStore(selectCheckSession);
+
+  // Check for existing session on app initialization
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
+
   return (
     <ErrorBoundary>
       <Toaster 

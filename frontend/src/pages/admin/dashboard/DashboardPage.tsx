@@ -1,10 +1,9 @@
-import { useAuth } from "@/context/AuthContext";
+import { useAuthStore, selectUser } from "@/stores/authStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Calendar, DollarSign, Clock } from "lucide-react"; // Iconos
 
 export default function DashboardPage() {
-  
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
 
   return (
     <div className="flex flex-col gap-8">

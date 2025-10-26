@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Lock, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { clientAuthService } from '@/api/clientAuth';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore, selectAuthState, selectLogoutClient } from '@/stores/authStore';
 import toast from 'react-hot-toast';
 
 /**
@@ -14,14 +14,15 @@ import toast from 'react-hot-toast';
  * Página para cambiar contraseña del cliente autenticado.
  * 
  * Mejores prácticas implementadas:
- * - React 19: Hooks useState, useNavigate, useAuth
+ * - React 19: Hooks useState, useNavigate, useAuthStore
  * - OWASP A02:2021: Requiere contraseña actual para confirmar identidad
  * - UX: Validaciones en frontend + feedback con toast
- * - TypeScript: Type-safe con interfaces del AuthContext
+ * - TypeScript: Type-safe con interfaces del AuthStore
  * - shadcn-ui: Componentes accesibles y responsive
  */
 export default function ChangePasswordPage() {
-  const { authState, logoutClient } = useAuth();
+  const authState = useAuthStore(selectAuthState);
+  const logoutClient = useAuthStore(selectLogoutClient);
   const navigate = useNavigate();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -96,12 +97,10 @@ export default function ChangePasswordPage() {
       if (result.success) {
         toast.success(result.message);
         
-        // Logout después de cambiar contraseña (buena práctica de seguridad)
-        setTimeout(async () => {
-          await logoutClient();
-          toast.success('Por favor inicia sesión con tu nueva contraseña');
-          navigate('/login');
-        }, 2000);
+        // Logout inmediato después de cambiar contraseña (buena práctica de seguridad)
+        await logoutClient();
+        toast.success('Por favor inicia sesión con tu nueva contraseña');
+        navigate('/login');
       } else {
         toast.error(result.message);
       }

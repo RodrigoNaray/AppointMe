@@ -30,7 +30,7 @@ import { useState } from 'react';
  * Mejores prácticas:
  * - Sticky en desktop, fixed bottom en móvil
  * - shadcn-ui components (Card, Button, Badge, Separator)
- * - Totales calculados automáticamente desde BookingContext
+ * - Totales calculados automáticamente desde Zustand bookingStore
  * - Responsive: Versión compacta en móvil, completa en desktop
  * 
  * UX Mobile:

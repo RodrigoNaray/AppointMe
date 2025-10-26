@@ -1,11 +1,11 @@
 import { Link, Outlet } from 'react-router-dom';
 import { Package2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore, selectAuthState } from '@/stores/authStore';
 import UserMenu from '@/components/UserMenu';
 
 export default function PublicLayout() {
-  const { authState } = useAuth();
+  const authState = useAuthStore(selectAuthState);
 
   return (
     <div className="min-h-screen w-full">

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast from 'react-hot-toast';
-import { useClientAuth } from "@/context/AuthContext";
+import { useAuthStore, selectLoginClient } from "@/stores/authStore";
+import { useOAuthStore, selectSaveReturnUrl } from "@/stores/oauthStore";
 import type { LoginDto } from "@/types/auth";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,10 +22,17 @@ function GoogleIcon({ className }: { className?: string }) {
 
 export default function LoginPage() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const { loginClient } = useClientAuth();
+    const loginClient = useAuthStore(selectLoginClient);
+    const saveReturnUrl = useOAuthStore(selectSaveReturnUrl);
+
+    // Leer returnUrl de query params
+    const returnUrl = searchParams.get('returnUrl');
+
+    console.log('[LoginPage] returnUrl:', returnUrl); // Debug
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -36,10 +44,14 @@ export default function LoginPage() {
             
             toast.success('¡Inicio de sesión exitoso!');
             
-            // Redirigir al dashboard o home
-            setTimeout(() => {
+            console.log('[LoginPage] Navigating to:', returnUrl || '/'); // Debug
+            
+            // Redirigir inmediatamente a returnUrl si existe, sino a home
+            if (returnUrl) {
+                navigate(returnUrl);
+            } else {
                 navigate('/');
-            }, 1000);
+            }
         } catch (error: any) {
             toast.error('Usuario o contraseña incorrecta');
         } finally {
@@ -48,9 +60,16 @@ export default function LoginPage() {
     };
 
     const handleGoogleLogin = () => {
+        // Guardar returnUrl en sessionStorage (Zustand) antes de redirect
+        // OWASP: sessionStorage expira al cerrar tab, no vulnerable a XSS persistente
+        if (returnUrl) {
+            saveReturnUrl(returnUrl);
+        }
+        
         // Redireccionar al backend para iniciar el flujo de OAuth
-        // Remover el trailing slash de VITE_API_BASE_URL si existe
         const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:5000/api';
+        
+        console.log('[LoginPage] Redirecting to Google OAuth, returnUrl saved in sessionStorage');
         window.location.href = `${apiUrl}/auth/client/google`;
     };
 
@@ -93,7 +112,10 @@ export default function LoginPage() {
                     </Button>
                     <p className="mt-4 text-center text-sm">
                         ¿No tienes una cuenta?{" "}
-                        <Link to="/register" className="text-blue-500 hover:underline">
+                        <Link 
+                            to={returnUrl ? `/register?returnUrl=${encodeURIComponent(returnUrl)}` : "/register"} 
+                            className="text-blue-500 hover:underline"
+                        >
                             Regístrate aquí
                         </Link>
                     </p>

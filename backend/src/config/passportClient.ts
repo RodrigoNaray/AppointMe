@@ -62,7 +62,7 @@ export const googleStrategy = new GoogleStrategy(
     callbackURL: `${process.env.API_URL}/auth/client/google/callback`,
     scope: ['profile', 'email'],
   },
-  async (accessToken, refreshToken, profile: GoogleProfile, done) => {
+  async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: any) => {
     try {
       // Extraer información del perfil de Google
       const email = profile.emails?.[0]?.value;

@@ -1,13 +1,13 @@
 "use client"
 
-import { useAuth } from "@/context/AuthContext";
+import { useAuthStore, selectUser } from "@/stores/authStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const user = useAuthStore(selectUser);
 
   return (
     <div className="grid gap-6">
