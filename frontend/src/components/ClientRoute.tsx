@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore, selectAuthState, selectIsLoading } from '../stores/authStore';
 
 /**
@@ -16,6 +16,7 @@ import { useAuthStore, selectAuthState, selectIsLoading } from '../stores/authSt
 export default function ClientRoute() {
   const authState = useAuthStore(selectAuthState);
   const isLoading = useAuthStore(selectIsLoading);
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -27,7 +28,9 @@ export default function ClientRoute() {
 
   // Verificación estricta: debe estar autenticado Y ser tipo client
   if (!authState.isAuthenticated || authState.type !== 'client') {
-    return <Navigate to="/login" replace />;
+    // Preservar la URL a la que intentaba acceder para redirigir después del login
+    const returnUrl = `${location.pathname}${location.search}`;
+    return <Navigate to={`/login?returnUrl=${encodeURIComponent(returnUrl)}`} replace />;
   }
 
   return <Outlet />;

@@ -1,7 +1,7 @@
 import { Link, Outlet } from 'react-router-dom';
 import { Menu, Package2, ChevronLeft, ChevronRight, LayoutDashboard, Tags, Calendar, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetDescription } from "@/components/ui/sheet"
 import { AdminNav } from '@/components/shared/AdminNav';
 import { useState } from 'react';
 
@@ -32,6 +32,9 @@ export default function AdminLayout() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="flex flex-col w-56 p-0">
+            <SheetDescription className="sr-only">
+              Menú de navegación principal
+            </SheetDescription>
             <div className="flex items-center gap-2 h-14 px-3 border-b bg-muted/30">
               <Package2 className="h-5 w-5 text-primary" />
               <span className="font-semibold text-sm">AppointMePro</span>

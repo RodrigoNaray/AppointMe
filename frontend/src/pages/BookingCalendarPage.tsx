@@ -8,6 +8,8 @@ import { useBookingStore, selectCart, selectTotalPrice, selectTotalDuration, sel
 import { useAuthStore, selectAuthState } from '@/stores/authStore';
 import { format, isBefore, startOfToday, parse, addMonths, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { getBookingRules } from '@/api/settings';
+import { API_BASE_URL } from '@/api/config';
 
 /**
  * BookingCalendarPage - Paso 2 + 3 fusionados del flujo de reserva
@@ -48,12 +50,28 @@ export default function BookingCalendarPage() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
+  const [minBookingAdvanceMinutes, setMinBookingAdvanceMinutes] = useState(15); // Default fallback
 
   const totalServices = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // Leer date y time de query params si vienen del returnUrl
   const dateParam = searchParams.get('date');
   const timeParam = searchParams.get('time');
+
+  // Fetch booking rules (tiempo mínimo de anticipación) al montar
+  useEffect(() => {
+    const fetchBookingRules = async () => {
+      try {
+        const rules = await getBookingRules();
+        setMinBookingAdvanceMinutes(rules.minBookingAdvanceMinutes);
+      } catch (error) {
+        console.error('[BookingCalendar] Error fetching booking rules:', error);
+        // Mantener default 15 minutos si falla
+      }
+    };
+
+    fetchBookingRules();
+  }, []);
 
   // Protección: redirigir si carrito vacío (pero solo después de inicializar)
   useEffect(() => {
@@ -107,7 +125,7 @@ export default function BookingCalendarPage() {
         console.log('[BookingCalendar] Fetching availability:', { month, totalDuration });
         
         const response = await fetch(
-          `http://localhost:5000/api/availability/month?month=${month}&totalDuration=${totalDuration}`
+          `${API_BASE_URL}/availability/month?month=${month}&totalDuration=${totalDuration}`
         );
         
         console.log('[BookingCalendar] Response status:', response.status);
@@ -158,7 +176,7 @@ export default function BookingCalendarPage() {
         );
 
         const response = await fetch(
-          `http://localhost:5000/api/availability?serviceId=${longestService.service.id}&date=${dateStr}`
+          `${API_BASE_URL}/availability?serviceId=${longestService.service.id}&date=${dateStr}`
         );
         
         if (!response.ok) {
@@ -178,9 +196,8 @@ export default function BookingCalendarPage() {
               const slotTime = new Date(selectedDate);
               slotTime.setHours(hours, minutes, 0, 0);
               
-              // Solo incluir si el slot es futuro (al menos 15 minutos adelante para buffer)
-              const bufferMinutes = 15;
-              const minimumTime = new Date(now.getTime() + bufferMinutes * 60 * 1000);
+              // Usar tiempo mínimo de anticipación dinámico (configurable por admin)
+              const minimumTime = new Date(now.getTime() + minBookingAdvanceMinutes * 60 * 1000);
               
               return slotTime >= minimumTime;
             })
@@ -196,7 +213,7 @@ export default function BookingCalendarPage() {
     };
 
     fetchSlots();
-  }, [selectedDate, cart]);
+  }, [selectedDate, cart, minBookingAdvanceMinutes]);
 
   // Determinar si una fecha está disponible
   const isDateAvailable = (date: Date): boolean => {

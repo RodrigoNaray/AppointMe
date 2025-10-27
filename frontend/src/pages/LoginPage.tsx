@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast from 'react-hot-toast';
 import { useAuthStore, selectLoginClient } from "@/stores/authStore";
 import { useOAuthStore, selectSaveReturnUrl } from "@/stores/oauthStore";
+import { API_BASE_URL } from "@/api/config";
 import type { LoginDto } from "@/types/auth";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -66,11 +67,8 @@ export default function LoginPage() {
             saveReturnUrl(returnUrl);
         }
         
-        // Redireccionar al backend para iniciar el flujo de OAuth
-        const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:5000/api';
-        
         console.log('[LoginPage] Redirecting to Google OAuth, returnUrl saved in sessionStorage');
-        window.location.href = `${apiUrl}/auth/client/google`;
+        window.location.href = `${API_BASE_URL}/auth/client/google`;
     };
 
     return (

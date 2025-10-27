@@ -14,6 +14,7 @@ import bookingRoutes, { adminBookingRoutes } from './modules/booking/booking.rou
 import { isAdminAuthenticated } from './middlewares/isAdminAuthenticated';
 import availabilityPublicRoutes from './modules/availability/public/availability.public.routes';
 import categoryRoutes from './modules/category/category.routes';
+import { settingsRoutes, adminSettingsRoutes } from './modules/settings/settings.routes';
 import compression from "compression";
 import helmet from "helmet";
 
@@ -55,12 +56,14 @@ passport.use('google', googleStrategy);
 //---  ROUTES ---//
 app.use('/api/admin/availability', isAdminAuthenticated, availabilityRouter);
 app.use('/api/admin/bookings', isAdminAuthenticated, adminBookingRoutes);
+app.use('/api/admin/settings', adminSettingsRoutes); // Ya incluye isAdminAuthenticated en routes
 app.use('/api/availability', availabilityPublicRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/client', clientAuthRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/categories', categoryRoutes); // Rutas públicas y admin de categorías
 app.use('/api/services', catalogRoutes);
+app.use('/api/settings', settingsRoutes); // Rutas públicas de settings
 app.use('/api/health', healthRoutes)
 
 
