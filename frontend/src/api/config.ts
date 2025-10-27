@@ -34,5 +34,9 @@ export const API_CONFIG: CreateAxiosDefaults = {
 
 /**
  * URL base del API (exportada por separado para uso directo si es necesario)
+ * 
+ * IMPORTANTE: Eliminamos trailing slash para consistencia
+ * Esto previene URLs con doble slash como /api//bookings
  */
-export const API_BASE_URL = API_CONFIG.baseURL as string;
+export const API_BASE_URL = (API_CONFIG.baseURL as string).replace(/\/$/, '');
+

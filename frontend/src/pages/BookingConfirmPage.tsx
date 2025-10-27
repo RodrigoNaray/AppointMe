@@ -59,16 +59,21 @@ export default function BookingConfirmPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingResults, setBookingResults] = useState<BookingResult[]>([]);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [hasValidated, setHasValidated] = useState(false);
 
   // Leer y validar query params
   const dateParam = searchParams.get('date'); // YYYY-MM-DD
   const timeParam = searchParams.get('time'); // HH:mm
 
   // Validación OWASP: Query params deben existir y tener formato válido
+  // IMPORTANTE: Solo ejecutar validaciones una vez para evitar toasts repetidos
   useEffect(() => {
+    if (hasValidated) return;
+    
     if (!dateParam || !timeParam) {
       toast.error('Parámetros de fecha/hora faltantes');
       navigate('/book');
+      setHasValidated(true);
       return;
     }
 
@@ -76,6 +81,7 @@ export default function BookingConfirmPage() {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
       toast.error('Formato de fecha inválido');
       navigate('/book');
+      setHasValidated(true);
       return;
     }
 
@@ -83,13 +89,15 @@ export default function BookingConfirmPage() {
     if (!/^\d{2}:\d{2}$/.test(timeParam)) {
       toast.error('Formato de hora inválido');
       navigate('/book');
+      setHasValidated(true);
       return;
     }
 
-    // Validar que el carrito no esté vacío
-    if (cart.length === 0) {
+    // Validar que el carrito no esté vacío (solo en primera carga)
+    if (cart.length === 0 && !hasSubmitted) {
       toast.error('El carrito está vacío');
       navigate('/book');
+      setHasValidated(true);
       return;
     }
 
@@ -97,9 +105,12 @@ export default function BookingConfirmPage() {
     if (authState.type !== 'client') {
       toast.error('Debes iniciar sesión para confirmar la reserva');
       navigate(`/login?returnUrl=${encodeURIComponent(`/book/confirm?date=${dateParam}&time=${timeParam}`)}`);
+      setHasValidated(true);
       return;
     }
-  }, [dateParam, timeParam, cart.length, authState.type, navigate]);
+    
+    setHasValidated(true);
+  }, [dateParam, timeParam, cart.length, authState.type, navigate, hasValidated, hasSubmitted]);
 
   // Parsear fecha y hora (date-fns para seguridad)
   const selectedDate = dateParam ? parse(dateParam, 'yyyy-MM-dd', new Date()) : null;
@@ -120,9 +131,15 @@ export default function BookingConfirmPage() {
 
     console.log('[BookingConfirm] Starting booking creation:', {
       selectedDateTime: selectedDateTime.toISOString(),
-      cart: cart.map(item => ({ id: item.service.id, name: item.service.name })),
+      dateParam,
+      timeParam,
+      cart: cart.map(item => ({ id: item.service.id, name: item.service.name, quantity: item.quantity })),
+      cartLength: cart.length,
       authState: authState.type,
-      cookies: document.cookie, // Debug: verificar cookies disponibles
+      isAuthenticated: authState.isAuthenticated,
+      userId: authState.type === 'client' ? authState.user?.id : 'N/A',
+      cookies: document.cookie || 'NO COOKIES', // Debug: verificar cookies disponibles
+      API_BASE_URL,
     });
 
     try {
@@ -145,12 +162,13 @@ export default function BookingConfirmPage() {
           console.log('[BookingConfirm] Creating booking for service:', {
             serviceName: item.service.name,
             payload,
-            url: `${API_BASE_URL}/bookings/create`,
             apiBaseUrl: API_BASE_URL,
           });
           
-          // Construir URL correctamente (API_BASE_URL no tiene trailing slash)
+          // Construir URL correctamente (API_BASE_URL ya incluye /api, no agregar / al inicio)
           const url = `${API_BASE_URL}/bookings/create`;
+          
+          console.log('[BookingConfirm] Final URL:', url);
           
           const response = await fetch(url, {
             method: 'POST',
@@ -163,10 +181,19 @@ export default function BookingConfirmPage() {
 
           let data;
           try {
-            data = await response.json();
+            const responseText = await response.text();
+            console.log('[BookingConfirm] Raw response:', {
+              status: response.status,
+              statusText: response.statusText,
+              ok: response.ok,
+              headers: Object.fromEntries(response.headers.entries()),
+              bodyPreview: responseText.substring(0, 500),
+            });
+            
+            data = JSON.parse(responseText);
           } catch (parseError) {
             console.error('[BookingConfirm] Error parsing JSON:', parseError);
-            throw new Error('Invalid response from server');
+            throw new Error(`Invalid response from server (${response.status}): ${response.statusText}`);
           }
           
           console.log('[BookingConfirm] Response:', { 
@@ -196,11 +223,27 @@ export default function BookingConfirmPage() {
         } catch (error) {
           // Error de red o parsing
           console.error('[BookingConfirm] Error creating booking:', error);
+          
+          // Mensajes de error amigables para el usuario
+          let userFriendlyError = 'Error al procesar la reserva';
+          
+          if (error instanceof Error) {
+            if (error.message.includes('404')) {
+              userFriendlyError = 'Servicio no encontrado. Por favor, contacta soporte.';
+            } else if (error.message.includes('401') || error.message.includes('403')) {
+              userFriendlyError = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
+            } else if (error.message.includes('500')) {
+              userFriendlyError = 'Error del servidor. Intenta nuevamente más tarde.';
+            } else if (error.message.toLowerCase().includes('network') || error.message.toLowerCase().includes('fetch')) {
+              userFriendlyError = 'Error de conexión. Verifica tu internet.';
+            }
+          }
+          
           results.push({
             serviceId: item.service.id,
             serviceName: item.service.name,
             success: false,
-            error: error instanceof Error ? error.message : 'Error de conexión',
+            error: userFriendlyError,
           });
           failureCount++;
         }

@@ -373,9 +373,101 @@
   - **Justificación UX:** Reduce frustración, guía al usuario hacia fechas válidas
   - **Justificación date-fns:** isBefore(), addMonths(), subMonths() para cálculos confiables
 
+### Paso 7: DEBUG - Bookings fallando en BookingConfirmPage ✅
+- [x] **BUG IDENTIFICADO Y CORREGIDO:** URL con doble slash `/api//bookings/create` → 404
+  - **Causa raíz:** `VITE_API_BASE_URL` en .env tenía trailing slash (`http://localhost:5000/api/`)
+  - **Fix aplicado:** `API_BASE_URL` ahora elimina trailing slash automáticamente con `.replace(/\/$/, '')`
+  - **Ubicación:** `frontend/src/api/config.ts` línea 36
+  - **Justificación arquitectura:** Solución defensiva que previene errores por config inconsistente
+  - **Justificación OWASP:** Input validation en layer de configuración (fail-safe)
+- [x] Mejorar mensajes de error amigables en BookingConfirmPage
+  - ✅ Mapeo de errores técnicos a mensajes user-friendly
+  - ✅ 404 → "Servicio no encontrado. Por favor, contacta soporte."
+  - ✅ 401/403 → "Sesión expirada. Por favor, inicia sesión nuevamente."
+  - ✅ 500 → "Error del servidor. Intenta nuevamente más tarde."
+  - ✅ Network → "Error de conexión. Verifica tu internet."
+  - **Justificación UX:** No exponer detalles técnicos al usuario final (OWASP A04:2021)
+  - **Justificación React:** Error boundary pattern con mensajes contextuales
+- [x] Fix toast repetido "El carrito está vacío"
+  - **Problema:** useEffect se ejecutaba múltiples veces cuando cart.length cambiaba
+  - **Causa raíz:** clearCart() después de crear reservas exitosas re-ejecutaba validaciones
+  - **Fix aplicado:** Agregado flag `hasValidated` para ejecutar validaciones solo una vez
+  - **Validación adicional:** Solo mostrar "carrito vacío" si no ha enviado reservas (`!hasSubmitted`)
+  - **Justificación React:** Evitar side effects duplicados con dependency guards
+  - **Justificación UX:** Prevenir toasts molestos durante flujo exitoso
+- [x] Logs de diagnóstico mejorados (mantener en desarrollo, remover en producción)
+  - ✅ Log completo de request: payload, URL, headers
+  - ✅ Log de response: status, headers, body preview
+  - ✅ Log de cookies y auth state para debugging
+  - **Nota:** Estos logs deben ser removidos o condicionados con `import.meta.env.DEV` antes de producción
+
+### Paso 8: Admin BookingsPage - Integración con API real ✅
+- [x] Crear servicio API `/api/bookings.ts`
+  - ✅ Tipos TypeScript completos: Booking, PaginationResponse, GetBookingsParams
+  - ✅ getAllBookings(): GET /admin/bookings (admin)
+  - ✅ getMyBookings(): GET /api/bookings/my (client)
+  - ✅ createBooking(): POST /api/bookings/create (client)
+  - ✅ cancelBooking(): PATCH /api/bookings/:id/cancel (client)
+  - **Justificación arquitectura:** Separación de concerns (API layer vs UI layer)
+  - **Justificación TypeScript:** Type safety end-to-end (frontend ↔ backend)
+  - **Justificación OWASP:** Autenticación via cookies HttpOnly (credentials: 'include')
+- [x] Actualizar BookingsPage.tsx para usar API real
+  - ✅ useEffect + useState para fetch + loading state
+  - ✅ Mapeo de datos backend → formato UI (date formatting con date-fns)
+  - ✅ Mapeo de estados: PENDING/CONFIRMED → "Confirmada", COMPLETED → "Completada", CANCELLED → "Cancelada"
+  - ✅ Loading state con Loader2 (lucide-react)
+  - ✅ Empty state: "No hay reservas registradas"
+  - ✅ Contador de reservas: "{total_count} reservas en total"
+  - ✅ Error handling con toast notifications
+  - **Justificación React:** Separation of concerns (data fetching vs presentation)
+  - **Justificación UX:** Loading states + empty states mejoran percepción de rendimiento
+  - **Justificación i18n:** date-fns con locale español (dd/MM/yyyy HH:mm)
+  - ✅ Verificar backend ya existente
+    - ✅ Ruta: GET /admin/bookings (booking.routes.ts)
+    - ✅ Controller: getAllBookings() con paginación
+    - ✅ Service: getAdminBookings() con filtros de fecha
+    - ✅ Middleware: isAdminAuthenticated protege ruta
+- [x] Agregar filtros de búsqueda y paginación interactiva
+  - ✅ Filtro de búsqueda: Input con icono Search (búsqueda por cliente o servicio)
+  - ✅ Filtro de estado: Select con opciones (Todos, Confirmada, Completada, Cancelada)
+  - ✅ Filtrado client-side con Array.filter() para performance
+  - ✅ Indicadores visuales: Tags con filtros activos + botón "Limpiar filtros"
+  - ✅ Paginación interactiva: Botones Anterior/Siguiente + números de página
+  - ✅ Paginación inteligente: Muestra máximo 5 páginas con lógica de ventana deslizante
+  - ✅ Estados disabled en botones cuando no se puede navegar
+  - ✅ Recarga de datos al cambiar página con useEffect
+  - **Justificación UX:** Búsqueda instantánea reduce fricción, filtros visuales mejoran discoverability
+  - **Justificación React:** Controlled inputs, estado local para filtros, useEffect para sincronización
+  - **Justificación performance:** Filtrado client-side (no requiere requests adicionales)
+- [x] Diseño responsive (mobile-first)
+  - ✅ Header: flex-col en mobile → flex-row en sm+
+  - ✅ Filtros: flex-col en mobile → flex-row en sm+ con gaps adaptativos
+  - ✅ Tabla: overflow-x-auto en contenedor para scroll horizontal en mobile
+  - ✅ Paginación: flex-col en mobile → flex-row en sm+
+  - ✅ Botones de página: hidden en mobile, visible en sm+ (inline-flex)
+  - ✅ Spacing adaptativo: space-y-4 mobile → space-y-6 desktop
+  - ✅ Input width: full en mobile → auto en desktop
+  - **Justificación TailwindCSS:** Breakpoint sm: (640px), utility classes nativas
+  - **Justificación shadcn-ui:** Componentes accesibles con soporte responsive built-in
+  - **Justificación UX:** Mobile-first garantiza usabilidad en todos los dispositivos
+- [x] Fix mapeo de datos backend → UI
+  - **Problema:** Tipo `Booking` en `/api/bookings.ts` no coincidía con estructura real del backend
+  - **Backend devuelve:** Objetos relacionados `client: { name, email }` y `service: { name, durationMinutes }`
+  - **Frontend esperaba:** Strings planos `clientName`, `serviceName`
+  - **Fix aplicado:** 
+    - Actualizado tipo `Booking` en `/api/bookings.ts` para reflejar estructura real con relaciones
+    - Renombrado import: `Booking as ApiBooking` para evitar conflicto con tipo UI
+    - Mapeo explícito: `booking.client.name` → `clientName`, `booking.service.name` → `serviceName`
+  - **Justificación TypeScript:** Type safety end-to-end, evitar runtime errors por estructura incorrecta
+  - **Justificación arquitectura:** Separación clara entre tipos de API vs tipos de UI (DTO pattern)
+  - **Justificación debugging:** Type annotations explícitas facilitan identificación de errores
+
 ## PENDIENTES POST-MVP
 - [ ] Cliente UI: MyBookingsPage con lista de reservas
 - [ ] Admin: Vista de reservas por día/semana
+- [ ] Admin: Filtros avanzados en BookingsPage (fecha, cliente, servicio, estado)
+- [ ] Admin: Export CSV/PDF de reservas
+- [ ] Admin: Bulk actions (confirmar, cancelar múltiples)
 - [ ] Rate limiting login/register
 - [ ] Toast notifications (Sonner)
 - [ ] Breadcrumb navigation
