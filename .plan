@@ -462,6 +462,22 @@
   - **Justificación arquitectura:** Separación clara entre tipos de API vs tipos de UI (DTO pattern)
   - **Justificación debugging:** Type annotations explícitas facilitan identificación de errores
 
+### Paso 9: Fix slots pasados en BookingCalendarPage ✅
+- [x] Filtrar horarios pasados en día actual
+  - **Problema:** Calendario mostraba horarios que ya pasaron (ej. 9:00-14:00 cuando son las 14:11)
+  - **Causa raíz:** Backend devuelve todos los slots del día sin validación de hora actual
+  - **Fix aplicado:**
+    - Detección de día actual: `format(selectedDate, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd')`
+    - Filtrado condicional: Solo si `isToday`, filtrar slots
+    - Parseo de hora del slot: `split(':')` → `Date.setHours(hours, minutes)`
+    - Buffer de seguridad: 15 minutos adelante (`minimumTime = now + 15min`)
+    - Comparación: `slotTime >= minimumTime`
+  - **Ubicación:** `BookingCalendarPage.tsx` línea 145-180 (useEffect fetchSlots)
+  - **Justificación UX:** Evitar confusión al usuario con horarios imposibles
+  - **Justificación date-fns:** format() para comparación de fechas type-safe
+  - **Justificación business:** Buffer de 15min previene reservas en horarios inmediatos (da tiempo de preparación)
+  - **Justificación performance:** Filtrado client-side (no requiere cambio en backend)
+
 ## PENDIENTES POST-MVP
 - [ ] Cliente UI: MyBookingsPage con lista de reservas
 - [ ] Admin: Vista de reservas por día/semana

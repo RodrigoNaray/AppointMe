@@ -166,7 +166,27 @@ export default function BookingCalendarPage() {
         }
 
         const slots = await response.json() as string[];
-        setAvailableSlots(slots);
+        
+        // FILTRO CRÍTICO: Si es hoy, eliminar horarios que ya pasaron
+        const now = new Date();
+        const isToday = format(selectedDate, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
+        
+        const filteredSlots = isToday 
+          ? slots.filter(timeSlot => {
+              // Parsear hora del slot (formato "HH:mm")
+              const [hours, minutes] = timeSlot.split(':').map(Number);
+              const slotTime = new Date(selectedDate);
+              slotTime.setHours(hours, minutes, 0, 0);
+              
+              // Solo incluir si el slot es futuro (al menos 15 minutos adelante para buffer)
+              const bufferMinutes = 15;
+              const minimumTime = new Date(now.getTime() + bufferMinutes * 60 * 1000);
+              
+              return slotTime >= minimumTime;
+            })
+          : slots;
+        
+        setAvailableSlots(filteredSlots);
       } catch (error) {
         console.error('Error fetching slots:', error);
         setAvailableSlots([]);
