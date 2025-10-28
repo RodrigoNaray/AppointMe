@@ -1,5 +1,5 @@
 # Estado
-313/276 tareas (113%) | MVP: 113% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 15% 🚧
+314/276 tareas (114%) | MVP: 114% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 20% 🚧
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
@@ -44,6 +44,15 @@
   - **Justificación OWASP:** No exponer información de debugging en producción (A04:2021 Insecure Design)
   - **Justificación CORS:** PUT tiene mejor soporte que PATCH en firewalls/proxies corporativos
   - **Justificación compatibilidad:** Reduce problemas de red (ERR_NETWORK) en clientes HTTP
+
+## FIX: Migración de localStorage a sessionStorage ✅
+- [x] Cambiar persist middleware de Zustand para usar sessionStorage
+  - ✅ **bookingStore.ts**: Storage personalizado con sessionStorage
+  - ✅ Implementado getItem/setItem/removeItem con JSON.parse/stringify
+  - ✅ Documentación actualizada
+  - **Justificación OWASP A04:2021 (Insecure Design):** sessionStorage se limpia automáticamente al cerrar navegador
+  - **Justificación seguridad:** Menor ventana de exposición vs localStorage (no persiste entre sesiones)
+  - **Justificación UX:** Carrito temporal apropiado para flujo de reserva (no debe persistir días)
 
 ## PENDIENTES POST-MVP
 - [ ] Cliente UI: MyBookingsPage con lista de reservas

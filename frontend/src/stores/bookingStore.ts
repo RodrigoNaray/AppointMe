@@ -8,13 +8,17 @@ import type { Service } from '../types/service';
  * Arquitectura Redux-ready (preparada para migración futura):
  * - Actions separadas del estado (patrón Redux-like)
  * - Selectors explícitos para composición
- * - Persist middleware con localStorage
+ * - Persist middleware con sessionStorage (se limpia al cerrar navegador)
  * - TypeScript strict mode
  * 
  * Mejores prácticas Zustand 5.0 (2025):
  * - Immer automático para mutaciones (set con funciones)
- * - Persist API v4 (storage personalizado)
+ * - Persist API v4 (storage personalizado con sessionStorage)
  * - Selectores granulares para optimización de renders
+ * 
+ * Seguridad OWASP:
+ * - sessionStorage vs localStorage: Menor ventana de exposición (se limpia al cerrar tab)
+ * - Datos temporales no persisten entre sesiones del navegador
  * 
  * Referencias:
  * - Zustand docs: https://docs.pmnd.rs/zustand/getting-started/introduction
@@ -171,7 +175,17 @@ export const useBookingStore = create<BookingState>()(
     }),
     {
       // Configuración de persist
-      name: 'appointme-booking-storage', // Clave en localStorage
+      name: 'appointme-booking-storage', // Clave en sessionStorage
+      storage: {
+        getItem: (name) => {
+          const str = sessionStorage.getItem(name);
+          return str ? JSON.parse(str) : null;
+        },
+        setItem: (name, value) => {
+          sessionStorage.setItem(name, JSON.stringify(value));
+        },
+        removeItem: (name) => sessionStorage.removeItem(name),
+      },
       version: 1, // Versión del schema (para migraciones futuras)
       
       // Opcional: Migración de versiones antiguas
