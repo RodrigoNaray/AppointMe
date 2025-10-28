@@ -16,10 +16,7 @@ const clientAuthApi = axios.create(API_CONFIG);
 clientAuthApi.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // En una migración futura a Redux, este será un dispatch action
-      console.warn('Client session expired');
-    }
+    // En una migración futura a Redux, este será un dispatch action
     return Promise.reject(error);
   }
 );

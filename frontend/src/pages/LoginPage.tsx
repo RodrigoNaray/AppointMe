@@ -33,8 +33,6 @@ export default function LoginPage() {
     // Leer returnUrl de query params
     const returnUrl = searchParams.get('returnUrl');
 
-    console.log('[LoginPage] returnUrl:', returnUrl); // Debug
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
@@ -44,8 +42,6 @@ export default function LoginPage() {
             await loginClient(loginData);
             
             toast.success('¡Inicio de sesión exitoso!');
-            
-            console.log('[LoginPage] Navigating to:', returnUrl || '/'); // Debug
             
             // Redirigir inmediatamente a returnUrl si existe, sino a home
             if (returnUrl) {
@@ -67,7 +63,6 @@ export default function LoginPage() {
             saveReturnUrl(returnUrl);
         }
         
-        console.log('[LoginPage] Redirecting to Google OAuth, returnUrl saved in sessionStorage');
         window.location.href = `${API_BASE_URL}/auth/client/google`;
     };
 

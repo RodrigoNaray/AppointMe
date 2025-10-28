@@ -79,7 +79,6 @@ export default function BookingCalendarPage() {
     const timer = setTimeout(() => {
       setIsInitialized(true);
       if (cart.length === 0) {
-        console.log('[BookingCalendar] Cart is empty, redirecting to /book');
         navigate('/book');
       }
     }, 100); // 100ms es suficiente para la hidratación
@@ -90,7 +89,6 @@ export default function BookingCalendarPage() {
   // Segundo efecto: verificar carrito después de inicialización
   useEffect(() => {
     if (isInitialized && cart.length === 0) {
-      console.log('[BookingCalendar] Cart became empty, redirecting to /book');
       navigate('/book');
     }
   }, [cart, isInitialized, navigate]);
@@ -98,7 +96,6 @@ export default function BookingCalendarPage() {
   // Restaurar fecha y hora desde query params (returnUrl)
   useEffect(() => {
     if (dateParam && timeParam) {
-      console.log('[BookingCalendar] Restoring from returnUrl:', { dateParam, timeParam });
       try {
         const date = parse(dateParam, 'yyyy-MM-dd', new Date());
         setSelectedDate(date);
@@ -110,25 +107,16 @@ export default function BookingCalendarPage() {
     }
   }, [dateParam, timeParam]);
 
-  // Debug: log para verificar datos del carrito
-  useEffect(() => {
-    console.log('[BookingCalendar] Cart:', cart);
-    console.log('[BookingCalendar] Total duration:', totalDuration);
-  }, [cart, totalDuration]);
-
   // Fetch disponibilidad mensual + auto-select primera fecha
   useEffect(() => {
     const fetchMonthAvailability = async () => {
       setLoadingMonth(true);
       try {
         const month = format(currentMonth, 'yyyy-MM');
-        console.log('[BookingCalendar] Fetching availability:', { month, totalDuration });
         
         const response = await fetch(
           `${API_BASE_URL}/availability/month?month=${month}&totalDuration=${totalDuration}`
         );
-        
-        console.log('[BookingCalendar] Response status:', response.status);
         
         if (!response.ok) {
           const errorText = await response.text();
@@ -137,16 +125,12 @@ export default function BookingCalendarPage() {
         }
 
         const days = await response.json() as string[];
-        console.log('[BookingCalendar] Available days:', days);
         setAvailableDays(days);
 
         // Auto-seleccionar primer día disponible
         if (days.length > 0 && !selectedDate) {
           const firstDay = parse(days[0], 'yyyy-MM-dd', new Date());
           setSelectedDate(firstDay);
-          console.log('[BookingCalendar] Auto-selected first day:', days[0]);
-        } else if (days.length === 0) {
-          console.warn('[BookingCalendar] No available days found for month:', month);
         }
       } catch (error) {
         console.error('[BookingCalendar] Error fetching month availability:', error);

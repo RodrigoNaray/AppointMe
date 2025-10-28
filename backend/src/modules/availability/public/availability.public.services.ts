@@ -84,13 +84,9 @@ export const getAvailableSlots = async (serviceId: string, date: Date) => {
  * - date-fns: eachDayOfInterval para iterar días del mes
  */
 export const getMonthAvailability = async (month: Date, totalDuration: number) => {
-  console.log('[getMonthAvailability] START - month:', month, 'totalDuration:', totalDuration);
-  
   // 1. Obtener rango del mes
   const monthStart = startOfMonth(month);
   const monthEnd = endOfMonth(month);
-  
-  console.log('[getMonthAvailability] Month range:', { monthStart, monthEnd });
   
   // 2. Obtener datos necesarios en paralelo (batch optimization)
   const [adminUser, bookings, blocks] = await Promise.all([
@@ -108,33 +104,20 @@ export const getMonthAvailability = async (month: Date, totalDuration: number) =
     })
   ]);
 
-  console.log('[getMonthAvailability] DB results:', { 
-    hasAdminUser: !!adminUser, 
-    hasSchedule: !!adminUser?.schedule,
-    bookingsCount: bookings.length,
-    blocksCount: blocks.length 
-  });
-
   if (!adminUser || !adminUser.schedule) {
     return [];
   }
 
   const schedule = adminUser.schedule as unknown as WeeklySchedule;
-  console.log('[getMonthAvailability] Schedule:', schedule);
-  
   const availableDays: string[] = [];
 
   // 3. Iterar cada día del mes
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
-  console.log('[getMonthAvailability] Days in month:', daysInMonth.length);
-
   const today = startOfDay(new Date());
-  console.log('[getMonthAvailability] Today:', today);
 
   for (const day of daysInMonth) {
     // Saltar días pasados
     if (day < today) {
-      console.log('[getMonthAvailability] Skipping past day:', format(day, 'yyyy-MM-dd'));
       continue;
     }
 
@@ -143,10 +126,7 @@ export const getMonthAvailability = async (month: Date, totalDuration: number) =
     const dayOfWeek = dayMap[dayOfWeekIndex];
     const daySchedule = schedule[dayOfWeek];
 
-    console.log('[getMonthAvailability] Checking day:', format(day, 'yyyy-MM-dd'), 'dayOfWeek:', dayOfWeek, 'schedule:', daySchedule);
-
     if (!daySchedule || !daySchedule.isActive) {
-      console.log('[getMonthAvailability] Day not active or no schedule');
       continue;
     }
 
@@ -188,13 +168,9 @@ export const getMonthAvailability = async (month: Date, totalDuration: number) =
     }
 
     if (hasAvailableSlot) {
-      console.log('[getMonthAvailability] Day has available slot:', format(day, 'yyyy-MM-dd'));
       availableDays.push(format(day, 'yyyy-MM-dd'));
-    } else {
-      console.log('[getMonthAvailability] Day has NO available slot:', format(day, 'yyyy-MM-dd'));
     }
   }
 
-  console.log('[getMonthAvailability] RESULT - availableDays:', availableDays);
   return availableDays;
 };

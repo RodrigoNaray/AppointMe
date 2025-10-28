@@ -46,21 +46,15 @@ export const useOAuthStore = create<OAuthStoreState>()(
       // Actions
       saveReturnUrl: (url: string) => {
         // Validación OWASP: Solo aceptar rutas relativas
-        if (url.startsWith('/') && !url.startsWith('//')) {
-          set({ returnUrl: url });
-          console.log('[OAuthStore] returnUrl saved:', url);
-        } else {
-          console.warn('[OAuthStore] Invalid returnUrl (must start with /), ignored:', url);
-        }
-      },
-      
-      getReturnUrl: () => {
+      if (url.startsWith('/') && !url.startsWith('//')) {
+        set({ returnUrl: url });
+      }
+    },      getReturnUrl: () => {
         return get().returnUrl;
       },
       
       clearReturnUrl: () => {
         set({ returnUrl: null });
-        console.log('[OAuthStore] returnUrl cleared');
       },
     }),
     {

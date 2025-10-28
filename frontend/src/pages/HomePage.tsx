@@ -60,7 +60,6 @@ export default function HomePage() {
       const savedReturnUrl = getReturnUrl();
       
       if (savedReturnUrl) {
-        console.log('[HomePage] Redirecting to saved returnUrl:', savedReturnUrl);
         // Limpiar returnUrl del store
         clearReturnUrl();
         // Limpiar query params

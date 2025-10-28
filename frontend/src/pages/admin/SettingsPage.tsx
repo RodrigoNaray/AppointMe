@@ -99,7 +99,6 @@ export default function SettingsPage() {
           setInitialValue(data.minBookingAdvanceMinutes);
         } else {
           // Fallback a valores por defecto si la respuesta es inválida
-          console.warn('Respuesta inválida de getBookingRules, usando valores por defecto');
           setInputValue('60');
           setInitialValue(60);
         }

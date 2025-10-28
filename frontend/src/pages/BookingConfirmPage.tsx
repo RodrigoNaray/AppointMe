@@ -129,19 +129,6 @@ export default function BookingConfirmPage() {
     setIsSubmitting(true);
     setHasSubmitted(true);
 
-    console.log('[BookingConfirm] Starting booking creation:', {
-      selectedDateTime: selectedDateTime.toISOString(),
-      dateParam,
-      timeParam,
-      cart: cart.map(item => ({ id: item.service.id, name: item.service.name, quantity: item.quantity })),
-      cartLength: cart.length,
-      authState: authState.type,
-      isAuthenticated: authState.isAuthenticated,
-      userId: authState.type === 'client' ? authState.user?.id : 'N/A',
-      cookies: document.cookie || 'NO COOKIES', // Debug: verificar cookies disponibles
-      API_BASE_URL,
-    });
-
     try {
       const results: BookingResult[] = [];
       let successCount = 0;
@@ -159,16 +146,8 @@ export default function BookingConfirmPage() {
             notes: '', // Opcional: agregar campo de notas en futuro
           };
           
-          console.log('[BookingConfirm] Creating booking for service:', {
-            serviceName: item.service.name,
-            payload,
-            apiBaseUrl: API_BASE_URL,
-          });
-          
           // Construir URL correctamente (API_BASE_URL ya incluye /api, no agregar / al inicio)
           const url = `${API_BASE_URL}/bookings/create`;
-          
-          console.log('[BookingConfirm] Final URL:', url);
           
           const response = await fetch(url, {
             method: 'POST',
@@ -182,25 +161,10 @@ export default function BookingConfirmPage() {
           let data;
           try {
             const responseText = await response.text();
-            console.log('[BookingConfirm] Raw response:', {
-              status: response.status,
-              statusText: response.statusText,
-              ok: response.ok,
-              headers: Object.fromEntries(response.headers.entries()),
-              bodyPreview: responseText.substring(0, 500),
-            });
-            
             data = JSON.parse(responseText);
           } catch (parseError) {
-            console.error('[BookingConfirm] Error parsing JSON:', parseError);
             throw new Error(`Invalid response from server (${response.status}): ${response.statusText}`);
           }
-          
-          console.log('[BookingConfirm] Response:', { 
-            status: response.status, 
-            ok: response.ok, 
-            data 
-          });
 
           if (response.ok && data.success) {
             results.push({
@@ -222,7 +186,7 @@ export default function BookingConfirmPage() {
           }
         } catch (error) {
           // Error de red o parsing
-          console.error('[BookingConfirm] Error creating booking:', error);
+          console.error('Error creating booking:', error);
           
           // Mensajes de error amigables para el usuario
           let userFriendlyError = 'Error al procesar la reserva';

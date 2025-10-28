@@ -257,7 +257,6 @@ export const useAuthStore = create<AuthStoreState>()(
 
           // Si llegamos aquí, NO hay sesión válida
           // OWASP: Limpiar sessionStorage si cookies no existen
-          console.warn('[AuthStore] No valid session found, clearing sessionStorage');
           set({
             authState: { type: null, user: null, isAuthenticated: false },
             isLoading: false

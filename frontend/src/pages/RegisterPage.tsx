@@ -124,7 +124,6 @@ export default function RegisterPage() {
         // Redireccionar al backend para iniciar el flujo de OAuth
         const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '');
         
-        console.log('[RegisterPage] Redirecting to Google OAuth, returnUrl saved in sessionStorage');
         window.location.href = `${apiUrl}/auth/client/google`;
     };
 

@@ -1,5 +1,5 @@
 # Estado
-312/276 tareas (113%) | MVP: 113% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 15% 🚧
+313/276 tareas (113%) | MVP: 113% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 15% 🚧
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
@@ -9,15 +9,39 @@
 **Estado:** ~~Context API (AuthContext + BookingContext)~~ → **ZUSTAND ✅ MIGRADO**
 **Seguridad:** ⚠️ REFACTOR EN PROGRESO - OWASP Compliance para Producción
 
-## FIX: Settings API - Cambio de PATCH a PUT
+## FIX: Settings API - Cambio de PATCH a PUT ✅
 - [x] Cambiar método HTTP de PATCH a PUT en módulo settings
-  - ❌ **PROBLEMA:** PATCH puede causar errores CORS/Network en algunos proxies y configuraciones
+  - ❌ **PROBLEMA:** PATCH causaba `ERR_NETWORK` (CORS/proxy issues)
   - ✅ **SOLUCIÓN:** Usar PUT (método HTTP estándar, mejor soportado)
   - ✅ **CAMBIOS:**
     - Frontend: `apiClient.patch` → `apiClient.put` en settings.ts
     - Backend: `adminSettingsRoutes.patch` → `adminSettingsRoutes.put` en settings.routes.ts
     - Docs: Actualizado comentario en settings.controller.ts (PATCH → PUT)
   - **Justificación REST:** PUT es idempotente y estándar para actualizaciones completas de recursos
+  - **Justificación CORS:** PUT tiene mejor soporte que PATCH en firewalls/proxies corporativos
+
+## CLEANUP: Eliminación de console.log de debugging ✅
+- [x] Eliminar todos los console.log/warn/info de debugging del código
+  - ✅ **Frontend limpiado (13 archivos):**
+    - SettingsPage.tsx: console.warn eliminado
+    - oauthStore.ts: 3 console.log eliminados
+    - authStore.ts: console.warn eliminado
+    - RegisterPage.tsx: console.log eliminado
+    - LoginPage.tsx: 3 console.log eliminados
+    - HomePage.tsx: console.log eliminado
+    - BookingCalendarPage.tsx: 9 console.log/warn eliminados
+    - BookingConfirmPage.tsx: 7 console.log eliminados (solo mantener console.error)
+    - AdminLoginPage.tsx: console.log eliminado
+    - clientAuth.ts: console.warn eliminado
+  - ✅ **Backend limpiado (1 archivo):**
+    - availability.public.services.ts: 12 console.log eliminados
+  - ✅ **Mantenidos (apropiados):**
+    - server.ts: Mensaje de inicio del servidor (estándar)
+    - seed.ts: Output de scripts CLI (necesario para feedback)
+    - create-first-admin.ts: Output de scripts CLI (necesario)
+  - ✅ **console.error mantenidos:** Solo en casos de error real (apropiado para debugging)
+  - **Justificación logging:** Backend usa Pino logger (profesional), frontend mantiene solo console.error para errores críticos
+  - **Justificación OWASP:** No exponer información de debugging en producción (A04:2021 Insecure Design)
   - **Justificación CORS:** PUT tiene mejor soporte que PATCH en firewalls/proxies corporativos
   - **Justificación compatibilidad:** Reduce problemas de red (ERR_NETWORK) en clientes HTTP
 

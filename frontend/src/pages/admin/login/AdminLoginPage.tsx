@@ -22,7 +22,6 @@ export default function AdminLoginPage() {
       await loginAdmin({ email, password });
       navigate('/admin');
     } catch (err) {
-      console.log('Error en login admin:', err);
       setError('El email o la contraseña son incorrectos.');
     }
   };
