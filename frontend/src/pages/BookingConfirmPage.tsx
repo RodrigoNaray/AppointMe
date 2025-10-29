@@ -112,11 +112,16 @@ export default function BookingConfirmPage() {
     setHasValidated(true);
   }, [dateParam, timeParam, cart.length, authState.type, navigate, hasValidated, hasSubmitted]);
 
-  // Parsear fecha y hora (date-fns para seguridad)
+  // Parsear fecha y hora en UTC (CRÍTICO: backend espera UTC)
   const selectedDate = dateParam ? parse(dateParam, 'yyyy-MM-dd', new Date()) : null;
   const selectedDateTime = selectedDate && timeParam
-    ? parse(`${dateParam} ${timeParam}`, 'yyyy-MM-dd HH:mm', new Date())
+    ? new Date(`${dateParam}T${timeParam}:00.000Z`) // Construir ISO string en UTC
     : null;
+  
+  // Convertir timeParam (UTC) a hora local para mostrar al usuario
+  const displayTime = selectedDateTime 
+    ? format(selectedDateTime, 'HH:mm') // format() convierte automáticamente a local timezone
+    : timeParam;
 
   const handleConfirmBooking = async () => {
     if (!selectedDateTime || !dateParam || !timeParam) {
@@ -134,11 +139,17 @@ export default function BookingConfirmPage() {
       let successCount = 0;
       let failureCount = 0;
 
-      // Crear un booking por cada servicio en el carrito
+      // Acumulador de tiempo para reservas escalonadas
+      let accumulatedMinutes = 0;
+
+      // Crear un booking por cada servicio en el carrito (escalonados secuencialmente)
       // Backend API: POST /api/bookings/create { serviceId, bookingTime, notes }
       for (const item of cart) {
         try {
-          const bookingTime = selectedDateTime.toISOString();
+          // Calcular hora de inicio escalonada: hora base + duración acumulada
+          const escalatedDateTime = new Date(selectedDateTime);
+          escalatedDateTime.setUTCMinutes(escalatedDateTime.getUTCMinutes() + accumulatedMinutes);
+          const bookingTime = escalatedDateTime.toISOString();
           
           const payload = {
             serviceId: item.service.id,
@@ -174,6 +185,9 @@ export default function BookingConfirmPage() {
               bookingId: data.booking?.id,
             });
             successCount++;
+            
+            // Acumular duración para escalonar siguiente reserva
+            accumulatedMinutes += item.service.durationMinutes * item.quantity;
           } else {
             // Error del backend (409 conflicto, 400 validación, etc.)
             results.push({
@@ -183,6 +197,9 @@ export default function BookingConfirmPage() {
               error: data.message || 'Error desconocido',
             });
             failureCount++;
+            
+            // IMPORTANTE: NO acumular duración en caso de fallo (no reservar siguientes servicios)
+            break; // Detener creación de reservas subsiguientes si falla una
           }
         } catch (error) {
           // Error de red o parsing
@@ -210,6 +227,9 @@ export default function BookingConfirmPage() {
             error: userFriendlyError,
           });
           failureCount++;
+          
+          // IMPORTANTE: Detener proceso si hay error de red/servidor
+          break;
         }
       }
 
@@ -273,7 +293,7 @@ export default function BookingConfirmPage() {
               <Clock className="w-5 h-5" />
               <div>
                 <p className="text-sm font-medium text-blue-700">Hora de inicio</p>
-                <p className="text-lg font-semibold">{timeParam}</p>
+                <p className="text-lg font-semibold">{displayTime}</p>
                 <p className="text-sm text-blue-600">
                   Duración total: {totalDuration} minutos
                 </p>
@@ -374,7 +394,7 @@ export default function BookingConfirmPage() {
           {/* Nota informativa */}
           <p className="text-sm text-gray-500 text-center">
             Al confirmar, se crearán {cart.length} {cart.length === 1 ? 'reserva' : 'reservas'} consecutivas
-            comenzando a las {timeParam}.
+            comenzando a las {displayTime}. Los servicios se reservarán uno después del otro automáticamente.
           </p>
         </CardContent>
       </Card>

@@ -23,12 +23,73 @@ import { API_BASE_URL } from '@/api/config';
  * 4. Usuario puede cambiar fecha → slots se actualizan
  * 5. Al seleccionar slot → verifica auth → navega a confirmación
  * 
+ * Timezone Strategy (CRÍTICO):
+ * - Backend siempre trabaja en UTC
+ * - Slots recibidos del API están en formato "HH:mm" UTC
+ * - Frontend convierte UTC → Local timezone para display
+ * - Al enviar: Local timezone → UTC ISO string
+ * 
  * Mejores prácticas:
  * - React 19: useState + useEffect con cleanup
  * - UX: Reduce clicks (fusión calendario + horarios)
  * - Performance: Batch API calls (month + first day slots)
  * - Mobile-first: Grid responsive 3 columnas
+ * - Timezone: Mostrar hora local, almacenar UTC (best practice internacional)
  */
+
+/**
+ * Convierte slot UTC "HH:mm" a hora local del navegador
+ * @param slotUTC - Slot en formato "HH:mm" UTC (ej: "09:00" = 09:00 UTC)
+ * @param date - Fecha base para el slot
+ * @returns Hora local en formato "HH:mm" (ej: "06:00" para UTC-3)
+ */
+function convertSlotUTCToLocal(slotUTC: string, date: Date): string {
+  const [hours, minutes] = slotUTC.split(':').map(Number);
+  
+  // Crear fecha UTC explícita
+  const utcDate = new Date(Date.UTC(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    hours,
+    minutes,
+    0,
+    0
+  ));
+  
+  // Convertir a hora local del navegador
+  const localHours = utcDate.getHours();
+  const localMinutes = utcDate.getMinutes();
+  
+  return `${String(localHours).padStart(2, '0')}:${String(localMinutes).padStart(2, '0')}`;
+}
+
+/**
+ * Convierte hora local "HH:mm" de vuelta a UTC para enviar al backend
+ * @param slotLocal - Slot en formato "HH:mm" local (ej: "06:00" hora local)
+ * @param date - Fecha base para el slot
+ * @returns Hora UTC en formato "HH:mm" (ej: "09:00" UTC)
+ */
+function convertSlotLocalToUTC(slotLocal: string, date: Date): string {
+  const [hours, minutes] = slotLocal.split(':').map(Number);
+  
+  // Crear fecha local
+  const localDate = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    hours,
+    minutes,
+    0,
+    0
+  );
+  
+  // Extraer componentes UTC
+  const utcHours = localDate.getUTCHours();
+  const utcMinutes = localDate.getUTCMinutes();
+  
+  return `${String(utcHours).padStart(2, '0')}:${String(utcMinutes).padStart(2, '0')}`;
+}
 
 export default function BookingCalendarPage() {
   const navigate = useNavigate();
@@ -48,7 +109,7 @@ export default function BookingCalendarPage() {
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loadingMonth, setLoadingMonth] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date | null>(null); // null hasta encontrar primer mes disponible
   const [isInitialized, setIsInitialized] = useState(false);
   const [minBookingAdvanceMinutes, setMinBookingAdvanceMinutes] = useState(15); // Default fallback
 
@@ -94,12 +155,17 @@ export default function BookingCalendarPage() {
   }, [cart, isInitialized, navigate]);
 
   // Restaurar fecha y hora desde query params (returnUrl)
+  // timeParam viene en UTC desde handleContinue, necesitamos convertir a local para display
   useEffect(() => {
     if (dateParam && timeParam) {
       try {
         const date = parse(dateParam, 'yyyy-MM-dd', new Date());
         setSelectedDate(date);
-        setSelectedTime(timeParam);
+        
+        // Convertir timeParam (UTC) → local timezone para display
+        const timeLocal = convertSlotUTCToLocal(timeParam, date);
+        setSelectedTime(timeLocal);
+        
         setCurrentMonth(date); // Navegar al mes correcto
       } catch (error) {
         console.error('[BookingCalendar] Error parsing date from returnUrl:', error);
@@ -107,8 +173,71 @@ export default function BookingCalendarPage() {
     }
   }, [dateParam, timeParam]);
 
+  // Buscar primer mes con disponibilidad al cargar (solo si no hay returnUrl)
+  useEffect(() => {
+    if (currentMonth !== null || dateParam) return; // Ya inicializado o viene de returnUrl
+
+    const findFirstAvailableMonth = async () => {
+      setLoadingMonth(true);
+      try {
+        let searchMonth = startOfToday();
+        let attempts = 0;
+        const maxAttempts = 12; // Buscar hasta 12 meses adelante
+        const now = new Date();
+
+        while (attempts < maxAttempts) {
+          const monthStr = format(searchMonth, 'yyyy-MM');
+          const response = await fetch(
+            `${API_BASE_URL}/availability/month?month=${monthStr}&totalDuration=${totalDuration}`
+          );
+
+          if (response.ok) {
+            const days = await response.json() as string[];
+            
+            // Filtrar días que realmente tienen slots disponibles
+            // Si es hoy, verificar que tenga slots después del tiempo mínimo
+            const validDays = days.filter(dayStr => {
+              const dayDate = parse(dayStr, 'yyyy-MM-dd', new Date());
+              const isToday = format(dayDate, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
+              
+              // Si no es hoy, asumimos que tiene slots disponibles
+              if (!isToday) return true;
+              
+              // Si es hoy, necesitamos verificar que tenga slots futuros
+              // Por ahora, excluimos hoy si todos los slots ya pasaron
+              // (esto se validará cuando se carguen los slots reales)
+              return false; // Excluir hoy del primer mes, buscar mañana en adelante
+            });
+            
+            if (validDays.length > 0) {
+              // Encontrado primer mes con disponibilidad válida
+              setCurrentMonth(searchMonth);
+              return;
+            }
+          }
+
+          // Buscar siguiente mes
+          searchMonth = addMonths(searchMonth, 1);
+          attempts++;
+        }
+
+        // No se encontró disponibilidad en 12 meses, iniciar en mes actual
+        setCurrentMonth(startOfToday());
+      } catch (error) {
+        console.error('[BookingCalendar] Error finding first available month:', error);
+        setCurrentMonth(startOfToday());
+      } finally {
+        setLoadingMonth(false);
+      }
+    };
+
+    findFirstAvailableMonth();
+  }, [totalDuration, dateParam, minBookingAdvanceMinutes]); // Agregar minBookingAdvanceMinutes
+
   // Fetch disponibilidad mensual + auto-select primera fecha
   useEffect(() => {
+    if (!currentMonth) return; // Esperar a que currentMonth se inicialice
+
     const fetchMonthAvailability = async () => {
       setLoadingMonth(true);
       try {
@@ -125,11 +254,22 @@ export default function BookingCalendarPage() {
         }
 
         const days = await response.json() as string[];
-        setAvailableDays(days);
+        
+        // Filtrar días que realmente tienen slots disponibles
+        // Si es hoy, excluir porque probablemente no tenga slots futuros
+        const now = new Date();
+        const validDays = days.filter(dayStr => {
+          const dayDate = parse(dayStr, 'yyyy-MM-dd', new Date());
+          const isToday = format(dayDate, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
+          // Excluir hoy del mes disponible (los slots de hoy se validarán dinámicamente)
+          return !isToday;
+        });
+        
+        setAvailableDays(validDays);
 
         // Auto-seleccionar primer día disponible
-        if (days.length > 0 && !selectedDate) {
-          const firstDay = parse(days[0], 'yyyy-MM-dd', new Date());
+        if (validDays.length > 0 && !selectedDate) {
+          const firstDay = parse(validDays[0], 'yyyy-MM-dd', new Date());
           setSelectedDate(firstDay);
         }
       } catch (error) {
@@ -154,28 +294,27 @@ export default function BookingCalendarPage() {
       try {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
         
-        // Estrategia: usar servicio con mayor duración
-        const longestService = cart.reduce((prev, current) => 
-          (current.service.durationMinutes > prev.service.durationMinutes) ? current : prev
-        );
-
+        // CRÍTICO: Usar duración TOTAL del carrito (todos los servicios combinados)
         const response = await fetch(
-          `${API_BASE_URL}/availability?serviceId=${longestService.service.id}&date=${dateStr}`
+          `${API_BASE_URL}/availability?durationMinutes=${totalDuration}&date=${dateStr}`
         );
         
         if (!response.ok) {
           throw new Error('Error fetching slots');
         }
 
-        const slots = await response.json() as string[];
+        const slotsUTC = await response.json() as string[];
         
-        // FILTRO CRÍTICO: Si es hoy, eliminar horarios que ya pasaron
+        // PASO 1: Convertir slots UTC → Local timezone para display
+        const slotsLocal = slotsUTC.map(slotUTC => convertSlotUTCToLocal(slotUTC, selectedDate));
+        
+        // PASO 2: FILTRO CRÍTICO - Si es hoy, eliminar horarios que ya pasaron (comparar en LOCAL)
         const now = new Date();
         const isToday = format(selectedDate, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
         
         const filteredSlots = isToday 
-          ? slots.filter(timeSlot => {
-              // Parsear hora del slot (formato "HH:mm")
+          ? slotsLocal.filter(timeSlot => {
+              // Parsear hora del slot en LOCAL timezone
               const [hours, minutes] = timeSlot.split(':').map(Number);
               const slotTime = new Date(selectedDate);
               slotTime.setHours(hours, minutes, 0, 0);
@@ -185,7 +324,7 @@ export default function BookingCalendarPage() {
               
               return slotTime >= minimumTime;
             })
-          : slots;
+          : slotsLocal;
         
         setAvailableSlots(filteredSlots);
       } catch (error) {
@@ -222,16 +361,19 @@ export default function BookingCalendarPage() {
 
     const isClientAuthenticated = authState.isAuthenticated && authState.type === 'client';
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    
+    // CRÍTICO: Convertir selectedTime (local) de vuelta a UTC para el backend
+    const timeUTC = convertSlotLocalToUTC(selectedTime, selectedDate);
 
     if (!isClientAuthenticated) {
-      // Redirigir a login con returnUrl
-      const returnUrl = `/book/calendar?date=${dateStr}&time=${selectedTime}`;
+      // Redirigir a login con returnUrl (guardar hora UTC en URL)
+      const returnUrl = `/book/calendar?date=${dateStr}&time=${timeUTC}`;
       navigate(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
       return;
     }
 
-    // Usuario autenticado → confirmar reserva
-    navigate(`/book/confirm?date=${dateStr}&time=${selectedTime}`);
+    // Usuario autenticado → confirmar reserva (enviar hora UTC)
+    navigate(`/book/confirm?date=${dateStr}&time=${timeUTC}`);
   };
 
   // Handler cambio de mes
@@ -242,6 +384,7 @@ export default function BookingCalendarPage() {
 
   // Verificar si se puede navegar al mes anterior
   const canNavigateToPrevMonth = (): boolean => {
+    if (!currentMonth) return false;
     const prevMonth = subMonths(currentMonth, 1);
     const today = startOfToday();
     
@@ -251,6 +394,7 @@ export default function BookingCalendarPage() {
 
   // Verificar si se puede navegar al mes siguiente
   const canNavigateToNextMonth = (): boolean => {
+    if (!currentMonth) return false;
     // Permitir navegar hasta 6 meses adelante (configurable)
     const maxMonth = addMonths(startOfToday(), 6);
     const nextMonth = addMonths(currentMonth, 1);
@@ -297,7 +441,7 @@ export default function BookingCalendarPage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => handleMonthChange(subMonths(currentMonth, 1))}
+                      onClick={() => currentMonth && handleMonthChange(subMonths(currentMonth, 1))}
                       disabled={loadingMonth || !canNavigateToPrevMonth()}
                       className="h-8 w-8"
                     >
@@ -306,14 +450,14 @@ export default function BookingCalendarPage() {
                     
                     <div className="min-w-[140px] text-center">
                       <span className="text-sm sm:text-base font-medium capitalize">
-                        {format(currentMonth, 'MMMM yyyy', { locale: es })}
+                        {currentMonth ? format(currentMonth, 'MMMM yyyy', { locale: es }) : 'Cargando...'}
                       </span>
                     </div>
                     
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => handleMonthChange(addMonths(currentMonth, 1))}
+                      onClick={() => currentMonth && handleMonthChange(addMonths(currentMonth, 1))}
                       disabled={loadingMonth || !canNavigateToNextMonth()}
                       className="h-8 w-8"
                     >
@@ -340,7 +484,7 @@ export default function BookingCalendarPage() {
                   <Calendar
                     mode="single"
                     selected={selectedDate}
-                    month={currentMonth}
+                    month={currentMonth || undefined}
                     onSelect={handleDateSelect}
                     onMonthChange={handleMonthChange}
                     disabled={(date) => {

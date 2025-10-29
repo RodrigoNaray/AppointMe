@@ -1,16 +1,42 @@
 import { Request, Response } from 'express';
 import * as publicService from './availability.public.services';
 import logger from '../../../utils/logger';
-import { parse } from 'date-fns';
 
+/**
+ * getAvailableSlotsController - Endpoint para obtener slots disponibles
+ * 
+ * Query params:
+ * - date: YYYY-MM-DD (ej: "2025-10-29")
+ * - durationMinutes: número de minutos requeridos (ej: 90)
+ * 
+ * Response: string[] de horarios HH:mm disponibles
+ * 
+ * Mejores prácticas:
+ * - Acepta durationMinutes directamente (más flexible que serviceId)
+ * - Permite calcular slots para múltiples servicios combinados
+ */
 export const getAvailableSlotsController = async (req: Request, res: Response) => {
-  const { serviceId, date } = req.query;
-  if (!serviceId || !date || typeof serviceId !== 'string' || typeof date !== 'string') {
-    return res.status(400).json({ message: 'Los parámetros "serviceId" y "date" son requeridos.' });
+  const { durationMinutes, date } = req.query;
+  
+  if (!durationMinutes || !date || typeof durationMinutes !== 'string' || typeof date !== 'string') {
+    return res.status(400).json({ message: 'Los parámetros "durationMinutes" y "date" son requeridos.' });
   }
+  
+  const duration = parseInt(durationMinutes, 10);
+  if (isNaN(duration) || duration <= 0) {
+    return res.status(400).json({ message: 'El parámetro "durationMinutes" debe ser un número positivo.' });
+  }
+  
   try {
-    const utcDate = new Date(date);
-    const slots = await publicService.getAvailableSlots(serviceId, utcDate);
+    // Parsear fecha como medianoche UTC explícitamente
+    // date = "2025-10-29" debe ser 2025-10-29T00:00:00.000Z
+    const utcDate = new Date(`${date}T00:00:00.000Z`);
+    
+    if (isNaN(utcDate.getTime())) {
+      return res.status(400).json({ message: 'Formato de fecha inválido. Use YYYY-MM-DD.' });
+    }
+    
+    const slots = await publicService.getAvailableSlots(utcDate, duration);
     res.status(200).json(slots);
   } catch (error) {
     logger.error(error, "Error al calcular los slots de disponibilidad");
@@ -50,9 +76,9 @@ export const getMonthAvailabilityController = async (req: Request, res: Response
   }
 
   try {
-    // Parsear month (YYYY-MM) a Date usando date-fns para evitar problemas de timezone
-    // parse('2025-10', 'yyyy-MM', new Date()) crea el 1 de octubre 2025 en zona local
-    const monthDate = parse(`${month}-01`, 'yyyy-MM-dd', new Date());
+    // Parsear month como primer día del mes en UTC explícitamente
+    // month = "2025-10" debe ser 2025-10-01T00:00:00.000Z
+    const monthDate = new Date(`${month}-01T00:00:00.000Z`);
     
     if (isNaN(monthDate.getTime())) {
       return res.status(400).json({ 

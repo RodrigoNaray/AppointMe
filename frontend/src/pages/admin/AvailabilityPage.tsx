@@ -51,6 +51,43 @@ const defaultDaySchedule: DaySchedule = {
   isActive: false,
 };
 
+/**
+ * Convierte hora UTC "HH:mm" a hora local del navegador
+ * Backend almacena en UTC, UI muestra en hora local
+ * @param timeUTC - Hora en formato "HH:mm" UTC (ej: "12:00" = 12:00 UTC)
+ * @returns Hora en formato "HH:mm" local (ej: "09:00" para UTC-3)
+ */
+function convertTimeUTCToLocal(timeUTC: string): string {
+  const [hours, minutes] = timeUTC.split(':').map(Number);
+  
+  // Crear fecha arbitraria en UTC con la hora especificada
+  const utcDate = new Date(Date.UTC(2000, 0, 1, hours, minutes, 0, 0));
+  
+  // Convertir a hora local del navegador
+  const localHours = utcDate.getHours();
+  const localMinutes = utcDate.getMinutes();
+  
+  return `${String(localHours).padStart(2, '0')}:${String(localMinutes).padStart(2, '0')}`;
+}
+
+/**
+ * Convierte hora local "HH:mm" a UTC para enviar al backend
+ * @param timeLocal - Hora en formato "HH:mm" local (ej: "09:00")
+ * @returns Hora en formato "HH:mm" UTC (ej: "12:00" para UTC-3)
+ */
+function convertTimeLocalToUTC(timeLocal: string): string {
+  const [hours, minutes] = timeLocal.split(':').map(Number);
+  
+  // Crear fecha en timezone local
+  const localDate = new Date(2000, 0, 1, hours, minutes, 0, 0);
+  
+  // Extraer componentes UTC
+  const utcHours = localDate.getUTCHours();
+  const utcMinutes = localDate.getUTCMinutes();
+  
+  return `${String(utcHours).padStart(2, '0')}:${String(utcMinutes).padStart(2, '0')}`;
+}
+
 export default function AvailabilityPage() {
   const [schedule, setSchedule] = useState<WeeklySchedule>({});
   const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
@@ -64,7 +101,18 @@ export default function AvailabilityPage() {
         apiClient.get<WeeklySchedule>("/admin/availability/schedule"),
         apiClient.get<AvailabilityBlock[]>("/admin/availability/blocks"),
       ]);
-      setSchedule(scheduleResponse.data);
+      
+      // Convertir horarios UTC → local para display
+      const scheduleLocal: WeeklySchedule = {};
+      for (const [day, daySchedule] of Object.entries(scheduleResponse.data)) {
+        scheduleLocal[day] = {
+          ...daySchedule,
+          start: convertTimeUTCToLocal(daySchedule.start),
+          end: convertTimeUTCToLocal(daySchedule.end),
+        };
+      }
+      
+      setSchedule(scheduleLocal);
       setBlocks(blocksResponse.data);
     } catch (error) {
       console.error("Error al cargar los datos de disponibilidad", error);
@@ -90,7 +138,17 @@ export default function AvailabilityPage() {
 
   const handleSaveChanges = async () => {
     try {
-      await apiClient.put("/admin/availability/schedule", schedule);
+      // Convertir horarios local → UTC antes de enviar al backend
+      const scheduleUTC: WeeklySchedule = {};
+      for (const [day, daySchedule] of Object.entries(schedule)) {
+        scheduleUTC[day] = {
+          ...daySchedule,
+          start: convertTimeLocalToUTC(daySchedule.start),
+          end: convertTimeLocalToUTC(daySchedule.end),
+        };
+      }
+      
+      await apiClient.put("/admin/availability/schedule", scheduleUTC);
       alert("¡Horario guardado con éxito!");
     } catch (error) {
       console.error("Error al guardar el horario", error);

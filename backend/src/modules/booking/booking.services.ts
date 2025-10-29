@@ -51,10 +51,19 @@ const validateTimeSlotAvailability = async (
       return false;
     }
 
-    // 3. Verificar que la hora esté dentro del rango de trabajo
-    const requestedDate = new Date(requestedTime);
-    const workingHoursStart = parse(daySchedule.start, 'HH:mm', requestedDate);
-    const workingHoursEnd = parse(daySchedule.end, 'HH:mm', requestedDate);
+    // 3. Verificar que la hora esté dentro del rango de trabajo (parsear en UTC explícitamente)
+    const requestedDateUTC = new Date(requestedTime);
+    
+    // Parsear horarios laborales en UTC (evitar parse() que usa timezone local)
+    const [startHour, startMinute] = daySchedule.start.split(':').map(Number);
+    const [endHour, endMinute] = daySchedule.end.split(':').map(Number);
+    
+    const workingHoursStart = new Date(requestedDateUTC);
+    workingHoursStart.setUTCHours(startHour, startMinute, 0, 0);
+    
+    const workingHoursEnd = new Date(requestedDateUTC);
+    workingHoursEnd.setUTCHours(endHour, endMinute, 0, 0);
+    
     const serviceEndTime = addMinutes(requestedTime, serviceDuration);
 
     if (requestedTime < workingHoursStart || serviceEndTime > workingHoursEnd) {
@@ -154,16 +163,8 @@ export const createBooking = async (
       throw error;
     }
 
-    // 2. Validación básica de tiempo (debe ser futuro)
+    // 2. Validar tiempo mínimo de antelación (valida futuro + notice en una sola lógica)
     const now = new Date();
-    if (data.bookingTime <= now) {
-      const error: BookingError = new Error('Booking time must be in the future') as BookingError;
-      error.statusCode = 400;
-      error.code = BookingErrorCodes.INVALID_TIME_RANGE;
-      throw error;
-    }
-
-    // 3. Validar tiempo mínimo de antelación
     const minNoticeMinutes = service.admin.minBookingNoticeMinutes || 60; // Default 1 hora
     const minBookingTime = addMinutes(now, minNoticeMinutes);
     
@@ -191,13 +192,14 @@ export const createBooking = async (
       throw error;
     }
 
-    // 5. Crear la reserva
+    // 5. Crear la reserva con snapshot de duración
     const booking = await prisma.booking.create({
       data: {
         clientId,
         serviceId: data.serviceId,
         adminId: service.adminId,
         bookingTime: data.bookingTime,
+        durationMinutes: service.durationMinutes, // Snapshot de duración al momento de reservar
       },
       include: {
         service: {

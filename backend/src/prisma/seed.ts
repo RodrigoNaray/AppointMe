@@ -22,14 +22,20 @@ async function main() {
     create: {
       email: process.env.ADMIN_EMAIL || '',
       passwordHash: adminPassword,
+      // IMPORTANTE: Horarios almacenados en UTC
+      // Configuración original en hora local Argentina (UTC-3):
+      // Lunes-Martes-Jueves: 09:00-18:00 local → 12:00-21:00 UTC
+      // Miércoles: 09:00-13:00 local → 12:00-16:00 UTC
+      // Viernes: 09:00-17:00 local → 12:00-20:00 UTC
+      // Sábado: 10:00-14:00 local → 13:00-17:00 UTC (inactivo)
       schedule: {
-        monday: { start: '09:00', end: '18:00', isActive: true },
-        tuesday: { start: '09:00', end: '18:00', isActive: true },
-        wednesday: { start: '09:00', end: '13:00', isActive: true },
-        thursday: { start: '09:00', end: '18:00', isActive: true },
-        friday: { start: '09:00', end: '17:00', isActive: true },
-        saturday: { start: '10:00', end: '14:00', isActive: false },
-        sunday: { start: '09:00', end: '18:00', isActive: false },
+        monday: { start: '12:00', end: '21:00', isActive: true },
+        tuesday: { start: '12:00', end: '21:00', isActive: true },
+        wednesday: { start: '12:00', end: '16:00', isActive: true },
+        thursday: { start: '12:00', end: '21:00', isActive: true },
+        friday: { start: '12:00', end: '20:00', isActive: true },
+        saturday: { start: '13:00', end: '17:00', isActive: false },
+        sunday: { start: '12:00', end: '21:00', isActive: false },
       },
     },
   });
@@ -219,6 +225,7 @@ async function main() {
       clientId: client1.id,
       serviceId: service1.id,
       adminId: admin.id,
+      durationMinutes: 60, // Snapshot de duración de service1
     },
   });
 
@@ -240,6 +247,7 @@ async function main() {
       clientId: client2.id,
       serviceId: service1.id,
       adminId: admin.id,
+      durationMinutes: 60, // Snapshot de duración de service1
     },
   });
   console.log('✅ Reservas de prueba creadas para el 22/09/2025.');

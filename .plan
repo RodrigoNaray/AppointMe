@@ -1,5 +1,5 @@
 # Estado
-314/276 tareas (114%) | MVP: 114% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 20% 🚧
+330/286 tareas (115%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 20% 🚧 | TIMEZONE-FIX: 100% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
@@ -8,6 +8,27 @@
 **Auth:** JWT HttpOnly cookies (sameSite:'lax' para Safari) + Discriminated unions
 **Estado:** ~~Context API (AuthContext + BookingContext)~~ → **ZUSTAND ✅ MIGRADO**
 **Seguridad:** ⚠️ REFACTOR EN PROGRESO - OWASP Compliance para Producción
+
+# ARQUITECTURA FINAL DE TIMEZONES
+┌─────────────────────────────────────────────────────┐
+│ FRONTEND (Cliente/Admin)                            │
+│ • Muestra: hora local del navegador                 │
+│ • Input: hora local                                 │
+│ • Conversión: local ↔ UTC antes de enviar/recibir   │
+└─────────────────────────────────────────────────────┘
+                        ↕ (ISO 8601 UTC)
+┌─────────────────────────────────────────────────────┐
+│ BACKEND (API + Business Logic)                      │
+│ • Procesa: solo UTC                                 │
+│ • Valida: solo UTC                                  │
+│ • Genera slots: solo UTC                            │
+└─────────────────────────────────────────────────────┘
+                        ↕ (UTC timestamps)
+┌─────────────────────────────────────────────────────┐
+│ DATABASE (PostgreSQL + Prisma)                      │
+│ • Almacena: solo UTC (DateTime sin timezone)        │
+│ • Queries: solo UTC                                 │
+└─────────────────────────────────────────────────────┘
 
 ## FIX: Settings API - Cambio de PATCH a PUT ✅
 - [x] Cambiar método HTTP de PATCH a PUT en módulo settings
@@ -54,6 +75,182 @@
   - **Justificación seguridad:** Menor ventana de exposición vs localStorage (no persiste entre sesiones)
   - **Justificación UX:** Carrito temporal apropiado para flujo de reserva (no debe persistir días)
 
+## FIX: Calendario inicia en primer día disponible ✅
+- [x] BookingCalendarPage: Buscar primer mes con disponibilidad al cargar
+  - ✅ useEffect busca mes con días disponibles (hasta 12 meses adelante)
+  - ✅ currentMonth inicializa en null hasta encontrar disponibilidad
+  - ✅ Guards para prevenir null reference errors
+  - ✅ Auto-selección de primer día disponible del mes encontrado
+  - ✅ **FIX CRÍTICO:** Excluir "hoy" de días disponibles (slots probablemente ya pasaron)
+  - ✅ Filtro aplicado en búsqueda inicial y en carga mensual
+  - **Justificación UX:** Usuario ve inmediatamente opciones disponibles sin navegar meses vacíos
+  - **Justificación lógica:** "Hoy" puede tener bloques pero sin slots futuros (tiempo mínimo anticipación)
+  - **Justificación Performance:** Batch API calls optimizan búsqueda inicial
+  - **Justificación React 19:** Async effects con cleanup para evitar memory leaks
+
+## FIX: Snapshot de duración en Booking (refactor arquitectural) ✅
+- [x] Schema: Agregar campo durationMinutes a modelo Booking
+  - ✅ **PROBLEMA ARQUITECTURAL:** Dependencia de relación Service para calcular períodos ocupados es ineficiente y frágil
+  - ✅ **SOLUCIÓN ESCALABLE:** Snapshot de durationMinutes en Booking al momento de crear reserva
+  - ✅ **MIGRACIÓN:**
+    - schema.prisma: Agregado `durationMinutes Int` a modelo Booking
+    - Migración 3 pasos: ADD COLUMN con DEFAULT → UPDATE from Service → DROP DEFAULT
+    - Datos existentes migrados automáticamente desde relación Service
+  - ✅ **CAMBIOS:**
+    - booking.services.ts: Capturar `service.durationMinutes` al crear booking
+    - availability.public.services.ts: Usar `b.durationMinutes` (snapshot) en lugar de join
+    - seed.ts: Incluir durationMinutes en reservas de prueba
+  - **Justificación Data Integrity (Prisma Best Practice):** Snapshot previene inconsistencias si admin cambia duración del servicio después de reservar
+  - **Justificación Performance:** Elimina JOIN innecesario en queries de disponibilidad (crítico para UX)
+  - **Justificación OWASP A04:2021 (Insecure Design):** Prevenir double-booking con datos precisos y atómicos
+  - **Justificación Temporal Coupling:** Reserva debe mantener su duración original incluso si servicio cambia
+  - **Justificación Prisma Pattern:** SELECT específico (bookingTime, durationMinutes) es más eficiente que INCLUDE con relaciones
+  - ⚠️ **ACCIÓN REQUERIDA:** Reiniciar VS Code para recargar TypeScript Language Server con tipos actualizados de Prisma Client
+
+## FIX: Endpoint de slots acepta duración total del carrito ✅
+- [x] Refactorizar /availability endpoint para recibir durationMinutes en lugar de serviceId
+  - ✅ **PROBLEMA DE DISEÑO:** Endpoint requería serviceId pero solo usaba su duración, no era flexible para múltiples servicios
+  - ✅ **SOLUCIÓN CORRECTA:** Endpoint acepta durationMinutes directamente (parámetro query)
+  - ✅ **CAMBIOS:**
+    - availability.public.services.ts: `getAvailableSlots(date, durationMinutes)` - elimina dependencia de Service
+    - availability.public.controllers.ts: Valida y parsea `durationMinutes` query param
+    - BookingCalendarPage.tsx: Envía `totalDuration` del carrito en lugar de serviceId
+  - **Justificación API Design:** Endpoints deben recibir solo los datos que realmente necesitan
+  - **Justificación Flexibilidad:** Permite reservar múltiples servicios con duración total combinada
+  - **Justificación Performance:** Elimina query innecesaria a tabla Service (ya no necesita el ID)
+  - **Justificación SOLID (SRP):** Función tiene una sola responsabilidad: calcular slots para una duración, no conocer servicios
+  - **Justificación REST:** Query params explícitos (`durationMinutes`) son más autodocumentados que IDs indirectos
+
+## FIX: Timezone UTC explícito en toda la aplicación ✅
+- [x] Corregir manejo de timezone para trabajar exclusivamente en UTC
+  - ✅ **PROBLEMA CRÍTICO:** date-fns `parse()` interpretaba horas en timezone local, causando offsets incorrectos
+  - ✅ **SOLUCIÓN DEFINITIVA:** Todo el sistema trabaja en UTC explícitamente
+  - ✅ **CAMBIOS BACKEND:**
+    - availability.public.services.ts: Parsear horarios laborales con setUTCHours() en lugar de parse()
+    - getAvailableSlots(): Generar slots usando getUTCHours/getUTCMinutes/setUTCMinutes
+    - getMonthAvailability(): Mismo tratamiento UTC para consistencia
+    - Formateo manual "HH:mm" con padStart() en lugar de format() (evita conversiones implícitas)
+  - ✅ **CAMBIOS FRONTEND:**
+    - BookingConfirmPage.tsx: `new Date(\`\${date}T\${time}:00.000Z\`)` construye ISO en UTC
+    - Elimina `parse('yyyy-MM-dd HH:mm')` que interpretaba local
+  - ✅ **VALIDACIÓN:**
+    - Script check-bookings.ts: Verificar reservas en DB muestran UTC correcto
+    - Logging temporal agregado para debugging
+  - **Justificación Date/Time Best Practice:** Almacenar siempre en UTC, convertir solo en display
+  - **Justificación OWASP A04:2021:** Prevenir double-booking por inconsistencias de timezone
+  - **Justificación ISO 8601:** Estándar internacional para interchange de fechas
+  - **Justificación Consistency:** Backend y frontend usan misma referencia temporal (UTC)
+  - ⚠️ **ACCIÓN REQUERIDA:** Eliminar reservas existentes con timezone incorrecto y recrearlas
+
+## FIX: Validación de tiempo y UTC en creación de bookings ✅
+- [x] Ajustar validación de tiempo futuro en booking.services.ts
+  - ✅ **FIX 1:** Combinadas validaciones redundantes (`bookingTime <= now` + `minBookingNoticeMinutes`)
+  - ✅ **FIX 2:** Parseo de horarios laborales en UTC en `validateTimeSlotAvailability()`
+  - ✅ **PROBLEMA ORIGINAL:** 
+    - Validación `bookingTime <= now` era demasiado estricta (no permitía mismo día)
+    - `parse(daySchedule.start, 'HH:mm')` interpretaba en timezone local (UTC-3) en lugar de UTC
+  - ✅ **SOLUCIÓN APLICADA:**
+    - booking.services.ts líneas ~158-166: Una sola validación con `minBookingNoticeMinutes`
+    - booking.services.ts líneas ~58-69: Parseo manual con `setUTCHours()` en lugar de `parse()`
+  - ✅ **VALIDADO:** Script test-booking-creation.ts confirma reserva exitosa para 2025-10-30T10:00:00.000Z
+  - **Justificación UX:** Permitir reservas del mismo día si cumplen tiempo mínimo de antelación
+  - **Justificación OWASP A04:2021:** Validación debe ser lógica y consistente (no redundante)
+  - **Justificación Timezone:** Consistencia con availability.public.services.ts (ambos usan UTC explícito)
+
+## FIX: Display de horarios en timezone local del navegador ✅
+- [x] Revisar BookingCalendarPage: mostrar slots en timezone local
+  - ✅ **IMPLEMENTADO:** Funciones `convertSlotUTCToLocal()` y `convertSlotLocalToUTC()`
+  - ✅ **CAMBIOS:**
+    - BookingCalendarPage.tsx líneas 46-93: Helper functions para conversión timezone
+    - Línea ~300: Slots UTC del backend se convierten a local antes de mostrar
+    - Línea ~360: selectedTime (local) se convierte a UTC antes de enviar
+    - Línea ~158: Query param timeParam (UTC) se convierte a local para display
+    - BookingConfirmPage.tsx línea ~122: displayTime convierte UTC → local con format()
+    - Línea ~283: Mostrar displayTime en lugar de timeParam directo
+  - ✅ **FLUJO COMPLETO:**
+    1. Backend devuelve slots "09:00" (UTC)
+    2. Frontend muestra "06:00" al usuario (UTC-3 Argentina)
+    3. Usuario selecciona "06:00" (local)
+    4. Frontend envía "09:00" (UTC) al backend
+  - **Justificación UX:** Usuario ve su hora local, evita confusión de timezone
+  - **Justificación i18n:** Automático para cualquier timezone del navegador (no hardcoded UTC-3)
+  - **Justificación Data Integrity:** Backend siempre recibe/almacena UTC (estándar internacional)
+
+- [x] Verificar slots disponibles no incluyan horarios ocupados
+  - ✅ **PROBLEMA IDENTIFICADO:** `startOfDay()`/`endOfDay()` de date-fns usan timezone local
+  - ✅ **FIX APLICADO:** 
+    - availability.public.services.ts líneas ~23-30: Calcular startOfDayUTC y endOfDayUTC con setUTCHours()
+    - Líneas ~216-223: Mismo fix en getMonthAvailability (dayStartUTC/dayEndUTC)
+    - Líneas ~187: Comparación con todayUTC en lugar de today local
+  - ✅ **VALIDADO CON TEST:**
+    - Antes: `bookingsCount: 0` (no detectaba reservas)
+    - Después: `bookingsCount: 3` (detecta todas las reservas correctamente)
+    - Slots 09:00-10:45 correctamente bloqueados por reserva 10:00-11:00 UTC
+  - **Justificación Data Integrity:** Queries de DB deben usar UTC para consistency
+  - **Justificación Performance:** Filtrado correcto evita double-bookings (OWASP A04:2021)
+  - **Justificación date-fns:** Funciones `startOfDay/endOfDay` NO son timezone-aware, requieren manual UTC
+
+## FIX: Horarios laborales del admin deben almacenarse en UTC ✅
+- [x] Convertir horarios seed.ts de hora local a UTC
+  - ✅ **CAMBIO:** seed.ts líneas ~27-37: Horarios convertidos de local (UTC-3) a UTC
+  - ✅ **EJEMPLOS:**
+    - Lunes-Jueves: 09:00-18:00 local → 12:00-21:00 UTC
+    - Miércoles: 09:00-13:00 local → 12:00-16:00 UTC
+    - Viernes: 09:00-17:00 local → 12:00-20:00 UTC
+  - ✅ **VALIDADO:** Slots generan 12:00-20:00 UTC (09:00-17:00 local) correctamente
+  
+- [x] Actualizar availability.public.services.ts para manejar fechas UTC
+  - ✅ **FIX 1:** Líneas ~135-136: Calcular monthStart/monthEnd con Date.UTC() manual
+  - ✅ **FIX 2:** Líneas ~164-170: Generar daysInMonth manualmente en UTC (evitar eachDayOfInterval)
+  - ✅ **FIX 3:** Líneas ~234-237: Formatear fechas manualmente con getUTCFullYear/Month/Date
+  - ✅ **PROBLEMA IDENTIFICADO:** date-fns `format()`, `startOfMonth()`, `endOfMonth()` convierten a local
+  - ✅ **VALIDADO:** getMonthAvailability devuelve ['2025-10-29', '2025-10-30', '2025-10-31']
+  - **Justificación date-fns:** Funciones NO son timezone-aware, requieren UTC manual
+  - **Justificación Consistency:** Todo el sistema trabaja en UTC (backend + DB)
+  
+- [x] Verificar panel de admin (SettingsPage) para conversión timezone
+  - ✅ **REVISADO:** SettingsPage solo maneja minBookingAdvanceMinutes (minutos), no horarios
+  - ✅ **NO REQUIERE CAMBIOS:** Valores ya son números absolutos sin timezone
+
+- [x] FIX: AvailabilityPage debe mostrar/guardar horarios con conversión UTC
+  - ✅ **IMPLEMENTADO:** Funciones `convertTimeUTCToLocal()` y `convertTimeLocalToUTC()`
+  - ✅ **CAMBIOS:**
+    - AvailabilityPage.tsx líneas ~46-91: Helper functions para conversión de horarios
+    - Línea ~110-124: fetchData() convierte UTC → local al cargar desde API
+    - Línea ~142-155: handleSaveChanges() convierte local → UTC antes de guardar
+  - ✅ **FLUJO COMPLETO:**
+    1. Backend devuelve schedule con horarios UTC (12:00-21:00)
+    2. Frontend convierte a local para display (09:00-18:00 para UTC-3)
+    3. Admin edita horarios en timezone local
+    4. Frontend convierte a UTC antes de enviar (09:00 → 12:00 UTC)
+  - ✅ **FORMATO 24HS:** Input type="time" HTML5 usa formato 24 horas por defecto
+  - **Justificación UX:** Admin configura en su hora local, evita confusión
+  - **Justificación Consistency:** Backend/DB solo trabajan en UTC (arquitectura unificada)
+  - **Justificación HTML5:** type="time" es estándar W3C, soporta 24hs nativamente
+
+## FIX: Reservas múltiples deben ser escalonadas (secuenciales) ✅
+- [x] BookingConfirmPage: Escalonar reservas según duración de servicios
+  - ✅ **PROBLEMA:** Todas las reservas del carrito usaban misma hora de inicio (causaba conflictos)
+  - ✅ **SOLUCIÓN:** Acumulador de duración para calcular hora de inicio de cada reserva
+  - ✅ **CAMBIOS:**
+    - BookingConfirmPage.tsx línea ~141: Variable `accumulatedMinutes` inicializada en 0
+    - Línea ~148-150: Calcular `escalatedDateTime` sumando `accumulatedMinutes` a hora base
+    - Línea ~190: Incrementar acumulador solo en caso de éxito: `accumulatedMinutes += durationMinutes * quantity`
+    - Línea ~199 y ~235: `break` en caso de fallo para detener reservas subsiguientes
+    - Línea ~397: Mensaje informativo actualizado (servicios "uno después del otro")
+  - ✅ **FLUJO CORREGIDO:**
+    1. Usuario selecciona 10:00 AM con 3 servicios (30min, 45min, 60min)
+    2. Reserva 1: 10:00 (hora base + 0min)
+    3. Reserva 2: 10:30 (hora base + 30min)
+    4. Reserva 3: 11:15 (hora base + 75min)
+  - ✅ **MANEJO DE ERRORES:**
+    - Si falla reserva 2 → detener proceso (no crear reserva 3)
+    - Evita reservas parciales inconsistentes
+  - **Justificación UX:** Usuario espera servicios consecutivos, no simultáneos
+  - **Justificación OWASP A04:2021:** Prevenir double-booking con lógica secuencial correcta
+  - **Justificación Atomicity:** Break en fallo mantiene consistencia (no reservas huérfanas)
+  - **Justificación React Best Practice:** setUTCMinutes() preserva timezone UTC sin side effects
+
 ## PENDIENTES POST-MVP
 - [ ] Cliente UI: MyBookingsPage con lista de reservas
 - [ ] Admin: Vista de reservas por día/semana
@@ -64,3 +261,6 @@
 - [ ] Toast notifications (Sonner)
 - [ ] Breadcrumb navigation
 - [ ] Progress stepper UI
+
+
+
