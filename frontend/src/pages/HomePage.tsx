@@ -243,11 +243,11 @@ export default function HomePage() {
                 <div className="space-y-2 text-sm text-foreground/70 sm:text-base">
                   <div className="flex justify-between">
                     <span>Lunes - Viernes</span>
-                    <span className="font-medium text-foreground">9:00 - 19:00</span>
+                    <span className="font-medium text-foreground">9:00 - 17:00</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Sábado</span>
-                    <span className="font-medium text-foreground">10:00 - 17:00</span>
+                    <span className="font-medium text-foreground">10:00 - 13:00</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Domingo</span>
