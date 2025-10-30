@@ -10,6 +10,7 @@ import {
 } from './booking.types';
 import * as service from './booking.services'
 import logger from '../../utils/logger';
+import { sendBookingConfirmationEmail } from '../../services/emailService';
 
 /**
  * Crear una nueva reserva (Cliente)
@@ -61,6 +62,20 @@ export const createBooking = async (
       clientId: client.id,
       serviceId
     }, 'Booking created via API');
+
+    // Enviar email de confirmación (async, no bloquear respuesta)
+    sendBookingConfirmationEmail({
+      to: client.email,
+      clientName: client.name,
+      bookings: [{
+        serviceName: booking.service.name,
+        bookingTime: booking.bookingTime,
+        durationMinutes: booking.durationMinutes
+      }]
+    }).catch(error => {
+      // Log error pero no fallar la petición (email es secundario)
+      logger.error({ error, bookingId: booking.id }, 'Failed to send booking confirmation email');
+    });
 
     return res.status(201).json({
       success: true,

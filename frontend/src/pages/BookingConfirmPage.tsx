@@ -238,13 +238,10 @@ export default function BookingConfirmPage() {
       // Mostrar resultado
       if (successCount === cart.length) {
         // Todas las reservas exitosas
-        toast.success(`¡${successCount} ${successCount === 1 ? 'reserva creada' : 'reservas creadas'} exitosamente!`);
         clearCart();
         
-        // Redirigir al perfil del cliente después de 2 segundos
-        setTimeout(() => {
-          navigate('/client/profile');
-        }, 2000);
+        // Redirigir a página de éxito inmediatamente
+        navigate(`/book/success?count=${successCount}`);
       } else if (successCount > 0) {
         // Algunas reservas exitosas, otras fallidas
         toast.error(`${successCount} reservas exitosas, ${failureCount} fallidas. Revisa los detalles.`);

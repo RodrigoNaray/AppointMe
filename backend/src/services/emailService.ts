@@ -282,6 +282,173 @@ export const sendEmailChangeVerification = async (data: EmailChangeData): Promis
   }
 };
 
+// Interface para los datos del email de confirmación de reserva
+interface BookingConfirmationData {
+  to: string;
+  clientName: string;
+  bookings: Array<{
+    serviceName: string;
+    bookingTime: Date;
+    durationMinutes: number;
+  }>;
+}
+
+/**
+ * Envía un email de confirmación de reserva(s) al cliente
+ * @param data Datos de las reservas confirmadas
+ * @returns Promise<boolean> true si el email se envió exitosamente
+ */
+export const sendBookingConfirmationEmail = async (data: BookingConfirmationData): Promise<boolean> => {
+  try {
+    const transporter = createTransporter();
+    
+    // Formatear fecha/hora en zona horaria local (UTC-3 para Argentina)
+    const formatDateTime = (date: Date) => {
+      const localDate = new Date(date.getTime() - (3 * 60 * 60 * 1000)); // UTC-3
+      const dateStr = localDate.toLocaleDateString('es-AR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      const timeStr = localDate.toLocaleTimeString('es-AR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      return `${dateStr} a las ${timeStr}`;
+    };
+
+    // Generar filas HTML para cada reserva
+    const bookingRows = data.bookings.map(booking => `
+      <tr>
+        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+          <strong>${booking.serviceName}</strong>
+        </td>
+        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+          ${formatDateTime(booking.bookingTime)}
+        </td>
+        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+          ${booking.durationMinutes} min
+        </td>
+      </tr>
+    `).join('');
+
+    // Template HTML del email de confirmación
+    const htmlTemplate = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Confirmación de Reserva - AppointMe</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">✓ Reserva Confirmada</h1>
+        </div>
+        
+        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+            <p style="font-size: 16px; margin-bottom: 20px;">
+                Hola <strong>${data.clientName}</strong>,
+            </p>
+            
+            <p style="font-size: 16px; margin-bottom: 20px;">
+                Tu${data.bookings.length > 1 ? 's' : ''} reserva${data.bookings.length > 1 ? 's han' : ' ha'} sido confirmada${data.bookings.length > 1 ? 's' : ''} exitosamente. A continuación los detalles:
+            </p>
+
+            <table style="width: 100%; background: white; border-radius: 8px; overflow: hidden; border-collapse: collapse; margin-bottom: 20px;">
+              <thead>
+                <tr style="background: #f3f4f6;">
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Servicio</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Fecha y Hora</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Duración</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${bookingRows}
+              </tbody>
+            </table>
+
+            <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                <p style="margin: 0; font-size: 14px; color: #1e40af;">
+                    <strong>Recordatorio:</strong> Por favor, llega 5 minutos antes de tu primera reserva.
+                </p>
+            </div>
+
+            <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">
+                Si necesitas cancelar o reagendar, puedes hacerlo desde tu perfil en nuestra plataforma.
+            </p>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="${process.env.CLIENT_URL}/client/profile" 
+                   style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    Ver Mis Reservas
+                </a>
+            </div>
+
+            <p style="font-size: 14px; color: #6b7280; margin-top: 30px; text-align: center;">
+                ¿Tienes preguntas? Contáctanos respondiendo este email.
+            </p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="font-size: 12px; color: #9ca3af;">
+                © 2025 AppointMe. Todos los derechos reservados.
+            </p>
+        </div>
+    </body>
+    </html>
+    `;
+
+    // Versión texto plano (fallback para clientes sin HTML)
+    const textContent = `
+Confirmación de Reserva - AppointMe
+
+Hola ${data.clientName},
+
+Tu${data.bookings.length > 1 ? 's' : ''} reserva${data.bookings.length > 1 ? 's han' : ' ha'} sido confirmada${data.bookings.length > 1 ? 's' : ''} exitosamente.
+
+Detalles de la${data.bookings.length > 1 ? 's' : ''} reserva${data.bookings.length > 1 ? 's' : ''}:
+
+${data.bookings.map(b => `- ${b.serviceName}\n  ${formatDateTime(b.bookingTime)}\n  Duración: ${b.durationMinutes} minutos\n`).join('\n')}
+
+Recordatorio: Por favor, llega 5 minutos antes de tu primera reserva.
+
+Si necesitas cancelar o reagendar, puedes hacerlo desde tu perfil en nuestra plataforma:
+${process.env.CLIENT_URL}/client/profile
+
+¿Tienes preguntas? Contáctanos respondiendo este email.
+
+© 2025 AppointMe. Todos los derechos reservados.
+    `.trim();
+
+    const mailOptions = {
+      from: `"AppointMe" <${process.env.SMTP_USER}>`,
+      to: data.to,
+      subject: `✓ Confirmación de Reserva${data.bookings.length > 1 ? 's' : ''} - AppointMe`,
+      text: textContent,
+      html: htmlTemplate,
+    };
+
+    await transporter.sendMail(mailOptions);
+    
+    logger.info({
+      to: data.to,
+      bookingCount: data.bookings.length
+    }, 'Booking confirmation email sent successfully');
+    
+    return true;
+  } catch (error) {
+    logger.error({
+      error,
+      to: data.to,
+      bookingCount: data.bookings.length
+    }, 'Failed to send booking confirmation email');
+    return false;
+  }
+};
+
 /**
  * Valida la configuración SMTP sin enviar un email
  * @returns Promise<boolean> true si la configuración es válida
