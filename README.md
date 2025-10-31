@@ -525,6 +525,70 @@ vercel --prod
 
 ---
 
+## 🌐 SEO & Multi-Tenancy Configuration
+
+### Dynamic Sitemap Implementation
+
+AppointMe includes a **dynamic sitemap.xml** generator for optimal SEO indexing:
+
+**Architecture:**
+- **Backend (Express)**: Generates sitemap from database (categories, services)
+- **Frontend (Vercel)**: Proxies `/sitemap.xml` to backend via `vercel.json` rewrite
+- **Result**: Google indexes sitemap at your main domain (e.g., `appointmepro.me/sitemap.xml`)
+
+### Configuring for Custom Clients
+
+When cloning this project for a custom client, update these files:
+
+**1. Backend Configuration (`backend/.env`)**
+```bash
+CLIENT_URL=https://clientdomain.com  # Client's production domain (used for CORS, sitemap, OAuth)
+```
+
+**2. Frontend Configuration (`frontend/.env`)**
+```bash
+VITE_PUBLIC_DOMAIN=https://clientdomain.com  # Client's production domain (for meta tags, SEO)
+VITE_API_BASE_URL=https://api-clientdomain.com/api  # Backend API URL
+```
+
+**3. Frontend Vercel Rewrite (`frontend/vercel.json`)**
+```json
+{
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://api-clientdomain.com/sitemap.xml"  // Update backend URL
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+```
+
+**4. robots.txt (`frontend/public/robots.txt`)**
+```
+Sitemap: https://clientdomain.com/sitemap.xml  # Update domain
+```
+
+### Google Search Console Setup
+
+After deployment:
+1. Verify domain ownership at [Google Search Console](https://search.google.com/search-console)
+2. Submit sitemap: `https://clientdomain.com/sitemap.xml`
+3. Monitor indexing status and errors in the Sitemaps report
+
+**SEO Best Practices Applied:**
+- ✅ UTF-8 encoding
+- ✅ Absolute URLs (not relative)
+- ✅ `lastmod` from database timestamps
+- ✅ XML escaping (OWASP injection prevention)
+- ✅ Cache headers (1 hour TTL)
+- ✅ robots.txt with sitemap reference
+
+---
+
 ## 📄 License
 
 MIT License - See [LICENSE](./LICENSE) file

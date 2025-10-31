@@ -15,6 +15,7 @@ import { isAdminAuthenticated } from './middlewares/isAdminAuthenticated';
 import availabilityPublicRoutes from './modules/availability/public/availability.public.routes';
 import categoryRoutes from './modules/category/category.routes';
 import { settingsRoutes, adminSettingsRoutes } from './modules/settings/settings.routes';
+import sitemapRoutes from './modules/sitemap/sitemap.routes';
 import compression from "compression";
 import helmet from "helmet";
 
@@ -64,7 +65,8 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/categories', categoryRoutes); // Rutas públicas y admin de categorías
 app.use('/api/services', catalogRoutes);
 app.use('/api/settings', settingsRoutes); // Rutas públicas de settings
-app.use('/api/health', healthRoutes)
+app.use('/api/health', healthRoutes);
+app.use('/', sitemapRoutes); // Sitemap en raíz (público)
 
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

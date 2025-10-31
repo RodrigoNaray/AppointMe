@@ -1,5 +1,5 @@
 # Estado
-332/288 tareas (115%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 20% 🚧 | TIMEZONE-FIX: 100% ✅
+350/324 tareas (108%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 20% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
@@ -300,6 +300,85 @@
   - **Justificación Non-blocking I/O:** Email enviado async sin bloquear response
   - **Justificación OWASP A09:2021 (Logging):** Error logging sin exponer datos sensibles
   - **Justificación i18n:** toLocaleString('es-AR') para formato local argentino
+
+## SEO: Implementación de sitemap.xml dinámico ✅
+- [x] Backend: Crear módulo sitemap
+  - [x] Crear sitemap.service.ts con función de generación XML
+  - [x] Crear sitemap.controller.ts con endpoint GET /sitemap.xml
+  - [x] Crear sitemap.routes.ts y registrar en server.ts
+  - [x] Agregar Content-Type: application/xml en response headers
+  - ✅ **Arquitectura:** Módulo completo en backend/src/modules/sitemap/
+  - ✅ **Service:** Genera XML dinámico con URLs estáticas + dinámicas desde DB
+  - ✅ **Controller:** Maneja endpoint público /sitemap.xml con cache headers
+  - ✅ **Routes:** Registrado en server.ts en raíz (/) para acceso público
+  - **Justificación Google SEO Oct 2025:** UTF-8 encoding, URLs absolutas, XML escaping
+  - **Justificación OWASP A03:2021:** Escape de caracteres XML para prevenir injection
+  - **Justificación Performance:** Cache-Control: max-age=3600 (1 hora)
+- [x] Frontend: Variables de entorno para dominio
+  - [x] Agregar VITE_PUBLIC_DOMAIN a .env.example
+  - [x] Documentar uso para clientes custom (multi-tenancy)
+  - ✅ **OPTIMIZACIÓN:** Reutilizar CLIENT_URL existente en lugar de crear PUBLIC_DOMAIN
+  - ✅ **Backend:** sitemap.controller.ts usa process.env.CLIENT_URL
+  - ✅ **Frontend:** VITE_PUBLIC_DOMAIN para meta tags y SEO
+  - ✅ **Documentación:** README.md sección completa de multi-tenancy config
+  - **Justificación DRY:** Elimina duplicación, CLIENT_URL ya servía el mismo propósito
+  - **Justificación Multi-Tenancy:** Parametrización permite clonar proyecto para N clientes
+- [x] Sitemap: URLs estáticas principales
+  - [x] / (homepage - priority 1.0, changefreq daily)
+  - [x] /services (catálogo servicios - priority 0.9, changefreq weekly)
+  - [x] /book (calendario - priority 0.8, changefreq daily)
+  - [x] /contact (contacto - priority 0.6, changefreq monthly)
+  - [x] /features (features - priority 0.6, changefreq monthly)
+  - [x] /login y /register (priority 0.5, changefreq monthly)
+  - ✅ **Implementado:** 7 URLs estáticas con priority según importancia SEO
+  - **Justificación Google:** Priority y changefreq son hints (Google puede ignorar)
+- [x] Sitemap: URLs dinámicas desde DB
+  - [x] Query a tabla Category para /services?category=ID
+  - [x] Query a tabla Service para /services/[serviceId] (si existe detalle)
+  - [x] Incluir lastmod usando updatedAt de cada recurso
+  - ✅ **Categorías:** Query Prisma con isActive=true + updatedAt para lastmod
+  - ✅ **Servicios:** Comentado (activar cuando exista página de detalle)
+  - **Justificación Prisma:** Select específico (id, updatedAt) optimiza query
+- [x] robots.txt: Referenciar sitemap
+  - [x] Crear frontend/public/robots.txt
+  - [x] Agregar línea: Sitemap: https://appointmepro.me/sitemap.xml
+  - [x] Configurar User-agent: * con Allow: /
+  - ✅ **Bloqueos:** Rutas privadas /admin/, /client/profile, /book/confirm
+  - **Justificación SEO:** No indexar páginas privadas/transaccionales
+- [x] Validación y deployment
+  - [x] Verificar UTF-8 encoding
+  - [x] Verificar URLs absolutas (no relativas)
+  - [x] Limitar a 50,000 URLs y 50MB (Google best practices)
+  - [x] Configurar cache headers (Cache-Control: max-age=3600)
+  - ✅ **Vercel Rewrite:** frontend/vercel.json proxy /sitemap.xml → backend Render
+  - ✅ **Headers:** Content-Type: application/xml; charset=utf-8
+  - ✅ **Escalabilidad:** Lógica soporta hasta 50k URLs (límite Google)
+  - [ ] Validar XML con https://www.xml-sitemaps.com/validate-xml-sitemap.html (post-deploy)
+  - **Justificación Arquitectura:** Backend genera, frontend sirve desde dominio principal
+- [x] Google Search Console
+  - [x] Documentar pasos de submit en README.md
+  - [ ] Agregar sitemap via Search Console Sitemaps report (post-deploy)
+  - [ ] Monitorear errores de indexación (post-deploy)
+  - ✅ **Documentación:** README con guía completa multi-tenancy + SEO setup
+
+### FIX: Vercel rewrite de /sitemap.xml usando variable de entorno
+- [x] Confirmar enfoque antes de cambios de arquitectura
+  - Hecho: verificado que `vercel.json` no admite variables en `rewrites.destination`. Se propone proxy serverless `/api/sitemap` leyendo `VITE_API_BASE_URL`.
+  - Justificación Vercel: Rewrites estáticos; usar Functions/Middleware para lógica dinámica.
+  - OWASP: Aplicar mitigaciones SSRF (allowlist de host, HTTPS, timeouts). Validación contra guías Oct 2025 pendiente por red restringida.
+- [ ] Implementar `frontend/api/sitemap.ts` (proxy seguro)
+  - Headers: `Content-Type: application/xml; charset=utf-8`, `Cache-Control: max-age=3600`.
+  - Seguridad (OWASP SSRF): Validar que `VITE_API_BASE_URL` apunte a host permitido; forzar `https`; timeout y manejo de errores sin exponer stack traces.
+  - Node/TS Best Practice: Usar `fetch` con AbortController; tipar `process.env` de forma estricta; no loguear datos sensibles.
+- [ ] Actualizar `frontend/vercel.json`
+  - Cambio: `"source": "/sitemap.xml"` a `"destination": "/api/sitemap"`.
+  - No soportado: `destination` con `${VITE_API_BASE_URL}` directamente.
+- [ ] Configurar variables en Vercel
+  - Env: Definir `VITE_API_BASE_URL` en Production/Preview/Development.
+  - OWASP ASVS: Separación de configuración por ambiente (segregación de entornos).
+- [ ] Validar integración
+  - Pruebas: GET `/sitemap.xml` devuelve 200, XML válido y con cache.
+  - SEO: `robots.txt` sigue referenciando `/sitemap.xml` en el dominio principal.
 
 ## PENDIENTES POST-MVP
 - [ ] Cliente UI: MyBookingsPage con lista de reservas

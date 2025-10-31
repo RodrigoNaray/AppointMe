@@ -1,0 +1,14 @@
+# robots.txt para AppointMePro
+# Generado para SEO y mejor indexación en buscadores
+
+User-agent: *
+Allow: /
+
+# Bloquear rutas privadas/admin de indexación
+Disallow: /admin/
+Disallow: /client/profile
+Disallow: /book/confirm
+Disallow: /book/success
+
+# Referencia al sitemap (actualizar con dominio real en producción)
+Sitemap: https://appointmepro.me/sitemap.xml
