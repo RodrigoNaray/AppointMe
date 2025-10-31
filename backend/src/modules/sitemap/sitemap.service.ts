@@ -28,9 +28,8 @@ export async function generateSitemapXml(baseUrl: string): Promise<string> {
   // 1. URLs estáticas principales
   urls.push(
     { loc: `${baseUrl}/`, priority: 1.0, changefreq: 'daily' },
-    { loc: `${baseUrl}/services`, priority: 0.9, changefreq: 'weekly' },
-    { loc: `${baseUrl}/book`, priority: 0.8, changefreq: 'daily' },
-    { loc: `${baseUrl}/contact`, priority: 0.6, changefreq: 'monthly' },
+    { loc: `${baseUrl}/book`, priority: 0.9, changefreq: 'daily' },
+    { loc: `${baseUrl}/contact`, priority: 0.8, changefreq: 'monthly' },
     { loc: `${baseUrl}/features`, priority: 0.6, changefreq: 'monthly' },
     { loc: `${baseUrl}/login`, priority: 0.5, changefreq: 'monthly' },
     { loc: `${baseUrl}/register`, priority: 0.5, changefreq: 'monthly' }
