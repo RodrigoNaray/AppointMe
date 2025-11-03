@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 /**
@@ -88,6 +88,11 @@ export default function UserMenu() {
         <DropdownMenuItem onClick={() => navigate('/profile')}>
           <User className="mr-2 h-4 w-4" />
           <span>Mi Perfil</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem onClick={() => navigate('/client/bookings')}>
+          <Calendar className="mr-2 h-4 w-4" />
+          <span>Mis Reservas</span>
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />

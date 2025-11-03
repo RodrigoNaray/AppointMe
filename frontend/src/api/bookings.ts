@@ -34,8 +34,9 @@ export interface Booking {
   clientId: string;
   serviceId: string;
   bookingTime: string; // ISO 8601
-  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
-  notes?: string;
+  status: 'CONFIRMED' | 'CANCELLED';
+  durationMinutes: number; // Snapshot de duración al momento de reservar
+  reminderSent: boolean; // Para sistema de notificaciones
   createdAt: string;
   updatedAt: string;
   // Relaciones incluidas por el backend
@@ -148,14 +149,16 @@ export const createBooking = async (payload: CreateBookingPayload): Promise<Crea
 /**
  * cancelBooking - Cancela una reserva existente
  * 
- * Endpoint: PATCH /api/bookings/:id/cancel
+ * Endpoint: PUT /api/bookings/:id/cancel
  * Auth: Requiere client autenticado (owner de la reserva)
  * 
  * @param bookingId - ID de la reserva a cancelar
  * @returns Promesa con resultado
+ * 
+ * Nota: Usa PUT en vez de PATCH por mejor compatibilidad con proxies/firewalls corporativos
  */
 export const cancelBooking = async (bookingId: string): Promise<{ success: boolean; message: string }> => {
-  const response = await apiClient.patch(`/bookings/${bookingId}/cancel`);
+  const response = await apiClient.put(`/bookings/${bookingId}/cancel`);
   return response.data;
 };
 

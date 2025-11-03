@@ -14,6 +14,7 @@ import ServicesGridPage from './pages/ServicesGridPage';
 import BookingCalendarPage from './pages/BookingCalendarPage';
 import BookingConfirmPage from './pages/BookingConfirmPage';
 import BookingSuccessPage from './pages/BookingSuccessPage';
+import MyBookingsPage from './pages/MyBookingsPage';
 
 //--- Public routes ---//
 const LoginPage = lazy(() => import('./pages/LoginPage'))
@@ -58,6 +59,7 @@ const router = createBrowserRouter([
       { path: 'verify-email-change', element: <VerifyEmailChangePage/> },
       { path: 'profile', element: <ClientProfilePage/> },
       { path: 'change-password', element: <ChangePasswordPage/> },
+      { path: 'client/bookings', element: <MyBookingsPage/> },
     ],
   },
   {  

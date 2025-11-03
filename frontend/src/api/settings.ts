@@ -2,10 +2,12 @@ import apiClient from './client'; // Usar cliente compartido con withCredentials
 
 interface BookingRulesDTO {
   minBookingAdvanceMinutes: number;
+  minCancellationNoticeMinutes: number;
 }
 
 interface UpdateBookingRulesDTO {
   minBookingAdvanceMinutes?: number;
+  minCancellationNoticeMinutes?: number;
 }
 
 /**

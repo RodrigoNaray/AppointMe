@@ -9,7 +9,7 @@ const router = Router();
 router.post('/create', isClientAuthenticated, bookingController.createBooking);
 router.get('/my', isClientAuthenticated, bookingController.getMyBookings);
 router.get('/:id', isClientAuthenticated, bookingController.getBookingById);
-router.patch('/:id/cancel', isClientAuthenticated, bookingController.cancelBooking);
+router.put('/:id/cancel', isClientAuthenticated, bookingController.cancelBooking); // PUT para mejor compatibilidad CORS
 
 // Rutas para administradores (prefijo /admin se maneja en server.ts)
 export const adminBookingRoutes = Router();

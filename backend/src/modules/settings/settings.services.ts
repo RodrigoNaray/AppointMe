@@ -34,7 +34,8 @@ export const getBookingRules = async (): Promise<BookingRulesDTO> => {
     // Single-tenant: obtener primer admin
     const admin = await prisma.adminUser.findFirst({
       select: {
-        minBookingNoticeMinutes: true
+        minBookingNoticeMinutes: true,
+        minCancellationNoticeMinutes: true
       }
     });
 
@@ -45,7 +46,8 @@ export const getBookingRules = async (): Promise<BookingRulesDTO> => {
     }
 
     return {
-      minBookingAdvanceMinutes: admin.minBookingNoticeMinutes || 60
+      minBookingAdvanceMinutes: admin.minBookingNoticeMinutes || 60,
+      minCancellationNoticeMinutes: admin.minCancellationNoticeMinutes || 120
     };
 
   } catch (error) {
@@ -90,21 +92,43 @@ export const updateBookingRules = async (
       }
     }
 
+    // Validación: minCancellationNoticeMinutes
+    if (data.minCancellationNoticeMinutes !== undefined) {
+      if (data.minCancellationNoticeMinutes < 0) {
+        const error: SettingsError = new Error('minCancellationNoticeMinutes must be non-negative') as SettingsError;
+        error.statusCode = 400;
+        throw error;
+      }
+
+      if (data.minCancellationNoticeMinutes > 10080) {
+        const error: SettingsError = new Error('minCancellationNoticeMinutes cannot exceed 1 week (10080 minutes)') as SettingsError;
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
     // Actualizar en DB
     const admin = await prisma.adminUser.update({
       where: { id: adminId },
       data: {
-        minBookingNoticeMinutes: data.minBookingAdvanceMinutes
+        minBookingNoticeMinutes: data.minBookingAdvanceMinutes,
+        minCancellationNoticeMinutes: data.minCancellationNoticeMinutes
       },
       select: {
-        minBookingNoticeMinutes: true
+        minBookingNoticeMinutes: true,
+        minCancellationNoticeMinutes: true
       }
     });
 
-    logger.info({ adminId, minBookingAdvanceMinutes: data.minBookingAdvanceMinutes }, 'Booking rules updated');
+    logger.info({ 
+      adminId, 
+      minBookingAdvanceMinutes: data.minBookingAdvanceMinutes,
+      minCancellationNoticeMinutes: data.minCancellationNoticeMinutes
+    }, 'Booking rules updated');
 
     return {
-      minBookingAdvanceMinutes: admin.minBookingNoticeMinutes || 60
+      minBookingAdvanceMinutes: admin.minBookingNoticeMinutes || 60,
+      minCancellationNoticeMinutes: admin.minCancellationNoticeMinutes || 120
     };
 
   } catch (error) {

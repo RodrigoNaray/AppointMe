@@ -112,7 +112,7 @@ export default function BookingSuccessPage() {
             </Button>
             
             <Button
-              onClick={() => navigate('/client/profile')}
+              onClick={() => navigate('/client/bookings')}
               className="flex-1"
             >
               <User className="w-4 h-4 mr-2" />

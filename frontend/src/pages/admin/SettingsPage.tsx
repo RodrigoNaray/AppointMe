@@ -25,23 +25,38 @@ import { getBookingRules, updateBookingRules } from '@/api/settings';
  * - React 19: Controlled components con estado local, validación en onChange
  */
 export default function SettingsPage() {
+  // Estado para tiempo de anticipación de reserva
   const [inputValue, setInputValue] = useState<string>('60'); // String para permitir edición libre
   const [inputUnit, setInputUnit] = useState<'minutes' | 'hours'>('minutes');
   const [initialValue, setInitialValue] = useState<number>(60); // Valor original en minutos
+  
+  // Estado para tiempo de cancelación
+  const [cancelInputValue, setCancelInputValue] = useState<string>('120');
+  const [cancelInputUnit, setCancelInputUnit] = useState<'minutes' | 'hours'>('minutes');
+  const [initialCancelValue, setInitialCancelValue] = useState<number>(120);
+  
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Convertir input a minutos según la unidad seleccionada
+  // Convertir input a minutos según la unidad seleccionada (RESERVA)
   const getMinutesFromInput = (): number => {
     const num = parseFloat(inputValue);
     if (isNaN(num)) return 0;
     return inputUnit === 'hours' ? Math.round(num * 60) : Math.round(num);
   };
 
-  // Obtener valor actual en minutos
+  // Convertir input de cancelación a minutos
+  const getCancelMinutesFromInput = (): number => {
+    const num = parseFloat(cancelInputValue);
+    if (isNaN(num)) return 0;
+    return cancelInputUnit === 'hours' ? Math.round(num * 60) : Math.round(num);
+  };
+
+  // Obtener valores actuales en minutos
   const currentMinutes = getMinutesFromInput();
+  const currentCancelMinutes = getCancelMinutesFromInput();
 
   // Función para convertir minutos a formato legible
   const formatMinutesToReadable = (minutes: number): string => {
@@ -58,9 +73,9 @@ export default function SettingsPage() {
   };
 
   // Detectar si hay cambios sin guardar
-  const hasUnsavedChanges = currentMinutes !== initialValue;
+  const hasUnsavedChanges = currentMinutes !== initialValue || currentCancelMinutes !== initialCancelValue;
 
-  // Validar si el input es válido
+  // Validar si el input de reserva es válido
   const isInputValid = (): boolean => {
     if (inputValue.trim() === '') return false;
     const num = parseFloat(inputValue);
@@ -69,22 +84,45 @@ export default function SettingsPage() {
     return minutes >= 0 && minutes <= 10080;
   };
 
-  // Manejar cambio de unidad (minutos ↔ horas)
+  // Validar si el input de cancelación es válido
+  const isCancelInputValid = (): boolean => {
+    if (cancelInputValue.trim() === '') return false;
+    const num = parseFloat(cancelInputValue);
+    if (isNaN(num)) return false;
+    const minutes = getCancelMinutesFromInput();
+    return minutes >= 0 && minutes <= 10080;
+  };
+
+  // Manejar cambio de unidad (minutos ↔ horas) - RESERVA
   const handleUnitChange = (newUnit: string) => {
     if (newUnit !== 'minutes' && newUnit !== 'hours') return;
     
     const currentMinutesValue = getMinutesFromInput();
     
     if (newUnit === 'hours') {
-      // Convertir minutos a horas
       const hours = currentMinutesValue / 60;
       setInputValue(hours.toString());
     } else {
-      // Convertir horas a minutos
       setInputValue(currentMinutesValue.toString());
     }
     
     setInputUnit(newUnit as 'minutes' | 'hours');
+  };
+
+  // Manejar cambio de unidad - CANCELACIÓN
+  const handleCancelUnitChange = (newUnit: string) => {
+    if (newUnit !== 'minutes' && newUnit !== 'hours') return;
+    
+    const currentMinutesValue = getCancelMinutesFromInput();
+    
+    if (newUnit === 'hours') {
+      const hours = currentMinutesValue / 60;
+      setCancelInputValue(hours.toString());
+    } else {
+      setCancelInputValue(currentMinutesValue.toString());
+    }
+    
+    setCancelInputUnit(newUnit as 'minutes' | 'hours');
   };
 
   // Cargar configuración actual
@@ -93,14 +131,31 @@ export default function SettingsPage() {
       try {
         const data = await getBookingRules();
         
-        // Validar que data y minBookingAdvanceMinutes existan (OWASP: null safety)
-        if (data && typeof data.minBookingAdvanceMinutes === 'number') {
-          setInputValue(data.minBookingAdvanceMinutes.toString());
-          setInitialValue(data.minBookingAdvanceMinutes);
+        // Validar que data exista (OWASP: null safety)
+        if (data) {
+          // Tiempo de anticipación de reserva
+          if (typeof data.minBookingAdvanceMinutes === 'number') {
+            setInputValue(data.minBookingAdvanceMinutes.toString());
+            setInitialValue(data.minBookingAdvanceMinutes);
+          } else {
+            setInputValue('60');
+            setInitialValue(60);
+          }
+          
+          // Tiempo de cancelación
+          if (typeof data.minCancellationNoticeMinutes === 'number') {
+            setCancelInputValue(data.minCancellationNoticeMinutes.toString());
+            setInitialCancelValue(data.minCancellationNoticeMinutes);
+          } else {
+            setCancelInputValue('120');
+            setInitialCancelValue(120);
+          }
         } else {
-          // Fallback a valores por defecto si la respuesta es inválida
+          // Fallback a valores por defecto
           setInputValue('60');
           setInitialValue(60);
+          setCancelInputValue('120');
+          setInitialCancelValue(120);
         }
       } catch (error) {
         console.error('Error al cargar configuración:', error);
@@ -108,6 +163,8 @@ export default function SettingsPage() {
         // Mantener valores por defecto en caso de error
         setInputValue('60');
         setInitialValue(60);
+        setCancelInputValue('120');
+        setInitialCancelValue(120);
       } finally {
         setIsFetching(false);
       }
@@ -121,24 +178,34 @@ export default function SettingsPage() {
     setError(null);
     setSuccessMessage(null);
 
-    // Validación: campo no vacío
-    if (inputValue.trim() === '') {
-      setError('Debes ingresar un valor');
+    // Validación: campos no vacíos
+    if (inputValue.trim() === '' || cancelInputValue.trim() === '') {
+      setError('Debes ingresar valores en ambos campos');
       return;
     }
 
     const minutes = getMinutesFromInput();
+    const cancelMinutes = getCancelMinutesFromInput();
 
     // Validación client-side (OWASP: nunca confiar solo en validación backend)
     if (minutes < 0 || minutes > 10080) {
-      setError('El tiempo debe estar entre 0 y 10080 minutos (1 semana)');
+      setError('El tiempo de anticipación debe estar entre 0 y 10080 minutos (1 semana)');
+      return;
+    }
+
+    if (cancelMinutes < 0 || cancelMinutes > 10080) {
+      setError('El tiempo de cancelación debe estar entre 0 y 10080 minutos (1 semana)');
       return;
     }
 
     setIsLoading(true);
     try {
-      await updateBookingRules({ minBookingAdvanceMinutes: minutes });
+      await updateBookingRules({ 
+        minBookingAdvanceMinutes: minutes,
+        minCancellationNoticeMinutes: cancelMinutes
+      });
       setInitialValue(minutes);
+      setInitialCancelValue(cancelMinutes);
       setSuccessMessage('Configuración actualizada correctamente');
     } catch (error: any) {
       console.error('Error al actualizar configuración:', error);
@@ -192,9 +259,14 @@ export default function SettingsPage() {
               </CardDescription>
             </div>
             {!isFetching && (
-              <Badge variant="secondary" className="text-sm">
-                Actual: {formatMinutesToReadable(initialValue)}
-              </Badge>
+              <div className="flex flex-col gap-1 text-right">
+                <Badge variant="secondary" className="text-xs">
+                  Anticipación: {formatMinutesToReadable(initialValue)}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  Cancelación: {formatMinutesToReadable(initialCancelValue)}
+                </Badge>
+              </div>
             )}
           </div>
         </CardHeader>
@@ -326,10 +398,119 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {/* SEGUNDO CAMPO: Tiempo de cancelación */}
+            <div className="space-y-4 pt-6 border-t">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-medium">
+                  Tiempo mínimo para cancelar
+                </Label>
+                {(currentCancelMinutes !== initialCancelValue) && (
+                  <Badge variant="outline" className="text-xs">
+                    Sin guardar
+                  </Badge>
+                )}
+              </div>
+
+              {/* Tabs para elegir unidad - CANCELACIÓN */}
+              <Tabs value={cancelInputUnit} onValueChange={handleCancelUnitChange} className="w-full">
+                <TabsList className="grid w-full max-w-[400px] grid-cols-2">
+                  <TabsTrigger value="minutes">Minutos</TabsTrigger>
+                  <TabsTrigger value="hours">Horas</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="minutes" className="space-y-3 mt-4">
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id="minCancelMinutes"
+                      type="text"
+                      inputMode="numeric"
+                      value={cancelInputValue}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                          setCancelInputValue(value);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (cancelInputValue.trim() === '') {
+                          setCancelInputValue('0');
+                        }
+                      }}
+                      disabled={isLoading}
+                      placeholder="Ej: 120"
+                      className="max-w-[200px]"
+                    />
+                    <span className="text-sm text-muted-foreground">minutos</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Rango válido: 0 a 10080 minutos
+                  </p>
+                </TabsContent>
+
+                <TabsContent value="hours" className="space-y-3 mt-4">
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id="minCancelHours"
+                      type="text"
+                      inputMode="decimal"
+                      value={cancelInputValue}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                          setCancelInputValue(value);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (cancelInputValue.trim() === '') {
+                          setCancelInputValue('0');
+                        }
+                      }}
+                      disabled={isLoading}
+                      placeholder="Ej: 2"
+                      className="max-w-[200px]"
+                    />
+                    <span className="text-sm text-muted-foreground">horas</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Rango válido: 0 a 168 horas (1 semana)
+                  </p>
+                </TabsContent>
+              </Tabs>
+
+              {/* Mostrar conversión en tiempo real - CANCELACIÓN */}
+              {isCancelInputValid() && currentCancelMinutes !== initialCancelValue && (
+                <div className="flex items-center gap-2 text-sm bg-muted/50 px-3 py-2 rounded-md">
+                  <span className="text-muted-foreground">Nuevo valor:</span>
+                  <span className="font-medium text-foreground">
+                    {formatMinutesToReadable(currentCancelMinutes)}
+                  </span>
+                </div>
+              )}
+
+              {/* Advertencia si el valor no es válido - CANCELACIÓN */}
+              {cancelInputValue.trim() !== '' && !isCancelInputValid() && (
+                <div className="flex items-start gap-2 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <span>
+                    Valor fuera de rango. Debe estar entre 0 y {cancelInputUnit === 'minutes' ? '10080 minutos' : '168 horas'}.
+                  </span>
+                </div>
+              )}
+
+              <div className="bg-amber-50 border border-amber-200 px-4 py-3 rounded-md space-y-2">
+                <p className="text-sm text-amber-900">
+                  <strong>⚠️ Política de cancelación:</strong> Los clientes solo podrán cancelar reservas con al menos esta cantidad de tiempo de anticipación.
+                </p>
+                <p className="text-sm text-amber-800">
+                  Si intentan cancelar con menos tiempo, verán un mensaje de error indicando el plazo mínimo.
+                </p>
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button 
                 type="submit" 
-                disabled={isLoading || !hasUnsavedChanges || !isInputValid()}
+                disabled={isLoading || !hasUnsavedChanges || !isInputValid() || !isCancelInputValid()}
                 className="min-w-[140px]"
               >
                 {isLoading ? 'Guardando...' : 'Guardar cambios'}

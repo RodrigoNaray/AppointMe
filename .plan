@@ -1,5 +1,5 @@
 # Estado
-350/324 tareas (108%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 20% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% ✅
+371/356 tareas (104%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 20% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% ✅ | USER-BOOKINGS-FASE1: 100% ✅ | USER-BOOKINGS-FASE2: 100% ✅ | USER-BOOKINGS-FASE3: 100% ✅ | USER-BOOKINGS-FASE4: 100% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
@@ -40,6 +40,18 @@
     - Docs: Actualizado comentario en settings.controller.ts (PATCH → PUT)
   - **Justificación REST:** PUT es idempotente y estándar para actualizaciones completas de recursos
   - **Justificación CORS:** PUT tiene mejor soporte que PATCH en firewalls/proxies corporativos
+
+## FIX: Booking Cancel API - Cambio de PATCH a PUT ✅
+- [x] Cambiar método HTTP de PATCH a PUT en cancelación de reservas
+  - ❌ **PROBLEMA:** PATCH causaba `ERR_NETWORK` en cancelación (mismo issue que settings)
+  - ✅ **SOLUCIÓN:** Usar PUT para consistencia y mejor compatibilidad
+  - ✅ **CAMBIOS:**
+    - Frontend: `apiClient.patch` → `apiClient.put` en bookings.ts cancelBooking()
+    - Backend: `router.patch` → `router.put` en booking.routes.ts
+    - Docs: Actualizado comentario en booking.controller.ts (PATCH → PUT)
+  - **Justificación REST:** PUT es idempotente para operaciones de actualización
+  - **Justificación CORS:** Evita problemas con proxies/firewalls que bloquean PATCH
+  - **Justificación Consistencia:** Mismo patrón que settings module
 
 ## CLEANUP: Eliminación de console.log de debugging ✅
 - [x] Eliminar todos los console.log/warn/info de debugging del código
@@ -380,16 +392,178 @@
   - Pruebas: GET `/sitemap.xml` devuelve 200, XML válido y con cache.
   - SEO: `robots.txt` sigue referenciando `/sitemap.xml` en el dominio principal.
 
+## USER-BOOKINGS-MODULE: Vista de reservas del cliente 🚧
+
+### FASE 1: UI Básica (Vista de solo lectura) ✅
+- [x] Crear MyBookingsPage.tsx en frontend/src/pages/
+  - ✅ GET /api/bookings/my con paginación (limit: 50)
+  - ✅ Tabs shadcn-ui: "Próximas" vs "Pasadas" con contador
+  - ✅ Grid responsive 1/2/3 columnas (mobile/tablet/desktop)
+  - ✅ Cards con servicio, fecha/hora local (format date-fns), duración, precio
+  - ✅ Separación automática: bookingTime >= now (próximas) vs < now (pasadas)
+  - ✅ Ordenamiento: próximas ASC (más cercanas primero), pasadas DESC (más recientes primero)
+  - **Justificación React 19:** useState + useEffect para fetch, conversión UTC→local con date-fns
+  - **Justificación UX:** Loading spinner, manejo de errores con toast
+- [x] Agregar ruta /client/bookings en App.tsx
+  - ✅ Ruta pública (por ahora), validación de auth en componente
+  - ✅ Import directo (no lazy) para mejor UX en navegación frecuente
+- [x] Links de navegación
+  - ✅ UserMenu: Item "Mis Reservas" con ícono Calendar
+  - ✅ BookingSuccessPage: Botón "Ver Mis Reservas" → /client/bookings
+- [x] Estados empty con ilustración o ícono
+  - ✅ CalendarX icon (lucide-react) grande centrado
+  - ✅ Próximas vacío: Mensaje + botón "Reservar Ahora" → /services
+  - ✅ Pasadas vacío: Mensaje informativo sin CTA
+  - **Justificación shadcn-ui:** Card + CardContent para layout consistente
+
+### FASE 2: Backend - Schema y configuración ✅
+- [x] Agregar enum BookingStatus y campos a schema.prisma
+  - ✅ Enum BookingStatus: CONFIRMED | CANCELLED
+  - ✅ Campo status: `status BookingStatus @default(CONFIRMED)`
+  - ✅ Campo reminderSent: `reminderSent Boolean @default(false)`
+  - ✅ Campo minCancellationNoticeMinutes en AdminUser: `Int? @default(120)`
+  - ✅ Índice agregado: `@@index([status])`
+  - **Justificación Prisma:** Enum type-safe, índice optimiza queries filtradas
+- [x] Migración aplicada: 20251103183616_add_booking_status_and_cancellation_config
+  - ✅ Migración 3 pasos: ADD COLUMN (nullable) → UPDATE existing → ALTER NOT NULL
+  - ✅ Prisma migrate dev ejecutado exitosamente
+  - **Justificación:** Migración segura para datos existentes, cero downtime
+- [x] Actualizar settings module backend
+  - ✅ settings.types.ts: BookingRulesDTO + UpdateBookingRulesDTO con minCancellationNoticeMinutes
+  - ✅ settings.services.ts: getBookingRules y updateBookingRules incluyen nuevo campo
+  - ✅ settings.controller.ts: Fallbacks actualizados con valor default 120
+  - ✅ Validaciones agregadas: 0 <= minCancellationNoticeMinutes <= 10080
+  - ✅ Ruta protegida: PUT /admin/settings/booking-rules con isAdminAuthenticated
+  - **Justificación OWASP A01:2021:** Solo admin puede modificar configuración, validación server-side
+- [x] Actualizar SettingsPage frontend (UI completa)
+  - ✅ frontend/src/api/settings.ts: Interfaces actualizadas
+  - ✅ Estados: cancelInputValue, cancelInputUnit, initialCancelValue
+  - ✅ Helpers: getCancelMinutesFromInput(), handleCancelUnitChange(), isCancelInputValid()
+  - ✅ UI: Segundo formulario con Tabs (minutos/horas), Input validado, conversión en tiempo real
+  - ✅ Badge dual: Muestra anticipación + cancelación actuales
+  - ✅ handleSubmit: Envía ambos campos al backend
+  - ✅ Validaciones client-side: Ambos campos (0-10080 minutos)
+  - ✅ Mensaje informativo: Política de cancelación con advertencia visual (amber)
+  - ✅ Ruta protegida: /admin/settings dentro de AdminRoute
+  - **Justificación React 19:** Controlled components, validación onChange + onBlur
+  - **Justificación UX:** Tabs para elegir unidad, feedback visual de cambios sin guardar
+  - **Justificación OWASP:** Validación doble (client + server), inputs sanitizados con regex
+
+### FASE 3: Backend - Lógica de cancelación ✅
+- [x] Actualizar `getClientBookings()` para incluir status
+  - ✅ booking.types.ts: Importado BookingStatus de Prisma Client
+  - ✅ BookingFiltersDTO: Agregado campo opcional `status?: BookingStatus`
+  - ✅ getClientBookings(): WHERE clause soporta filtro por status
+  - ✅ getAdminBookings(): WHERE clause soporta filtro por status (consistencia)
+- [x] Implementar `cancelBooking()` en booking.services.ts
+  - ✅ Validación booking existe + clientId coincide (OWASP A01:2021 - Broken Access Control)
+  - ✅ Query AdminUser.minCancellationNoticeMinutes (default 120 si null)
+  - ✅ Cálculo: `addMinutes(now, minNotice) < bookingTime`
+  - ✅ Error 400 con mensaje detallado: minutos requeridos vs restantes
+  - ✅ Validación adicional: previene cancelar bookings ya cancelados
+  - ✅ Soft delete: UPDATE status='CANCELLED' (no DELETE)
+  - ✅ Retorna BookingWithDetails con relaciones completas
+- [x] Actualizar endpoint PATCH /:id/cancel en booking.controller.ts
+  - ✅ Importado BookingWithDetails en tipos
+  - ✅ Response 200: "Reserva cancelada exitosamente" + booking actualizado
+  - ✅ Manejo de errores BookingError con statusCode específico
+  - ✅ Logger info con bookingId + clientId
+- [x] Actualizar `validateTimeSlotAvailability()` para excluir cancelaciones
+  - ✅ Query bookings: WHERE status='CONFIRMED' (excluye CANCELLED)
+  - ✅ Slots cancelados liberados automáticamente para nuevas reservas
+  - **Justificación arquitectural:** Soft delete pattern permite auditoría + estadísticas
+
+### FASE 4: Frontend - Funcionalidad de cancelación ✅
+- [x] Refactorizar MyBookingsPage.tsx a formato tabla responsive con paginación
+  - ✅ Tabla responsive sin scroll horizontal (stack layout mobile + tabla desktop)
+  - ✅ Mobile (<768px): Info apilada en columna Servicio (nombre + fecha + hora + duración + precio)
+  - ✅ Desktop (≥768px): Columnas progresivas con breakpoints (sm:fecha, md:hora, lg:duración, xl:precio)
+  - ✅ Badge status: Verde "Confirmada" (variant=default) | Gris "Cancelada" (variant=secondary)
+  - ✅ Paginación client-side: 10 items por página, navegación Anterior/Siguiente + números
+  - ✅ Estados separados: currentPageUpcoming + currentPagePast (independientes por tab)
+  - ✅ Iconos lucide-react en mobile: Calendar, Clock, DollarSign para mejor escaneo visual
+  - **Justificación UX:** Sin scroll horizontal mejora usabilidad mobile, paginación reduce scroll vertical
+  - **Justificación Performance:** Client-side pagination (sin latencia de red), máximo 50 items cargados
+- [x] Crear utilidades de validación en lib/bookingUtils.ts
+  - ✅ canCancelBooking(): Retorna { canCancel, minutesRemaining, hoursRemaining }
+  - ✅ formatCancellationNotice(): Formatea minutos a texto legible (ej: "2 horas", "30 minutos")
+  - ✅ Type-safe con TypeScript, lógica reutilizable y testeable
+  - **Justificación arquitectural:** Separación de concerns (business logic vs UI)
+- [x] Fetch minCancellationNoticeMinutes desde settings API
+  - ✅ useEffect en mount: getBookingRules() → minCancellationNoticeMinutes
+  - ✅ Fallback 120 minutos si falla (consistente con backend default)
+  - ✅ Endpoint público: /settings/booking-rules (no requiere auth)
+  - **Justificación OWASP:** No hardcodear valores, single source of truth en backend
+- [x] Implementar funcionalidad de cancelación
+  - ✅ Botón "Cancelar" condicional: solo si status=CONFIRMED Y canCancelBooking()=true
+  - ✅ Texto informativo si disabled: "Cancelación cerrada (2 horas antes)"
+  - ✅ AlertDialog confirmación: Muestra servicio + fecha/hora + advertencia irreversible
+  - ✅ Loading state: Spinner Loader2 durante cancelación
+  - ✅ Error handling: Toast con mensaje del backend (ej: tiempo insuficiente)
+  - ✅ Optimistic update: Elimina de lista local + refetch para sync
+  - ✅ PATCH /api/bookings/:id/cancel con credentials
+  - **Justificación UX:** Doble confirmación previene errores, feedback claro en cada paso
+- [x] Corregir tipo Booking en api/bookings.ts
+  - ✅ status: 'CONFIRMED' | 'CANCELLED' (eliminar PENDING | COMPLETED obsoletos)
+  - ✅ Agregado durationMinutes: number (snapshot de duración)
+  - ✅ Agregado reminderSent: boolean (para sistema notificaciones FASE 5)
+  - **Justificación:** Type-safety con schema Prisma actualizado
+- [x] Agregar navegación en MyBookingsPage.tsx
+  - ✅ Header flex con título + botones de navegación
+  - ✅ Botón "Volver al Inicio" (variant=outline) → navigate('/')
+  - ✅ Botón "Nueva Reserva" (variant=default) → navigate('/book')
+  - ✅ Layout responsive: flex-col en mobile, flex-row en sm+
+  - ✅ Botones con flex-1 en mobile para aprovechar ancho completo
+  - **Justificación UX:** Navegación directa a /book (flujo de reserva), CTA claro "Nueva Reserva"
+
 ## PENDIENTES POST-MVP
-- [ ] Cliente UI: MyBookingsPage con lista de reservas
 - [ ] Admin: Vista de reservas por día/semana
 - [ ] Admin: Filtros avanzados en BookingsPage (fecha, cliente, servicio, estado)
 - [ ] Admin: Export CSV/PDF de reservas
 - [ ] Admin: Bulk actions (confirmar, cancelar múltiples)
 - [ ] Rate limiting login/register
-- [ ] Toast notifications (Sonner)
 - [ ] Breadcrumb navigation
 - [ ] Progress stepper UI
+
+## FEATURES OPCIONALES (POST-MVP)
+
+### Sistema de Notificaciones por Email (Recordatorios 24hs)
+- [ ] Backend: emailService.ts - Email recordatorio de cita
+  - Nueva función `sendBookingReminderEmail(booking)`
+  - Template HTML: recordatorio 24hs antes de la cita
+  - Incluir: servicio, fecha/hora local, duración
+  - Botón CTA "Ver/Cancelar Reserva" → link a /client/bookings
+- [ ] Backend: Script cron de recordatorios (scripts/send-reminders.ts)
+  - Query: `bookingTime >= now+23h AND bookingTime <= now+25h`
+  - Filtrar: `status=CONFIRMED AND reminderSent=false`
+  - Enviar emails async con Promise.allSettled
+  - UPDATE reminderSent=true después de enviar
+  - Log: bookingId + email + resultado (sin datos sensibles)
+- [ ] Documentar setup de cron job en README.md
+  - **Opción 1 (desarrollo):** node-cron en server.ts (cada 1 hora)
+  - **Opción 2 (producción):** Render Cron Job (cada 1 hora, proceso separado)
+  - Variables ENV: SMTP_* (ya configuradas), DATABASE_URL
+  - Comando: `ts-node backend/scripts/send-reminders.ts`
+
+### Integración Google Calendar
+- [ ] Investigar Google Calendar API requirements
+  - OAuth 2.0 scopes necesarios: calendar.events
+  - Almacenar refreshToken en Client model (campo opcional)
+  - Documentar setup en README: Google Cloud Console config
+- [ ] Backend: Crear módulo googleCalendar.service.ts
+  - Función `addEventToCalendar(clientId, booking)`
+  - Validar si cliente tiene refreshToken antes de intentar
+  - Manejo de errores: log sin fallar reserva (feature opcional)
+- [ ] Backend: Integrar en booking.controller.ts createBooking
+  - Llamada async a Google Calendar después de crear booking
+  - Solo si cliente autenticó con Google y dio permisos
+- [ ] Frontend: Indicador visual en MyBookingsPage
+  - Badge "Agregado a Google Calendar" si sincronizado
+  - Link para autorizar Google Calendar si no lo hizo en registro
+- [ ] Documentación: OPTIONAL_FEATURES.md
+  - Guía de habilitación de Google Calendar
+  - Pasos de configuración en Google Cloud Console
+  - Variables ENV: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
 
 
 

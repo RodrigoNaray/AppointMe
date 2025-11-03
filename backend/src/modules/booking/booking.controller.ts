@@ -6,7 +6,8 @@ import {
   CancelBookingRequest,
   CreateBookingResponse,
   GetBookingsResponse,
-  BookingError
+  BookingError,
+  BookingWithDetails
 } from './booking.types';
 import * as service from './booking.services'
 import logger from '../../utils/logger';
@@ -159,11 +160,12 @@ export const getMyBookings = async (
 
 /**
  * Cancelar una reserva (Cliente)
- * PATCH /api/bookings/:id/cancel
+ * PUT /api/bookings/:id/cancel
+ * Nota: PUT en vez de PATCH para mejor compatibilidad CORS/proxies
  */
 export const cancelBooking = async (
   req: CancelBookingRequest,
-  res: Response<{ success: boolean; message: string }>
+  res: Response<{ success: boolean; message: string; booking?: BookingWithDetails }>
 ) => {
   try {
     const client = req.user as Client;
@@ -176,7 +178,7 @@ export const cancelBooking = async (
 
     const { id } = req.params;
 
-    await service.cancelBooking(id, client.id);
+    const updatedBooking = await service.cancelBooking(id, client.id);
 
     logger.info({
       bookingId: id,
@@ -185,7 +187,8 @@ export const cancelBooking = async (
 
     return res.status(200).json({
       success: true,
-      message: 'Booking cancelled successfully'
+      message: 'Reserva cancelada exitosamente',
+      booking: updatedBooking
     });
 
   } catch (error) {

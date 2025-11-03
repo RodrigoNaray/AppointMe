@@ -55,14 +55,14 @@ export const getBookingRules = async (
       const settingsError = error as SettingsError;
       return res.status(settingsError.statusCode).json({
         success: false,
-        data: { minBookingAdvanceMinutes: 60 }, // Fallback default
+        data: { minBookingAdvanceMinutes: 60, minCancellationNoticeMinutes: 120 }, // Fallback defaults
         message: settingsError.message
       });
     }
 
     return res.status(500).json({
       success: false,
-      data: { minBookingAdvanceMinutes: 60 }, // Fallback default
+      data: { minBookingAdvanceMinutes: 60, minCancellationNoticeMinutes: 120 }, // Fallback defaults
       message: 'Internal server error'
     });
   }
@@ -102,7 +102,7 @@ export const updateBookingRules = async (
     if (!admin?.id) {
       return res.status(401).json({
         success: false,
-        data: { minBookingAdvanceMinutes: 60 },
+        data: { minBookingAdvanceMinutes: 60, minCancellationNoticeMinutes: 120 },
         message: 'Authentication required'
       });
     }
@@ -122,14 +122,14 @@ export const updateBookingRules = async (
       const settingsError = error as SettingsError;
       return res.status(settingsError.statusCode).json({
         success: false,
-        data: { minBookingAdvanceMinutes: 60 },
+        data: { minBookingAdvanceMinutes: 60, minCancellationNoticeMinutes: 120 },
         message: settingsError.message
       });
     }
 
     return res.status(500).json({
       success: false,
-      data: { minBookingAdvanceMinutes: 60 },
+      data: { minBookingAdvanceMinutes: 60, minCancellationNoticeMinutes: 120 },
       message: 'Internal server error'
     });
   }

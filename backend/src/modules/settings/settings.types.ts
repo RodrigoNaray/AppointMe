@@ -13,10 +13,12 @@ import { AdminUser } from '@prisma/client';
 
 export interface BookingRulesDTO {
   minBookingAdvanceMinutes: number;
+  minCancellationNoticeMinutes: number;
 }
 
 export interface UpdateBookingRulesDTO {
   minBookingAdvanceMinutes?: number;
+  minCancellationNoticeMinutes?: number;
 }
 
 // ============================================================================

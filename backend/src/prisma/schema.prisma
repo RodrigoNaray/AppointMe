@@ -14,6 +14,12 @@ datasource db {
   directUrl = env("DIRECT_DATABASE_URL")
 }
 
+// Enum para el estado de las reservas
+enum BookingStatus {
+  CONFIRMED  // Reserva activa (default al crear)
+  CANCELLED  // Reserva cancelada por el usuario (soft delete)
+}
+
 // Modelo para el Administrador (el profesional que usa la app)
 model AdminUser {
   id            String    @id @default(cuid()) // Clave primaria, generada automáticamente
@@ -25,6 +31,7 @@ model AdminUser {
   schedule      Json?     // Horario base semanal, almacenado como JSON. Ejemplo:
                           // { "monday": { "start": "09:00", "end": "18:00", "isActive": true }, ... }
   minBookingNoticeMinutes Int? @default(60)   // Antelación mínima para reservas, en minutos. Por defecto 1 hora.
+  minCancellationNoticeMinutes Int? @default(120) // Tiempo mínimo antes de cita para permitir cancelación (2 horas)
 
   services          Service[]
   bookings          Booking[]
@@ -101,9 +108,11 @@ model Service {
 
 // Modelo para las Reservas hechas por los clientes
 model Booking {
-  id              String   @id @default(cuid())
+  id              String        @id @default(cuid())
   bookingTime     DateTime
-  durationMinutes Int      // Duración snapshot del servicio al momento de reservar
+  durationMinutes Int           // Duración snapshot del servicio al momento de reservar
+  status          BookingStatus @default(CONFIRMED) // Estado de la reserva (CONFIRMED | CANCELLED)
+  reminderSent    Boolean       @default(false)     // Flag para prevenir duplicados en emails de recordatorio
 
   adminId     String
   admin       AdminUser @relation(fields: [adminId], references: [id])
@@ -117,6 +126,7 @@ model Booking {
   updatedAt   DateTime @updatedAt
 
   @@index([bookingTime])
+  @@index([status])  // Índice para queries filtradas por status
   @@unique([bookingTime, serviceId, clientId, adminId]) 
 }
 

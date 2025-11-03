@@ -1,5 +1,8 @@
 import { Request } from 'express';
-import { Booking } from '@prisma/client';
+import { Booking, BookingStatus } from '@prisma/client';
+
+// Re-export BookingStatus para uso en otros módulos
+export { BookingStatus };
 
 // Interfaces para requests
 export interface CreateBookingRequest extends Request {
@@ -68,6 +71,7 @@ export interface CreateBookingDTO {
 export interface BookingFiltersDTO {
   from?: Date;
   to?: Date;
+  status?: BookingStatus; // Filtro opcional por status
   page: number;
   limit: number;
 }
