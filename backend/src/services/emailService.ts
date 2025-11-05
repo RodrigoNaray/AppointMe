@@ -2,9 +2,21 @@ import { Resend } from 'resend';
 import logger from "../utils/logger";
 
 
+if (!process.env.RESEND_API_KEY) {
+  logger.error('RESEND_API_KEY is not configured. Set it in .env file.');
+  throw new Error('Missing required environment variable: RESEND_API_KEY');
+}
+
+if (!process.env.RESEND_FROM_EMAIL) {
+  logger.error('RESEND_FROM_EMAIL is not configured. Set it in .env file.');
+  throw new Error('Missing required environment variable: RESEND_FROM_EMAIL');
+}
+
+// Inicializar cliente Resend (solo si validación pasó)
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL;
+// Email "from" garantizado por validación
+const FROM_EMAIL: string = process.env.RESEND_FROM_EMAIL;
 
 interface VerificationEmailData {
   to: string;
@@ -394,49 +406,14 @@ ${process.env.CLIENT_URL}/client/profile
   }
 };
 
-/**
- * Valida la configuración de Resend
- * @returns Promise<boolean> true si la configuración es válida
- */
-export const validateResendConfig = async (): Promise<boolean> => {
-  try {
-    // Verificar que RESEND_API_KEY está configurado
-    if (!process.env.RESEND_API_KEY) {
-      logger.error('RESEND_API_KEY is not configured');
-      return false;
-    }
+// Log de configuración exitosa (sin exponer credenciales completas)
+logger.info({
+  apiKeyPrefix: process.env.RESEND_API_KEY.substring(0, 10) + '...',
+  fromEmail: FROM_EMAIL,
+  isSandbox: FROM_EMAIL.includes('resend.dev')
+}, 'Resend service initialized successfully');
 
-    // Verificar formato de la API key (debe empezar con "re_")
-    if (!process.env.RESEND_API_KEY.startsWith('re_')) {
-      logger.error('RESEND_API_KEY has invalid format (should start with "re_")');
-      return false;
-    }
-
-    // Verificar que FROM_EMAIL está configurado
-    if (!FROM_EMAIL) {
-      logger.warn('RESEND_FROM_EMAIL is not configured, using default: onboarding@resend.dev');
-    }
-
-    // Log de configuración (sin exponer API key completa)
-    logger.info({
-      apiKeyPrefix: process.env.RESEND_API_KEY.substring(0, 10) + '...',
-      fromEmail: FROM_EMAIL,
-      isSandbox: FROM_EMAIL.includes('resend.dev')
-    }, 'Resend configuration validated');
-
-    // Warning si se está usando sandbox en producción
-    if (process.env.NODE_ENV === 'production' && FROM_EMAIL.includes('resend.dev')) {
-      logger.warn('Using Resend sandbox domain in production. Verify your own domain for better deliverability.');
-    }
-
-    return true;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.error({
-      error: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined
-    }, 'Resend configuration validation failed');
-    
-    return false;
-  }
-};
+// Warning si se está usando sandbox en producción
+if (process.env.NODE_ENV === 'production' && FROM_EMAIL.includes('resend.dev')) {
+  logger.warn('Using Resend sandbox domain in production. Verify your own domain for better deliverability.');
+}
