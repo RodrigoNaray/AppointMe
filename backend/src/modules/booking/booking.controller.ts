@@ -32,14 +32,14 @@ export const createBooking = async (
       });
     }
 
-    const { serviceId, bookingTime, notes } = req.body;
+    const { serviceId, bookingTime, notes, clientTimezone } = req.body;
 
-    // Validaciones básicas
-    if (!serviceId || !bookingTime) {
+    // Validaciones básicas (timezone es REQUERIDO)
+    if (!serviceId || !bookingTime || !clientTimezone) {
       return res.status(400).json({
         success: false,
         booking: undefined as any,
-        message: 'Service ID and booking time are required'
+        message: 'Service ID, booking time, and client timezone are required'
       });
     }
 
@@ -68,6 +68,7 @@ export const createBooking = async (
     sendBookingConfirmationEmail({
       to: client.email,
       clientName: client.name,
+      clientTimezone, // Timezone REQUERIDO detectado en frontend (IANA format)
       bookings: [{
         serviceName: booking.service.name,
         bookingTime: booking.bookingTime,

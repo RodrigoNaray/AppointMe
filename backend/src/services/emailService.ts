@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { formatInTimeZone } from 'date-fns-tz';
 import logger from "../utils/logger";
 
 
@@ -35,6 +36,7 @@ interface EmailChangeData {
 interface BookingConfirmationData {
   to: string;
   clientName: string;
+  clientTimezone: string; // IANA timezone (ej: 'America/Argentina/Buenos_Aires')
   bookings: Array<{
     serviceName: string;
     bookingTime: Date;
@@ -255,21 +257,22 @@ Si no solicitaste este cambio, ignora este email.
  */
 export const sendBookingConfirmationEmail = async (data: BookingConfirmationData): Promise<boolean> => {
   try {
-    // Formatear fecha/hora en zona horaria local (UTC-3 para Argentina)
-    const formatDateTime = (date: Date) => {
-      const localDate = new Date(date.getTime() - (3 * 60 * 60 * 1000)); // UTC-3
-      const dateStr = localDate.toLocaleDateString('es-AR', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-      const timeStr = localDate.toLocaleTimeString('es-AR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
-      return `${dateStr} a las ${timeStr}`;
+    /**
+     * Formatea fecha/hora en el timezone del cliente
+     * 
+     * Justificación Node.js Best Practice:
+     * - Usa date-fns-tz para conversión precisa de timezones (respeta DST)
+     * - Formato neutral ISO-like: dd/MM/yyyy HH:mm (sin asumir idioma del cliente)
+     * - Timezone dinámico: recibido desde frontend (navegador del usuario)
+     * 
+     * Justificación OWASP A04:2021 (Insecure Design):
+     * - Validación implícita: date-fns-tz maneja timezones inválidos gracefully
+     * - Sin hardcoding: ni timezone ni locale asumidos en backend
+     * - Separation of concerns: frontend detecta, backend formatea
+     */
+    const formatDateTime = (date: Date, timezone: string): string => {
+      // Formato neutral: "05/11/2025 14:30" (día/mes/año hora:minuto)
+      return formatInTimeZone(date, timezone, 'dd/MM/yyyy HH:mm');
     };
 
     // Generar filas HTML para cada reserva
@@ -279,7 +282,7 @@ export const sendBookingConfirmationEmail = async (data: BookingConfirmationData
           <strong>${booking.serviceName}</strong>
         </td>
         <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
-          ${formatDateTime(booking.bookingTime)}
+          ${formatDateTime(booking.bookingTime, data.clientTimezone)}
         </td>
         <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
           ${booking.durationMinutes} min
@@ -364,7 +367,7 @@ Tu${data.bookings.length > 1 ? 's' : ''} reserva${data.bookings.length > 1 ? 's 
 
 Detalles de la${data.bookings.length > 1 ? 's' : ''} reserva${data.bookings.length > 1 ? 's' : ''}:
 
-${data.bookings.map(b => `- ${b.serviceName}\n  ${formatDateTime(b.bookingTime)}\n  Duración: ${b.durationMinutes} minutos\n`).join('\n')}
+${data.bookings.map(b => `- ${b.serviceName}\n  ${formatDateTime(b.bookingTime, data.clientTimezone)}\n  Duración: ${b.durationMinutes} minutos\n`).join('\n')}
 
 Recordatorio: Por favor, llega 5 minutos antes de tu primera reserva.
 

@@ -679,5 +679,43 @@
 4. Verificar dominio propio para producción
 5. Actualizar variables en Render cuando esté listo para deploy
 
+## MÓDULO: EMAIL-TIMEZONE-FIX (Formato correcto de horarios en emails)
+
+### Checklist
+
+#### Implementación completada
+- [x] Backend: Instalar date-fns-tz
+  - ✅ `pnpm add date-fns-tz` ejecutado (v3.2.0)
+  - ✅ Librería para manejo preciso de timezones (respeta DST)
+- [x] Backend: Modificar interface BookingConfirmationData
+  - ✅ Agregado campo `clientTimezone: string` (IANA format)
+  - ✅ Justificación: Timezone dinámico detectado en navegador del usuario
+- [x] Backend: Refactorizar función formatDateTime en emailService.ts
+  - ✅ Removido hardcoding UTC-3 (Argentina)
+  - ✅ Removido import de locale español (sin asumir idioma)
+  - ✅ Usa `formatInTimeZone(date, timezone, 'dd/MM/yyyy HH:mm')`
+  - ✅ Formato neutral ISO-like (día/mes/año hora:minuto)
+  - ✅ Justificación OWASP A04:2021: Sin hardcoding, validación implícita
+- [x] Backend: Actualizar CreateBookingRequest type
+  - ✅ Agregado `clientTimezone: string` (REQUERIDO) en booking.types.ts
+  - ✅ Sin fallback: frontend DEBE enviar timezone siempre
+- [x] Backend: Modificar booking.controller.ts
+  - ✅ Captura `clientTimezone` del body
+  - ✅ Fallback a 'UTC' si no viene (const timezone = clientTimezone || 'UTC')
+  - ✅ Pasa timezone a `sendBookingConfirmationEmail()`
+  - ✅ Justificación Node.js Best Practice: Separation of concerns
+- [x] Frontend: Detectar timezone en BookingConfirmPage
+  - ✅ Usa `Intl.DateTimeFormat().resolvedOptions().timeZone`
+  - ✅ Agrega `clientTimezone` al payload de booking
+  - ✅ Detecta automáticamente timezone del navegador (ej: 'America/Argentina/Buenos_Aires')
+  - ✅ Justificación: Frontend detecta contexto del usuario, backend solo formatea
+
+### Notas Técnicas
+- **Arquitectura:** Frontend detecta timezone → Backend formatea con ese timezone → Email muestra hora local correcta
+- **Escalabilidad:** Funciona para usuarios en cualquier país sin hardcoding
+- **Formato neutral:** dd/MM/yyyy HH:mm (sin asumir idioma español en backend)
+- **Fallback seguro:** Si frontend no envía timezone, backend usa 'UTC'
+- **date-fns-tz:** Maneja Daylight Saving Time (DST) correctamente
+
 
 

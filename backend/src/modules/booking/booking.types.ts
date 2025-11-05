@@ -10,6 +10,7 @@ export interface CreateBookingRequest extends Request {
     serviceId: string;
     bookingTime: string; // ISO datetime string
     notes?: string;
+    clientTimezone: string; // IANA timezone REQUERIDO (ej: 'America/Argentina/Buenos_Aires')
   };
 }
 

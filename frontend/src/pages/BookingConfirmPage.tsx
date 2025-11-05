@@ -11,34 +11,6 @@ import { Separator } from "@/components/ui/separator";
 import { Calendar, Clock, DollarSign, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { API_BASE_URL } from "@/api/config";
 
-/**
- * BookingConfirmPage - Página de confirmación de reserva
- * 
- * Flujo:
- * 1. Lee date + time de query params
- * 2. Muestra resumen: servicios, fecha, hora, totales
- * 3. POST /api/bookings/create (un booking por cada servicio)
- * 4. Success: clearCart() + navigate(/client/profile o /client/bookings)
- * 5. Error handling: 409 conflicto, 400 validación
- * 
- * OWASP Security (2025):
- * - Validación query params (XSS prevention)
- * - Auth check antes de mostrar contenido
- * - Error handling sin exponer detalles sensibles
- * - Rate limiting implícito (un submit por carga)
- * 
- * React Best Practices:
- * - useSearchParams para query params type-safe
- * - date-fns para parsing seguro de fechas
- * - Zustand para estado global (cart + auth)
- * - shadcn-ui para componentes accesibles
- * 
- * Referencias:
- * - React Router 7: https://reactrouter.com/en/main/hooks/use-search-params
- * - date-fns: https://date-fns.org/docs/Getting-Started
- * - OWASP Input Validation: https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html
- */
-
 interface BookingResult {
   serviceId: string;
   serviceName: string;
@@ -151,10 +123,16 @@ export default function BookingConfirmPage() {
           escalatedDateTime.setUTCMinutes(escalatedDateTime.getUTCMinutes() + accumulatedMinutes);
           const bookingTime = escalatedDateTime.toISOString();
           
+          // Detectar timezone del navegador del usuario (IANA format)
+          // Justificación: Backend formatea emails con timezone correcto del cliente
+          // Ejemplo: 'America/Argentina/Buenos_Aires', 'America/New_York', 'Europe/Madrid'
+          const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          
           const payload = {
             serviceId: item.service.id,
             bookingTime,
             notes: '', // Opcional: agregar campo de notas en futuro
+            clientTimezone, // Timezone IANA para formatear emails correctamente
           };
           
           // Construir URL correctamente (API_BASE_URL ya incluye /api, no agregar / al inicio)
