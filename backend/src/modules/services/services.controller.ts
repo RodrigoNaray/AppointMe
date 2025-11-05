@@ -16,19 +16,9 @@ export const findAll = async (req: Request, res: Response) => {
   }
 };
 
-export const findOne = async (req: Request<{ id: string }>, res: Response) => {
-  try {
-    const foundService = await service.getServiceById(req.params.id);
-    res.status(200).json(foundService);
-  } catch (error) {
-    if (error instanceof NotFoundError) {
-      logger.warn(error.message);
-      return res.status(404).json({ message: error.message });
-    }
-    logger.error(error, "Error al obtener el servicio");
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-};
+// NOTA: findOne eliminado - endpoint GET /:id no se usa en frontend (dead code removal)
+// Justificación OWASP A01:2021: Reducir superficie de ataque eliminando código sin uso
+// Justificación Mantenibilidad: Eliminar dead code facilita refactors y reduce deuda técnica
 
 export const create = async (req: Request<{}, {}, CreateServiceDto>, res: Response) => {
   try {

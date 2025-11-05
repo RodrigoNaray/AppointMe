@@ -46,7 +46,7 @@ export async function generateSitemapXml(baseUrl: string): Promise<string> {
 
   categories.forEach((category) => {
     urls.push({
-      loc: `${baseUrl}/services?category=${category.id}`,
+      loc: `${baseUrl}/book?category=${category.id}`,
       lastmod: category.updatedAt.toISOString(),
       priority: 0.7,
       changefreq: 'weekly',

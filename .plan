@@ -1,5 +1,5 @@
 # Estado
-383/368 tareas (104%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 20% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% ✅ | USER-BOOKINGS-FASE1: 100% ✅ | USER-BOOKINGS-FASE2: 100% ✅ | USER-BOOKINGS-FASE3: 100% ✅ | USER-BOOKINGS-FASE4: 100% ✅ | RESEND-INTEGRATION: 70% �
+389/374 tareas (104%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 22% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% 🚧 | USER-BOOKINGS-FASE1: 100% ✅ | USER-BOOKINGS-FASE2: 100% ✅ | USER-BOOKINGS-FASE3: 100% ✅ | USER-BOOKINGS-FASE4: 100% ✅ | RESEND-INTEGRATION: 70% 🚧 | SEO-SOFT404-FIX: 85% ⚡
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + ~~Nodemailer 7.0.9~~ → **Resend 6.4.1 ✅**
@@ -716,6 +716,37 @@
 - **Formato neutral:** dd/MM/yyyy HH:mm (sin asumir idioma español en backend)
 - **Fallback seguro:** Si frontend no envía timezone, backend usa 'UTC'
 - **date-fns-tz:** Maneja Daylight Saving Time (DST) correctamente
+
+## FIX: Google Search Console Soft 404 - Rutas incorrectas en sitemap ✅
+- [x] Analizar rutas reales del frontend vs URLs en sitemap
+  - ✅ **CONFIRMADO:** `/services?category=<id>` NO EXISTE en App.tsx
+  - ✅ **RUTA CORRECTA:** `/book?category=<id>` (ServicesGridPage acepta query params)
+  - ✅ **ROOT CAUSE:** sitemap.service.ts usaba rutas desactualizadas
+- [x] Corregir sitemap.service.ts para usar rutas reales del frontend
+  - ✅ Cambiado `/services?category=<id>` → `/book?category=<id>` línea 49
+  - ✅ Todas las URLs estáticas validadas contra App.tsx (/, /book, /contact, /features, /login, /register)
+  - **Justificación SEO:** Google penaliza Soft 404 (URLs que retornan 200 pero sin contenido)
+  - **Justificación Google Search Console Best Practices Oct 2025:** URLs deben retornar contenido real indexable
+- [x] Actualizar robots.txt si es necesario
+  - ✅ **NO REQUIERE CAMBIOS:** Bloqueos de rutas privadas correctos (/admin/, /client/profile, /book/confirm, /book/success)
+  - ✅ Sitemap URL correcta (https://appointmepro.me/sitemap.xml)
+- [x] Auditar endpoints públicos backend sin uso frontend
+  - ✅ **IDENTIFICADO:** GET /services/:id (findOne) sin uso en frontend
+  - ✅ GET /services/ - SÍ SE USA (HomePage, ServicesList)
+  - ✅ POST/PUT/DELETE - SÍ SE USAN (admin ServicesPage)
+- [x] Eliminar endpoints identificados sin uso
+  - ✅ **ELIMINADO:** GET /services/:id de services.routes.ts (línea 10 comentada)
+  - ✅ **ELIMINADO:** findOne controller de services.controller.ts (reemplazado con comentario explicativo)
+  - ✅ **CONSERVADO:** getServiceById en services.services.ts (usado internamente por update/delete)
+  - **Justificación OWASP A01:2021 (Broken Access Control):** Reducir superficie de ataque eliminando endpoints sin uso
+  - **Justificación Mantenibilidad:** Dead code removal facilita refactors y reduce deuda técnica
+  - **Justificación Clean Code:** Código sin referencias aumenta complejidad innecesaria
+- [x] FIX: Corregir navegación incorrecta en MyBookingsPage
+  - ✅ Cambiado `navigate('/services')` → `navigate('/book')` línea 339
+  - **Justificación UX:** Evitar 404 en empty state de reservas
+- [ ] Re-someter sitemap a Google Search Console
+  - Usar herramienta de inspección de URL para validar
+  - Verificar que nuevas URLs retornen 200 con contenido real
 
 
 

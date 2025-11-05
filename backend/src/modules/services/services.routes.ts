@@ -6,7 +6,7 @@ const servicesRoutes: Router = Router();
 
 //-- PUBLIC ROUTES
 servicesRoutes.get('/' , servicesController.findAll)
-servicesRoutes.get('/:id' ,servicesController.findOne)
+// NOTA: GET /:id eliminado - no se usa en frontend (dead code removal)
 
 //-- PRIVATE ROUTES
 servicesRoutes.post('/' ,isAdminAuthenticated , servicesController.create)

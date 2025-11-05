@@ -336,7 +336,7 @@ export default function MyBookingsPage() {
                 Reserva un servicio para comenzar
               </p>
             </div>
-            <Button onClick={() => navigate('/services')}>
+            <Button onClick={() => navigate('/book')}>
               Reservar Ahora
             </Button>
           </CardContent>
