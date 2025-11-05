@@ -1,5 +1,5 @@
 # Estado
-389/374 tareas (104%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 22% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% 🚧 | USER-BOOKINGS-FASE1: 100% ✅ | USER-BOOKINGS-FASE2: 100% ✅ | USER-BOOKINGS-FASE3: 100% ✅ | USER-BOOKINGS-FASE4: 100% ✅ | RESEND-INTEGRATION: 70% 🚧 | SEO-SOFT404-FIX: 85% ⚡
+395/380 tareas (104%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 22% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% 🚧 | USER-BOOKINGS-FASE1: 100% ✅ | USER-BOOKINGS-FASE2: 100% ✅ | USER-BOOKINGS-FASE3: 100% ✅ | USER-BOOKINGS-FASE4: 100% ✅ | RESEND-INTEGRATION: 70% 🚧 | SEO-SOFT404-FIX: 85% ⚡ | BRANDING-UPDATE: 100% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + ~~Nodemailer 7.0.9~~ → **Resend 6.4.1 ✅**
@@ -747,6 +747,37 @@
 - [ ] Re-someter sitemap a Google Search Console
   - Usar herramienta de inspección de URL para validar
   - Verificar que nuevas URLs retornen 200 con contenido real
+
+## BRANDING: Cambio de AppointMe → AppointMePro ✅
+- [x] README.md - Actualizar título y referencias al proyecto
+  - ✅ Título principal: `# AppointMe 📅` → `# AppointMePro 📅`
+  - ✅ Descripción del proyecto actualizada (línea 33, 36)
+  - ✅ Comandos git clone: `AppointMe.git` → `AppointMePro.git`
+  - ✅ Base de datos ejemplo: `appointme` → `appointmepro`
+  - ✅ Referencias de dominio: `appointme.com` → `appointmepro.com`
+  - **Justificación Branding:** Consistencia entre dominio de producción y documentación
+- [x] package.json - Actualizar nombre del proyecto
+  - ✅ `"name": "appointme-launcher"` → `"appointmepro-launcher"`
+  - **Justificación npm Best Practices:** Package name debe reflejar nombre real del proyecto
+- [x] backend/src/services/emailService.ts - Actualizar branding en emails
+  - ✅ Email verificación: 3 ocurrencias `AppointMe` → `AppointMePro`
+  - ✅ Email cambio de email: 3 ocurrencias `AppointMe` → `AppointMePro`
+  - ✅ Email confirmación de reserva: 4 ocurrencias `AppointMe` → `AppointMePro`
+  - ✅ Sender name en todos los emails: `AppointMe <${FROM_EMAIL}>` → `AppointMePro <${FROM_EMAIL}>`
+  - **Justificación UX Email Marketing:** Nombre de sender debe coincidir con dominio remitente (appointmepro.me)
+  - **Justificación Brand Trust:** Consistencia en branding aumenta reconocimiento y confianza del cliente
+- [x] frontend/src/stores/*.ts - Actualizar claves de sessionStorage
+  - ✅ oauthStore.ts: `appointme-oauth-storage` → `appointmepro-oauth-storage`
+  - ✅ bookingStore.ts: `appointme-booking-storage` → `appointmepro-booking-storage`
+  - ✅ authStore.ts: `appointme-auth-storage` → `appointmepro-auth-storage`
+  - **Justificación Browser Storage:** Evitar conflictos con otras apps usando mismas claves
+  - **Justificación Clean Slate:** Usuarios existentes obtendrán storage limpio (invalidar sesiones antiguas)
+- [x] frontend/src/pages/ContactPage.tsx - Actualizar email de contacto
+  - ✅ `info@appointme.com` → `info@appointmepro.com`
+  - **Justificación Customer Support:** Email debe coincidir con dominio de producción
+- [x] frontend/src/pages/admin/SettingsPage.tsx - Actualizar descripción
+  - ✅ `Administra los parámetros generales de AppointMe` → `AppointMePro`
+  - **Justificación UI Consistency:** Interfaz admin debe usar nombre correcto del producto
 
 
 

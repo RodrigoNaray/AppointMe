@@ -61,17 +61,17 @@ export const sendVerificationEmail = async (data: VerificationEmailData): Promis
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Verificación de Email - AppointMe</title>
+        <title>Verificación de Email - AppointMePro</title>
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="margin: 0; font-size: 28px;">¡Bienvenido a AppointMe!</h1>
+            <h1 style="margin: 0; font-size: 28px;">¡Bienvenido a AppointMePro!</h1>
         </div>
         
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
             <h2 style="color: #333; margin-top: 0;">Hola ${data.name},</h2>
             
-            <p>Gracias por registrarte en AppointMe. Para completar tu registro y comenzar a usar nuestra plataforma, necesitas verificar tu dirección de email.</p>
+            <p>Gracias por registrarte en AppointMePro. Para completar tu registro y comenzar a usar nuestra plataforma, necesitas verificar tu dirección de email.</p>
             
             <div style="text-align: center; margin: 30px 0;">
                 <a href="${verificationUrl}" 
@@ -90,12 +90,12 @@ export const sendVerificationEmail = async (data: VerificationEmailData): Promis
             </p>
             
             <p style="color: #666; font-size: 14px;">
-                Si no te registraste en AppointMe, puedes ignorar este email de forma segura.
+                Si no te registraste en AppointMePro, puedes ignorar este email de forma segura.
             </p>
         </div>
         
         <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
-            <p>© 2025 AppointMe. Todos los derechos reservados.</p>
+            <p>© 2025 AppointMePro. Todos los derechos reservados.</p>
         </div>
     </body>
     </html>
@@ -103,23 +103,23 @@ export const sendVerificationEmail = async (data: VerificationEmailData): Promis
 
     // Texto plano como fallback
     const textContent = `
-¡Bienvenido a AppointMe, ${data.name}!
+¡Bienvenido a AppointMePro, ${data.name}!
 
 Para completar tu registro, verifica tu email haciendo clic en el siguiente enlace:
 ${verificationUrl}
 
 Este enlace expira en 24 horas.
 
-Si no te registraste en AppointMe, ignora este email.
+Si no te registraste en AppointMePro, ignora este email.
 
-© 2025 AppointMe
+© 2025 AppointMePro
     `.trim();
 
     // Enviar email con Resend
     const result = await resend.emails.send({
-      from: `AppointMe <${FROM_EMAIL}>`,
+      from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.to,
-      subject: 'Verifica tu email - AppointMe',
+      subject: 'Verifica tu email - AppointMePro',
       html: htmlTemplate,
       text: textContent,
     });
@@ -161,7 +161,7 @@ export const sendEmailChangeVerification = async (data: EmailChangeData): Promis
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Confirmar Cambio de Email - AppointMe</title>
+        <title>Confirmar Cambio de Email - AppointMePro</title>
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
@@ -171,7 +171,7 @@ export const sendEmailChangeVerification = async (data: EmailChangeData): Promis
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
             <h2 style="color: #333; margin-top: 0;">Hola ${data.name},</h2>
             
-            <p>Has solicitado cambiar tu dirección de email en AppointMe a <strong>${data.newEmail}</strong>.</p>
+            <p>Has solicitado cambiar tu dirección de email en AppointMePro a <strong>${data.newEmail}</strong>.</p>
             
             <p>Para confirmar este cambio, haz clic en el botón de abajo:</p>
             
@@ -200,7 +200,7 @@ export const sendEmailChangeVerification = async (data: EmailChangeData): Promis
         </div>
         
         <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
-            <p>© 2025 AppointMe. Todos los derechos reservados.</p>
+            <p>© 2025 AppointMePro. Todos los derechos reservados.</p>
         </div>
     </body>
     </html>
@@ -210,7 +210,7 @@ export const sendEmailChangeVerification = async (data: EmailChangeData): Promis
     const textContent = `
 Hola ${data.name},
 
-Has solicitado cambiar tu email en AppointMe a ${data.newEmail}.
+Has solicitado cambiar tu email en AppointMePro a ${data.newEmail}.
 
 Para confirmar este cambio, haz clic en el siguiente enlace:
 ${verificationUrl}
@@ -219,14 +219,14 @@ Este enlace expira en 24 horas.
 
 Si no solicitaste este cambio, ignora este email.
 
-© 2025 AppointMe
+© 2025 AppointMePro
     `.trim();
 
     // Enviar email con Resend al NUEVO email para verificarlo
     const result = await resend.emails.send({
-      from: `AppointMe <${FROM_EMAIL}>`,
+      from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.newEmail,
-      subject: 'Confirma tu nuevo email - AppointMe',
+      subject: 'Confirma tu nuevo email - AppointMePro',
       html: htmlTemplate,
       text: textContent,
     });
@@ -297,7 +297,7 @@ export const sendBookingConfirmationEmail = async (data: BookingConfirmationData
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Confirmación de Reserva - AppointMe</title>
+        <title>Confirmación de Reserva - AppointMePro</title>
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
@@ -350,7 +350,7 @@ export const sendBookingConfirmationEmail = async (data: BookingConfirmationData
         
         <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
             <p style="font-size: 12px; color: #9ca3af;">
-                © 2025 AppointMe. Todos los derechos reservados.
+                © 2025 AppointMePro. Todos los derechos reservados.
             </p>
         </div>
     </body>
@@ -359,7 +359,7 @@ export const sendBookingConfirmationEmail = async (data: BookingConfirmationData
 
     // Versión texto plano (fallback para clientes sin HTML)
     const textContent = `
-Confirmación de Reserva - AppointMe
+Confirmación de Reserva - AppointMePro
 
 Hola ${data.clientName},
 
@@ -376,14 +376,14 @@ ${process.env.CLIENT_URL}/client/profile
 
 ¿Tienes preguntas? Contáctanos respondiendo este email.
 
-© 2025 AppointMe. Todos los derechos reservados.
+© 2025 AppointMePro. Todos los derechos reservados.
     `.trim();
 
     // Enviar email con Resend
     const result = await resend.emails.send({
-      from: `AppointMe <${FROM_EMAIL}>`,
+      from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.to,
-      subject: `✓ Confirmación de Reserva${data.bookings.length > 1 ? 's' : ''} - AppointMe`,
+      subject: `✓ Confirmación de Reserva${data.bookings.length > 1 ? 's' : ''} - AppointMePro`,
       html: htmlTemplate,
       text: textContent,
     });

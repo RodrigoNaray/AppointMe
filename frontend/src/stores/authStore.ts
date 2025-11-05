@@ -278,7 +278,7 @@ export const useAuthStore = create<AuthStoreState>()(
       _setIsLoading: (isLoading) => set({ isLoading }),
     }),
     {
-      name: 'appointme-auth-storage',
+      name: 'appointmepro-auth-storage',
       storage: createJSONStorage(() => sessionStorage), // sessionStorage para seguridad OWASP
       version: 1,
       

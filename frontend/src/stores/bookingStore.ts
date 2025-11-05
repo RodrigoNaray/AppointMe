@@ -175,7 +175,7 @@ export const useBookingStore = create<BookingState>()(
     }),
     {
       // Configuración de persist
-      name: 'appointme-booking-storage', // Clave en sessionStorage
+      name: 'appointmepro-booking-storage', // Clave en sessionStorage
       storage: {
         getItem: (name) => {
           const str = sessionStorage.getItem(name);

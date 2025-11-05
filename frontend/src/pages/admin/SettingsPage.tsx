@@ -242,7 +242,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Configuración del Sistema</h1>
         <p className="text-muted-foreground mt-2">
-          Administra los parámetros generales de AppointMe
+          Administra los parámetros generales de AppointMePro
         </p>
       </div>
 

@@ -1,4 +1,4 @@
-# AppointMe 📅
+# AppointMePro 📅
 
 > **Full-stack booking platform for independent professionals**  
 > Production-ready appointment management system with enterprise-grade security and modern UX patterns.
@@ -30,10 +30,10 @@
 
 ## 🎯 Project Overview
 
-**AppointMe** is a production-grade SaaS platform that enables independent professionals (stylists, therapists, consultants) to manage their business operations through a secure admin dashboard while providing clients with an intuitive booking experience.
+**AppointMePro** is a production-grade SaaS platform that enables independent professionals (stylists, therapists, consultants) to manage their business operations through a secure admin dashboard while providing clients with an intuitive booking experience.
 
 **Problem Solved:**  
-Small business owners need professional booking systems without enterprise costs. AppointMe delivers enterprise features (RBAC, JWT auth, real-time availability) with indie-friendly deployment costs.
+Small business owners need professional booking systems without enterprise costs. AppointMePro delivers enterprise features (RBAC, JWT auth, real-time availability) with indie-friendly deployment costs.
 
 **Target Users:**
 - **Professionals:** Manage services, availability, bookings through mobile-first admin panel
@@ -358,8 +358,8 @@ Git
 
 1. **Clone Repository**
    ```bash
-   git clone https://github.com/RodrigoNaray/AppointMe.git
-   cd AppointMe
+   git clone https://github.com/RodrigoNaray/AppointMePro.git
+   cd AppointMePro
    ```
 
 2. **Install Dependencies**
@@ -375,7 +375,7 @@ Git
 
    **Backend** (`backend/.env`):
    ```env
-   DATABASE_URL="postgresql://user:pass@host:5432/appointme?schema=public"
+   DATABASE_URL="postgresql://user:pass@host:5432/appointmepro?schema=public"
    JWT_SECRET="your-256-bit-secret-key"
    CLIENT_URL="http://localhost:5173"
    
@@ -445,7 +445,7 @@ vercel --prod
 **Production Setup:**
 1. **Verify your domain:**
    - Go to [Domains section](https://resend.com/domains)
-   - Add your domain (e.g., `appointme.com`)
+   - Add your domain (e.g., `appointmepro.com`)
    - Add DNS records (SPF, DKIM, DMARC) to your domain provider
    - Wait for verification (usually 5-10 minutes)
 
@@ -562,7 +562,7 @@ vercel --prod
 
 ### Dynamic Sitemap Implementation
 
-AppointMe includes a **dynamic sitemap.xml** generator for optimal SEO indexing:
+AppointMePro includes a **dynamic sitemap.xml** generator for optimal SEO indexing:
 
 **Architecture:**
 - **Backend (Express)**: Generates sitemap from database (categories, services)

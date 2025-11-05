@@ -17,7 +17,7 @@ export default function ContactPage() {
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
             <Mail className="h-6 w-6 text-primary" />
-            <p className="text-lg">info@appointme.com</p>
+            <p className="text-lg">info@appointmepro.com</p>
           </div>
           <div className="flex items-center gap-4">
             <Phone className="h-6 w-6 text-primary" />

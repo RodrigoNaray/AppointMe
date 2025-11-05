@@ -58,7 +58,7 @@ export const useOAuthStore = create<OAuthStoreState>()(
       },
     }),
     {
-      name: 'appointme-oauth-storage', // Key en sessionStorage
+      name: 'appointmepro-oauth-storage', // Key en sessionStorage
       storage: createJSONStorage(() => sessionStorage), // sessionStorage (expira al cerrar tab)
     }
   )
