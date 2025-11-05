@@ -1,77 +1,33 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import logger from "../utils/logger";
 
-/**
- * CONFIGURACIÓN GMAIL:
- * 
- * Para usar Gmail, necesitas:
- * 1. Habilitar 2FA en tu cuenta Gmail
- * 2. Generar una "Contraseña de aplicación" específica:
- *    - Ve a tu cuenta Google > Seguridad > Verificación en 2 pasos > Contraseñas de aplicaciones
- *    - Genera una nueva contraseña para "Correo"
- *    - Usa esa contraseña de 16 caracteres en SMTP_PASS (no tu contraseña normal)
- * 
- * Variables de entorno requeridas:
- * - SMTP_HOST=smtp.gmail.com
- * - SMTP_PORT=587
- * - SMTP_SECURE=false
- * - SMTP_USER=tu-email@gmail.com
- * - SMTP_PASS=tu-contraseña-de-aplicacion (16 caracteres)
- */
 
-// Configuración del transportador SMTP
-const createTransporter = () => {
-  // Validar configuración requerida
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    logger.error('SMTP configuration incomplete: SMTP_USER and SMTP_PASS are required');
-    throw new Error('SMTP configuration is incomplete');
-  }
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-  // Log de configuración para debugging (sin exponer credenciales)
-  logger.debug({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true',
-    user: process.env.SMTP_USER?.replace(/(.{2}).*(@.*)/, '$1***$2') // Ocultar parte del email
-  }, 'SMTP transporter configuration');
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL;
 
-  const config = {
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true', // true para SSL (puerto 465), false para TLS (puerto 587)
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-    // Configuración TLS optimizada para Gmail
-    tls: {
-      // En desarrollo, ser más permisivo con certificados
-      rejectUnauthorized: process.env.NODE_ENV === 'production',
-      minVersion: 'TLSv1.2' as const
-    },
-    // Configuración específica para Gmail
-    requireTLS: true,
-    connectionTimeout: 10000, // 10 segundos
-    greetingTimeout: 5000, // 5 segundos
-    socketTimeout: 10000 // 10 segundos
-  };
-
-  return nodemailer.createTransport(config);
-};
-
-// Interface para los datos del email de verificación
 interface VerificationEmailData {
   to: string;
   name: string;
   verificationToken: string;
 }
 
-// Interface para los datos del email de cambio de email
 interface EmailChangeData {
   to: string;
   name: string;
   newEmail: string;
   emailChangeToken: string;
+}
+
+
+interface BookingConfirmationData {
+  to: string;
+  clientName: string;
+  bookings: Array<{
+    serviceName: string;
+    bookingTime: Date;
+    durationMinutes: number;
+  }>;
 }
 
 /**
@@ -81,12 +37,10 @@ interface EmailChangeData {
  */
 export const sendVerificationEmail = async (data: VerificationEmailData): Promise<boolean> => {
   try {
-    const transporter = createTransporter();
-    
     // URL de verificación - usar CLIENT_URL del entorno
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${data.verificationToken}`;
     
-    // Template HTML del email de verificación
+    // Template HTML del email de verificación (reutilizado de Nodemailer)
     const htmlTemplate = `
     <!DOCTYPE html>
     <html lang="es">
@@ -133,44 +87,45 @@ export const sendVerificationEmail = async (data: VerificationEmailData): Promis
     </html>
     `;
 
-    // Configuración del email
-    const mailOptions = {
-      from: {
-        name: 'AppointMe',
-        address: process.env.SMTP_USER!
-      },
+    // Texto plano como fallback
+    const textContent = `
+¡Bienvenido a AppointMe, ${data.name}!
+
+Para completar tu registro, verifica tu email haciendo clic en el siguiente enlace:
+${verificationUrl}
+
+Este enlace expira en 24 horas.
+
+Si no te registraste en AppointMe, ignora este email.
+
+© 2025 AppointMe
+    `.trim();
+
+    // Enviar email con Resend
+    const result = await resend.emails.send({
+      from: `AppointMe <${FROM_EMAIL}>`,
       to: data.to,
       subject: 'Verifica tu email - AppointMe',
       html: htmlTemplate,
-      // Texto plano como fallback
-      text: `
-        ¡Bienvenido a AppointMe, ${data.name}!
-        
-        Para completar tu registro, verifica tu email haciendo clic en el siguiente enlace:
-        ${verificationUrl}
-        
-        Este enlace expira en 24 horas.
-        
-        Si no te registraste en AppointMe, ignora este email.
-        
-        © 2025 AppointMe
-      `
-    };
+      text: textContent,
+    });
 
-    // Enviar el email
-    const info = await transporter.sendMail(mailOptions);
-    
+    // Resend retorna { data: { id: string } } en éxito, { error: ErrorObject } en fallo
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+
     logger.info({
-      messageId: info.messageId,
-      to: data.to
-    }, 'Verification email sent successfully');
+      messageId: result.data?.id,
+      to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2') // Ocultar parte del email por seguridad
+    }, 'Verification email sent successfully via Resend');
 
     return true;
   } catch (error) {
     logger.error({
       error: error instanceof Error ? error.message : 'Unknown error',
-      to: data.to
-    }, 'Failed to send verification email');
+      to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2')
+    }, 'Failed to send verification email via Resend');
     return false;
   }
 };
@@ -182,12 +137,10 @@ export const sendVerificationEmail = async (data: VerificationEmailData): Promis
  */
 export const sendEmailChangeVerification = async (data: EmailChangeData): Promise<boolean> => {
   try {
-    const transporter = createTransporter();
-    
     // URL de verificación de cambio de email
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email-change?token=${data.emailChangeToken}`;
     
-    // Template HTML del email de cambio
+    // Template HTML del email de cambio (reutilizado de Nodemailer)
     const htmlTemplate = `
     <!DOCTYPE html>
     <html lang="es">
@@ -239,59 +192,49 @@ export const sendEmailChangeVerification = async (data: EmailChangeData): Promis
     </html>
     `;
 
-    // Configuración del email
-    const mailOptions = {
-      from: {
-        name: 'AppointMe',
-        address: process.env.SMTP_USER!
-      },
-      to: data.newEmail, // Enviar al NUEVO email para verificarlo
+    // Texto plano como fallback
+    const textContent = `
+Hola ${data.name},
+
+Has solicitado cambiar tu email en AppointMe a ${data.newEmail}.
+
+Para confirmar este cambio, haz clic en el siguiente enlace:
+${verificationUrl}
+
+Este enlace expira en 24 horas.
+
+Si no solicitaste este cambio, ignora este email.
+
+© 2025 AppointMe
+    `.trim();
+
+    // Enviar email con Resend al NUEVO email para verificarlo
+    const result = await resend.emails.send({
+      from: `AppointMe <${FROM_EMAIL}>`,
+      to: data.newEmail,
       subject: 'Confirma tu nuevo email - AppointMe',
       html: htmlTemplate,
-      text: `
-        Hola ${data.name},
-        
-        Has solicitado cambiar tu email en AppointMe a ${data.newEmail}.
-        
-        Para confirmar este cambio, haz clic en el siguiente enlace:
-        ${verificationUrl}
-        
-        Este enlace expira en 24 horas.
-        
-        Si no solicitaste este cambio, ignora este email.
-        
-        © 2025 AppointMe
-      `
-    };
+      text: textContent,
+    });
 
-    // Enviar el email
-    const info = await transporter.sendMail(mailOptions);
-    
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+
     logger.info({
-      messageId: info.messageId,
-      to: data.newEmail
-    }, 'Email change verification sent successfully');
+      messageId: result.data?.id,
+      to: data.newEmail.replace(/(.{2}).*(@.*)/, '$1***$2')
+    }, 'Email change verification sent successfully via Resend');
 
     return true;
   } catch (error) {
     logger.error({
       error: error instanceof Error ? error.message : 'Unknown error',
-      to: data.newEmail
-    }, 'Failed to send email change verification');
+      to: data.newEmail.replace(/(.{2}).*(@.*)/, '$1***$2')
+    }, 'Failed to send email change verification via Resend');
     return false;
   }
 };
-
-// Interface para los datos del email de confirmación de reserva
-interface BookingConfirmationData {
-  to: string;
-  clientName: string;
-  bookings: Array<{
-    serviceName: string;
-    bookingTime: Date;
-    durationMinutes: number;
-  }>;
-}
 
 /**
  * Envía un email de confirmación de reserva(s) al cliente
@@ -300,8 +243,6 @@ interface BookingConfirmationData {
  */
 export const sendBookingConfirmationEmail = async (data: BookingConfirmationData): Promise<boolean> => {
   try {
-    const transporter = createTransporter();
-    
     // Formatear fecha/hora en zona horaria local (UTC-3 para Argentina)
     const formatDateTime = (date: Date) => {
       const localDate = new Date(date.getTime() - (3 * 60 * 60 * 1000)); // UTC-3
@@ -334,7 +275,7 @@ export const sendBookingConfirmationEmail = async (data: BookingConfirmationData
       </tr>
     `).join('');
 
-    // Template HTML del email de confirmación
+    // Template HTML del email de confirmación (reutilizado de Nodemailer)
     const htmlTemplate = `
     <!DOCTYPE html>
     <html lang="es">
@@ -423,58 +364,78 @@ ${process.env.CLIENT_URL}/client/profile
 © 2025 AppointMe. Todos los derechos reservados.
     `.trim();
 
-    const mailOptions = {
-      from: `"AppointMe" <${process.env.SMTP_USER}>`,
+    // Enviar email con Resend
+    const result = await resend.emails.send({
+      from: `AppointMe <${FROM_EMAIL}>`,
       to: data.to,
       subject: `✓ Confirmación de Reserva${data.bookings.length > 1 ? 's' : ''} - AppointMe`,
-      text: textContent,
       html: htmlTemplate,
-    };
+      text: textContent,
+    });
 
-    await transporter.sendMail(mailOptions);
-    
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+
     logger.info({
-      to: data.to,
+      messageId: result.data?.id,
+      to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2'),
       bookingCount: data.bookings.length
-    }, 'Booking confirmation email sent successfully');
+    }, 'Booking confirmation email sent successfully via Resend');
     
     return true;
   } catch (error) {
     logger.error({
-      error,
-      to: data.to,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2'),
       bookingCount: data.bookings.length
-    }, 'Failed to send booking confirmation email');
+    }, 'Failed to send booking confirmation email via Resend');
     return false;
   }
 };
 
 /**
- * Valida la configuración SMTP sin enviar un email
+ * Valida la configuración de Resend
  * @returns Promise<boolean> true si la configuración es válida
  */
-export const validateSMTPConfig = async (): Promise<boolean> => {
+export const validateResendConfig = async (): Promise<boolean> => {
   try {
-    const transporter = createTransporter();
-    logger.info('Testing SMTP connection...');
-    await transporter.verify();
-    logger.info('SMTP configuration is valid and connection successful');
+    // Verificar que RESEND_API_KEY está configurado
+    if (!process.env.RESEND_API_KEY) {
+      logger.error('RESEND_API_KEY is not configured');
+      return false;
+    }
+
+    // Verificar formato de la API key (debe empezar con "re_")
+    if (!process.env.RESEND_API_KEY.startsWith('re_')) {
+      logger.error('RESEND_API_KEY has invalid format (should start with "re_")');
+      return false;
+    }
+
+    // Verificar que FROM_EMAIL está configurado
+    if (!FROM_EMAIL) {
+      logger.warn('RESEND_FROM_EMAIL is not configured, using default: onboarding@resend.dev');
+    }
+
+    // Log de configuración (sin exponer API key completa)
+    logger.info({
+      apiKeyPrefix: process.env.RESEND_API_KEY.substring(0, 10) + '...',
+      fromEmail: FROM_EMAIL,
+      isSandbox: FROM_EMAIL.includes('resend.dev')
+    }, 'Resend configuration validated');
+
+    // Warning si se está usando sandbox en producción
+    if (process.env.NODE_ENV === 'production' && FROM_EMAIL.includes('resend.dev')) {
+      logger.warn('Using Resend sandbox domain in production. Verify your own domain for better deliverability.');
+    }
+
     return true;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error({
       error: errorMessage,
       stack: error instanceof Error ? error.stack : undefined
-    }, 'SMTP configuration validation failed');
-    
-    // Sugerencias específicas basadas en el error
-    if (errorMessage.includes('self-signed certificate')) {
-      logger.warn('Gmail certificate issue detected. Make sure you are using an App Password, not your regular Gmail password.');
-    } else if (errorMessage.includes('authentication')) {
-      logger.warn('Authentication failed. Verify SMTP_USER and SMTP_PASS are correct. For Gmail, use an App Password.');
-    } else if (errorMessage.includes('timeout')) {
-      logger.warn('Connection timeout. Check your internet connection and firewall settings.');
-    }
+    }, 'Resend configuration validation failed');
     
     return false;
   }

@@ -1,8 +1,8 @@
 # Estado
-371/356 tareas (104%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 20% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% ✅ | USER-BOOKINGS-FASE1: 100% ✅ | USER-BOOKINGS-FASE2: 100% ✅ | USER-BOOKINGS-FASE3: 100% ✅ | USER-BOOKINGS-FASE4: 100% ✅
+383/368 tareas (104%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 20% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% ✅ | USER-BOOKINGS-FASE1: 100% ✅ | USER-BOOKINGS-FASE2: 100% ✅ | USER-BOOKINGS-FASE3: 100% ✅ | USER-BOOKINGS-FASE4: 100% ✅ | RESEND-INTEGRATION: 70% �
 
 # Stack
-**Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + Nodemailer 7.0.9
+**Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + ~~Nodemailer 7.0.9~~ → **Resend 6.4.1 ✅**
 **Frontend:** React 19 + TypeScript + Vite + TailwindCSS 4 + shadcn-ui + React Router 7
 **Deploy:** Vercel (frontend) + Render (backend) + Supabase (DB) ✅ FUNCIONANDO
 **Auth:** JWT HttpOnly cookies (sameSite:'lax' para Safari) + Discriminated unions
@@ -564,6 +564,120 @@
   - Guía de habilitación de Google Calendar
   - Pasos de configuración en Google Cloud Console
   - Variables ENV: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+
+## MÓDULO: RESEND-INTEGRATION (Migración de Nodemailer a Resend)
+
+### Checklist
+
+#### Fase 1: Configuración e instalación
+- [x] Backend: Instalar dependencia Resend
+  - ✅ `pnpm add resend` ejecutado (v6.4.1)
+  - ✅ Compatible con TypeScript nativo
+- [x] Backend: Crear nueva variable de entorno RESEND_API_KEY
+  - ✅ Agregado RESEND_API_KEY y RESEND_FROM_EMAIL en .env.example
+  - ✅ Documentado en README.md proceso completo (dev + prod)
+  - ✅ Variables SMTP_* eliminadas de .env.example
+- [x] Backend: Configurar dominio verificado en Resend
+  - ✅ Documentado proceso de verificación de dominio en README
+  - ✅ Configurado email "from" por defecto (sandbox dev + producción)
+
+#### Fase 2: Refactor del servicio de emails
+- [x] Backend: Crear nuevo emailService.resend.ts
+  - ✅ Cliente Resend configurado con API_KEY
+  - ✅ Función `sendVerificationEmail` implementada
+  - ✅ Función `sendEmailChangeVerification` implementada
+  - ✅ Función `sendBookingConfirmationEmail` implementada
+  - ✅ Interfaces mantenidas para compatibilidad
+  - ✅ Templates HTML reutilizados (testados previamente)
+  - ✅ Manejo de errores con Pino logger + ocultación de emails sensibles
+- [x] Backend: Agregar validación de configuración Resend
+  - ✅ Función `validateResendConfig()` implementada
+  - ✅ Verificación de RESEND_API_KEY presente y formato válido
+  - ✅ Warning si sandbox en producción
+
+#### Fase 3: Integración en módulos existentes
+- [x] Backend: Actualizar clientAuth.services.ts
+  - ✅ Import cambiado de emailService a emailService.resend
+  - ✅ Llamadas a sendVerificationEmail verificadas
+  - ✅ Llamadas a sendEmailChangeVerification verificadas
+  - ✅ Lógica de negocio mantenida (sin cambios de flujo)
+- [x] Backend: Actualizar booking.controller.ts
+  - ✅ Import cambiado de emailService a emailService.resend
+  - ✅ Llamadas a sendBookingConfirmationEmail verificadas
+  - ✅ Lógica de negocio mantenida
+
+#### Fase 4: Testing y validación
+- [ ] Backend: Testing manual en desarrollo (requiere RESEND_API_KEY configurado)
+  - Probar envío de email de verificación en registro
+  - Probar reenvío de email de verificación
+  - Probar email de cambio de dirección
+  - Probar email de confirmación de reserva (single y multiple)
+  - Verificar recepción en bandeja de entrada (no spam)
+  - Validar formato HTML en diferentes clientes (Gmail, Outlook, mobile)
+- [ ] Backend: Verificar logs con Pino
+  - Confirmar que errores se loggean correctamente
+  - Verificar que info de éxito incluye messageId de Resend
+  - ✅ Emails parcialmente ocultos en logs (implementado)
+
+#### Fase 5: Cleanup y documentación
+- [x] Backend: Eliminar código obsoleto
+  - ✅ Archivo emailService.ts respaldado como .old.ts
+  - ✅ emailService.resend.ts renombrado a emailService.ts
+  - ✅ Dependencias nodemailer removidas: `pnpm remove nodemailer @types/nodemailer`
+  - ✅ Comentarios SMTP eliminados, documentación Resend agregada
+- [x] Backend: Actualizar package.json
+  - ✅ resend ^6.4.1 en dependencies verificado
+  - ✅ nodemailer removido completamente verificado
+  - ✅ Versión actual: 1.0.0 (actualizar a 1.1.0 en deploy)
+- [x] Documentación: Actualizar README.md
+  - ✅ Sección "Email Configuration (Resend)" agregada
+  - ✅ Instrucciones completas para obtener API key
+  - ✅ Instrucciones de verificación de dominio
+  - ✅ Variables de entorno actualizadas en ejemplos
+  - ✅ Referencias a SMTP/Gmail/Nodemailer eliminadas
+- [x] Documentación: Agregar MIGRATION_RESEND.md
+  - ✅ Guía completa de migración documentada
+  - ✅ Comparación Nodemailer vs Resend
+  - ✅ Troubleshooting común incluido
+  - ✅ Checklist de migración agregado
+
+#### Fase 6: Deploy y monitoreo
+- [ ] Deploy: Actualizar variables de entorno en Render
+  - Agregar RESEND_API_KEY
+  - Eliminar variables SMTP_*
+  - Verificar CLIENT_URL está configurado
+- [ ] Deploy: Testing en producción
+  - Verificar envío real de emails en prod
+  - Monitorear logs de Pino en Render
+  - Confirmar entrega exitosa (no bounces)
+- [ ] Monitoreo: Dashboard de Resend
+  - Verificar métricas de entrega
+  - Revisar tasa de apertura
+  - Configurar alertas de fallos si disponible
+
+### Notas Técnicas
+- **Justificación Resend:** Servicio moderno especializado en emails transaccionales, mejor deliverability que SMTP directo, SDK oficial con TypeScript, dashboard de monitoreo incluido
+- **Justificación OWASP A04:2021 (Insecure Design):** Resend usa autenticación por API key (más seguro que credenciales SMTP), soporte nativo de rate limiting, logs auditables
+- **Justificación Clean Code:** Abstracción clara del proveedor de emails, interfaces inmutables, separación de concerns (templates vs envío)
+- **Ventaja sobre Nodemailer:** No requiere configuración SMTP compleja, elimina problemas de TLS/certificados, mejor handling de bounces/spam
+- **Compatibilidad:** Interfaces de datos mantenidas → cero cambios en lógica de negocio
+- **Compilación:** ✅ Build exitoso sin errores TypeScript
+- **Rollback:** Branch ResendIntegration separado, main intacto hasta testing completo
+
+### Estado de Implementación
+- ✅ **Fase 1:** Dependencia instalada, variables configuradas, documentación creada
+- ✅ **Fase 2:** Servicio Resend implementado con todas las funciones
+- ✅ **Fase 3:** Módulos integrados sin cambios de lógica
+- ⏳ **Fase 4:** Pendiente testing manual (requiere RESEND_API_KEY)
+- ✅ **Fase 5:** Código limpiado, documentación completa
+- ⏳ **Fase 6:** Pendiente deploy a producción
+
+### Próximos Pasos (Usuario)
+1. Obtener RESEND_API_KEY desde https://resend.com/api-keys
+2. Agregar a backend/.env: `RESEND_API_KEY=re_...`
+3. Probar registro de usuario para validar email de verificación
+4. Verificar dominio propio para producción
+5. Actualizar variables en Render cuando esté listo para deploy
 
 
 

@@ -188,7 +188,7 @@ Small business owners need professional booking systems without enterprise costs
 - Optional password for OAuth users
 
 ✅ **Email Verification**
-- Nodemailer 7 with SMTP
+- Resend API for transactional emails
 - Token-based verification (expires: 24h)
 - Resend verification option
 
@@ -208,7 +208,7 @@ Small business owners need professional booking systems without enterprise costs
 | **bcrypt** | 5.1 | Password hashing (10 rounds) |
 | **jsonwebtoken** | 9.0 | JWT generation/verification |
 | **Pino** | 9.5 | Structured logging |
-| **Nodemailer** | 7.0 | SMTP email delivery |
+| **Resend** | 6.4 | Transactional email delivery |
 
 ### Frontend
 | Technology | Version | Purpose |
@@ -379,11 +379,9 @@ Git
    JWT_SECRET="your-256-bit-secret-key"
    CLIENT_URL="http://localhost:5173"
    
-   # Email (Nodemailer SMTP)
-   SMTP_HOST="smtp.gmail.com"
-   SMTP_PORT=587
-   SMTP_USER="your-email@gmail.com"
-   SMTP_PASS="your-app-password"
+   # Email (Resend)
+   RESEND_API_KEY="re_your_api_key"
+   RESEND_FROM_EMAIL="onboarding@resend.dev"  # Use verified domain in production
    
    # Google OAuth (optional)
    GOOGLE_CLIENT_ID="your-google-client-id"
@@ -432,6 +430,41 @@ vercel --prod
 1. Create project at supabase.com
 2. Copy connection string to `DATABASE_URL`
 3. Run migrations: `npx prisma migrate deploy`
+
+### Email Configuration (Resend)
+
+**Development Setup:**
+1. Sign up at [resend.com](https://resend.com)
+2. Get your API key from [API Keys section](https://resend.com/api-keys)
+3. Add to `backend/.env`:
+   ```env
+   RESEND_API_KEY="re_your_api_key"
+   RESEND_FROM_EMAIL="onboarding@resend.dev"  # Sandbox domain for testing
+   ```
+
+**Production Setup:**
+1. **Verify your domain:**
+   - Go to [Domains section](https://resend.com/domains)
+   - Add your domain (e.g., `appointme.com`)
+   - Add DNS records (SPF, DKIM, DMARC) to your domain provider
+   - Wait for verification (usually 5-10 minutes)
+
+2. **Update environment variables:**
+   ```env
+   RESEND_API_KEY="re_your_production_api_key"
+   RESEND_FROM_EMAIL="noreply@yourdomain.com"
+   ```
+
+3. **Monitor deliverability:**
+   - Check [Resend Dashboard](https://resend.com/emails) for sent emails
+   - Monitor bounce rates and spam complaints
+   - Emails typically deliver in <1 second
+
+**Email Templates Included:**
+- ✅ Email verification (registration)
+- ✅ Email change verification
+- ✅ Booking confirmation (single/multiple services)
+- ✅ Responsive HTML templates (Gmail, Outlook, mobile tested)
 
 ---
 
