@@ -29,6 +29,11 @@ clientAuthRoutes.post('/verify-email-change', controller.verifyEmailChangeContro
 // OWASP A02:2021: Protegida con middleware isClientAuthenticated
 clientAuthRoutes.post('/change-password', isClientAuthenticated, controller.changePasswordController);
 
+// Rutas de recuperación de contraseña (públicas - no requieren autenticación)
+// OWASP A01:2021: forgotPassword retorna siempre 200 para prevenir enumeración de usuarios
+clientAuthRoutes.post('/forgot-password', controller.forgotPasswordController);
+clientAuthRoutes.post('/reset-password', controller.resetPasswordController);
+
 // Rutas de Google OAuth 2.0
 // OWASP A02:2021: CSRF protection mediante state parameter (manejado por passport)
 // Nota: returnUrl se maneja en frontend con sessionStorage (Zustand oauthStore)

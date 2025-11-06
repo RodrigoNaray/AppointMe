@@ -97,6 +97,14 @@ export default function LoginPage() {
                         <Button type="submit" className="w-full" disabled={isLoading}>
                             {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                         </Button>
+                        <div className="text-center mt-2">
+                            <Link 
+                                to="/forgot-password" 
+                                className="text-sm text-muted-foreground hover:text-foreground hover:underline"
+                            >
+                                ¿Olvidaste tu contraseña?
+                            </Link>
+                        </div>
                     </form>
                     <Separator className="my-4" />
                     <Button variant="outline" className="w-full flex items-center justify-center gap-2" onClick={handleGoogleLogin}>

@@ -625,3 +625,122 @@ export const updateClientProfile = async (
     throw new Error('Error al actualizar el perfil. Intenta nuevamente.');
   }
 };
+
+/**
+ * Solicita un restablecimiento de contraseña para un cliente.
+ * Genera un token y envía email con instrucciones.
+ * 
+ * @param email - Email del cliente que solicita el reset
+ * @returns Promise<boolean> - Siempre true por seguridad (no revelar si email existe)
+ * 
+ * Justificación OWASP A01:2021 (Broken Access Control):
+ * - Siempre retorna true para prevenir enumeración de usuarios
+ * - Solo envía email si el usuario realmente existe
+ * 
+ * Justificación Crypto Best Practices:
+ * - Token generado con crypto.randomBytes (cryptographically secure)
+ * - Expiración de 24 horas previene abuso de tokens antiguos
+ */
+export const requestPasswordReset = async (email: string): Promise<boolean> => {
+  try {
+    // Buscar cliente por email
+    const client = await prisma.client.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    // Si el cliente no existe, retornar true sin hacer nada (seguridad)
+    if (!client) {
+      logger.info({ email: email.replace(/(.{2}).*(@.*)/, '$1***$2') }, 'Password reset requested for non-existent email');
+      return true;
+    }
+
+    // Generar token de reset con expiración de 24 horas
+    const { token: resetToken, expiration: resetExpires } = generateTokenWithExpiration(24);
+
+    // Guardar token en base de datos
+    await prisma.client.update({
+      where: { id: client.id },
+      data: {
+        passwordResetToken: resetToken,
+        passwordResetExpires: resetExpires,
+      },
+    });
+
+    // Importar y enviar email (lazy import para evitar circular dependency)
+    const { sendPasswordResetEmail } = await import('../../services/emailService');
+    const emailSent = await sendPasswordResetEmail({
+      to: client.email,
+      name: client.name,
+      resetToken,
+    });
+
+    if (!emailSent) {
+      logger.error({ clientId: client.id }, 'Failed to send password reset email');
+      // No lanzar error - retornar true por seguridad
+    }
+
+    logger.info({ clientId: client.id }, 'Password reset token generated and email sent');
+    return true;
+  } catch (error) {
+    logger.error({
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 'Error processing password reset request');
+    
+    // Retornar true incluso en error (no revelar información)
+    return true;
+  }
+};
+
+/**
+ * Restablece la contraseña de un cliente usando un token válido.
+ * 
+ * @param token - Token de reset recibido por email
+ * @param newPassword - Nueva contraseña del cliente
+ * @returns Promise<void>
+ * @throws Error si token inválido/expirado o password inválido
+ * 
+ * Justificación OWASP A02:2021 (Cryptographic Failures):
+ * - Password hasheado con bcrypt (mismo algoritmo que registro)
+ * - Token invalidado inmediatamente después de uso exitoso
+ * 
+ * Justificación Security Best Practices:
+ * - Validación de password en backend (no confiar en frontend)
+ * - Tokens de un solo uso (se limpian después de reset exitoso)
+ */
+export const resetPassword = async (token: string, newPassword: string): Promise<void> => {
+  // 1. Validar que la nueva contraseña cumple requisitos mínimos
+  if (!newPassword || newPassword.length < 6) {
+    throw new Error('La contraseña debe tener al menos 6 caracteres.');
+  }
+
+  // 2. Buscar cliente por token de reset
+  const client = await prisma.client.findFirst({
+    where: {
+      passwordResetToken: token,
+    },
+  });
+
+  if (!client) {
+    throw new Error('Token de recuperación inválido o expirado.');
+  }
+
+  // 3. Verificar que el token no haya expirado
+  if (!client.passwordResetExpires || client.passwordResetExpires < new Date()) {
+    throw new Error('El token de recuperación ha expirado. Solicita uno nuevo.');
+  }
+
+  // 4. Hashear la nueva contraseña
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+
+  // 5. Actualizar contraseña y limpiar token de reset
+  await prisma.client.update({
+    where: { id: client.id },
+    data: {
+      passwordHash,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+    },
+  });
+
+  logger.info({ clientId: client.id }, 'Password reset successful');
+};

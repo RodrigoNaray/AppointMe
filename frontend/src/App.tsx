@@ -25,6 +25,8 @@ const ChangeEmailPage = lazy(() => import('./pages/ChangeEmailPage'))
 const VerifyEmailChangePage = lazy(() => import('./pages/VerifyEmailChangePage'))
 const ClientProfilePage = lazy(() => import('./pages/ClientProfilePage'))
 const ChangePasswordPage = lazy(() => import('./pages/ChangePasswordPage'))
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 
 
 //--- Admin routes ---//
@@ -60,6 +62,8 @@ const router = createBrowserRouter([
       { path: 'profile', element: <ClientProfilePage/> },
       { path: 'change-password', element: <ChangePasswordPage/> },
       { path: 'client/bookings', element: <MyBookingsPage/> },
+      { path: 'forgot-password', element: <ForgotPasswordPage/> },
+      { path: 'reset-password', element: <ResetPasswordPage/> },
     ],
   },
   {  

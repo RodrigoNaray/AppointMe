@@ -60,6 +60,10 @@ model Client {
   emailChangeToken String?
   emailChangeExpires DateTime?
 
+  // Campos de recuperación de contraseña
+  passwordResetToken String?
+  passwordResetExpires DateTime?
+
   // Relación: Un cliente puede tener muchas reservas
   bookings     Booking[]
 
@@ -68,6 +72,7 @@ model Client {
 
   @@index([emailVerificationToken])
   @@index([emailChangeToken])
+  @@index([passwordResetToken])
 }
 
 // Modelo para las Categorías de Servicios (globales para toda la plataforma)

@@ -343,3 +343,69 @@ export const googleCallbackController = (req: Request, res: Response) => {
     res.redirect(`${process.env.CLIENT_URL}/login?error=server_error`);
   }
 };
+
+/**
+ * Controller para solicitar restablecimiento de contraseña
+ * 
+ * Justificación OWASP A01:2021 (Broken Access Control):
+ * - Siempre retorna 200 para prevenir enumeración de usuarios
+ * - Mensaje genérico no revela si email existe
+ */
+export const forgotPasswordController = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    // Validar formato de email
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ message: 'Email inválido' });
+    }
+
+    // Procesar solicitud (siempre retorna true por seguridad)
+    await service.requestPasswordReset(email);
+
+    // Mensaje genérico (no revelar si email existe)
+    logger.info({ email: email.replace(/(.{2}).*(@.*)/, '$1***$2') }, 'Password reset requested');
+    res.status(200).json({ 
+      message: 'Si el email existe en nuestro sistema, recibirás instrucciones de recuperación.' 
+    });
+  } catch (error: any) {
+    logger.error(error, 'Error en forgot password controller');
+    // Retornar mensaje genérico incluso en error
+    res.status(200).json({ 
+      message: 'Si el email existe en nuestro sistema, recibirás instrucciones de recuperación.' 
+    });
+  }
+};
+
+/**
+ * Controller para restablecer contraseña con token
+ * 
+ * Justificación OWASP A02:2021 (Cryptographic Failures):
+ * - Validación de token en backend
+ * - Password hasheado antes de almacenar
+ */
+export const resetPasswordController = async (req: Request, res: Response) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    // Validar inputs
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ message: 'Token inválido' });
+    }
+
+    if (!newPassword || typeof newPassword !== 'string') {
+      return res.status(400).json({ message: 'Contraseña inválida' });
+    }
+
+    // Intentar restablecer contraseña
+    await service.resetPassword(token, newPassword);
+
+    logger.info({ token: token.substring(0, 10) + '...' }, 'Password reset successful');
+    res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
+  } catch (error: any) {
+    logger.error({ error: error.message }, 'Error en reset password controller');
+    
+    // Retornar error específico (token expirado, password inválida, etc)
+    res.status(400).json({ message: error.message || 'Error al restablecer contraseña' });
+  }
+};

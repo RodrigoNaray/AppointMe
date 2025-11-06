@@ -44,6 +44,12 @@ interface BookingConfirmationData {
   }>;
 }
 
+interface PasswordResetEmailData {
+  to: string;
+  name: string;
+  resetToken: string;
+}
+
 /**
  * Envía un email de verificación al cliente recién registrado
  * @param data Datos necesarios para el email de verificación
@@ -409,12 +415,127 @@ ${process.env.CLIENT_URL}/client/profile
   }
 };
 
+/**
+ * Envía un email de recuperación de contraseña
+ * @param data Datos necesarios para el email de recuperación
+ * @returns Promise<boolean> true si el email se envió exitosamente
+ * 
+ * Justificación OWASP A07:2021 (Identification and Authentication Failures):
+ * - Token temporal con expiración de 24 horas previene abuso
+ * - Link directo facilita UX sin comprometer seguridad
+ * 
+ * Justificación UX Best Practices:
+ * - Diseño consistente con otros emails del sistema
+ * - Información clara sobre expiración del token
+ * - Alternativa de texto plano para clientes sin HTML
+ */
+export const sendPasswordResetEmail = async (data: PasswordResetEmailData): Promise<boolean> => {
+  try {
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${data.resetToken}`;
+
+    // Template HTML (diseño consistente con verificación de email)
+    const htmlTemplate = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Recuperación de Contraseña - AppointMePro</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">Recuperación de Contraseña</h1>
+        </div>
+        
+        <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #333; margin-top: 0;">Hola ${data.name},</h2>
+            
+            <p>Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en AppointMePro.</p>
+            
+            <p>Si fuiste tú quien solicitó este cambio, haz clic en el botón de abajo para crear una nueva contraseña:</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetUrl}" 
+                   style="background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                    Restablecer Contraseña
+                </a>
+            </div>
+            
+            <p style="color: #666; font-size: 14px;">Si no puedes hacer clic en el botón, copia y pega el siguiente enlace en tu navegador:</p>
+            <p style="background: #e9e9e9; padding: 10px; border-radius: 5px; font-size: 12px; word-break: break-all;">
+                ${resetUrl}
+            </p>
+            
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+                <p style="margin: 0; color: #856404; font-weight: bold;">⏰ Importante:</p>
+                <p style="margin: 5px 0 0 0; color: #856404;">
+                    Este enlace es válido por <strong>24 horas</strong>. Después de ese tiempo, deberás solicitar un nuevo enlace de recuperación.
+                </p>
+            </div>
+            
+            <div style="background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin: 20px 0;">
+                <p style="margin: 0; color: #721c24; font-weight: bold;">🔒 Seguridad:</p>
+                <p style="margin: 5px 0 0 0; color: #721c24;">
+                    Si no solicitaste restablecer tu contraseña, puedes ignorar este email de forma segura. Tu contraseña actual no será modificada.
+                </p>
+            </div>
+        </div>
+        
+        <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
+            <p>© 2025 AppointMePro. Todos los derechos reservados.</p>
+        </div>
+    </body>
+    </html>
+    `;
+
+    // Texto plano como fallback
+    const textContent = `
+Recuperación de Contraseña - AppointMePro
+
+Hola ${data.name},
+
+Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en AppointMePro.
+
+Para crear una nueva contraseña, haz clic en el siguiente enlace:
+${resetUrl}
+
+⏰ IMPORTANTE: Este enlace es válido por 24 horas.
+
+🔒 SEGURIDAD: Si no solicitaste restablecer tu contraseña, ignora este email. Tu contraseña actual no será modificada.
+
+© 2025 AppointMePro
+    `.trim();
+
+    // Enviar email con Resend
+    const result = await resend.emails.send({
+      from: `AppointMePro <${FROM_EMAIL}>`,
+      to: data.to,
+      subject: 'Recuperación de Contraseña - AppointMePro',
+      html: htmlTemplate,
+      text: textContent,
+    });
+
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+
+    logger.info({
+      messageId: result.data?.id,
+      to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2')
+    }, 'Password reset email sent successfully via Resend');
+    
+    return true;
+  } catch (error) {
+    logger.error({
+      error: error instanceof Error ? error.message : 'Unknown error',
+      to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2')
+    }, 'Failed to send password reset email via Resend');
+    return false;
+  }
+};
+
 // Log de configuración exitosa (sin exponer credenciales completas)
-logger.info({
-  apiKeyPrefix: process.env.RESEND_API_KEY.substring(0, 10) + '...',
-  fromEmail: FROM_EMAIL,
-  isSandbox: FROM_EMAIL.includes('resend.dev')
-}, 'Resend service initialized successfully');
+logger.info( 'Resend service initialized successfully');
 
 // Warning si se está usando sandbox en producción
 if (process.env.NODE_ENV === 'production' && FROM_EMAIL.includes('resend.dev')) {

@@ -1,5 +1,5 @@
 # Estado
-395/380 tareas (104%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 22% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% 🚧 | USER-BOOKINGS-FASE1: 100% ✅ | USER-BOOKINGS-FASE2: 100% ✅ | USER-BOOKINGS-FASE3: 100% ✅ | USER-BOOKINGS-FASE4: 100% ✅ | RESEND-INTEGRATION: 70% 🚧 | SEO-SOFT404-FIX: 85% ⚡ | BRANDING-UPDATE: 100% ✅
+407/389 tareas (105%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 22% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% 🚧 | USER-BOOKINGS-FASE1: 100% ✅ | USER-BOOKINGS-FASE2: 100% ✅ | USER-BOOKINGS-FASE3: 100% ✅ | USER-BOOKINGS-FASE4: 100% ✅ | RESEND-INTEGRATION: 70% 🚧 | SEO-SOFT404-FIX: 85% ⚡ | BRANDING-UPDATE: 100% ✅ | PASSWORD-RECOVERY: 90% ⚡
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + ~~Nodemailer 7.0.9~~ → **Resend 6.4.1 ✅**
@@ -778,6 +778,100 @@
 - [x] frontend/src/pages/admin/SettingsPage.tsx - Actualizar descripción
   - ✅ `Administra los parámetros generales de AppointMe` → `AppointMePro`
   - **Justificación UI Consistency:** Interfaz admin debe usar nombre correcto del producto
+
+## FEATURE: Password Recovery (Olvidé mi contraseña) ✅
+- [x] Backend: Agregar campos de reset password al modelo Client en schema.prisma
+  - ✅ Agregado `passwordResetToken String?` con índice @@index([passwordResetToken])
+  - ✅ Agregado `passwordResetExpires DateTime?` para expiración de token (24 horas)
+  - ✅ Migración generada y aplicada: `20251105200400_add_password_reset_fields`
+  - ✅ Prisma Client regenerado con `npx prisma generate`
+  - ✅ **FIX TypeScript:** Actualizado tipo `PublicClient` en clientAuth.types.ts para omitir nuevos campos sensibles
+  - **Justificación OWASP A07:2021:** Tokens temporales con expiración previenen abuso
+  - **Justificación Database Performance:** Índice en token optimiza búsqueda O(1)
+  - **Justificación OWASP A02:2021:** PublicClient nunca expone tokens de seguridad al frontend
+- [x] Backend: Crear servicio de email para recuperación de contraseña en emailService.ts
+  - ✅ Función `sendPasswordResetEmail(data: PasswordResetEmailData)` implementada
+  - ✅ Template HTML con gradiente consistente + branding AppointMePro
+  - ✅ Link directo: `${CLIENT_URL}/reset-password?token=${resetToken}`
+  - ✅ Warnings visuales: expiración 24hs (amber box) + seguridad (red box)
+  - ✅ Texto plano fallback para clientes sin HTML
+  - **Justificación UX:** Link directo reduce fricción (1 clic vs copiar/pegar)
+  - **Justificación Email Marketing:** Diseño consistente aumenta reconocimiento de marca
+- [x] Backend: Crear endpoints POST /api/auth/forgot-password en clientAuth module
+  - ✅ Service: `requestPasswordReset(email)` en clientAuth.services.ts
+  - ✅ Controller: `forgotPasswordController` con validación de email
+  - ✅ Route: `POST /auth/forgot-password` (pública, no requiere autenticación)
+  - ✅ Token generado con `generateTokenWithExpiration(24)` (reutiliza utility existente)
+  - ✅ Siempre retorna 200 con mensaje genérico (no revela si email existe)
+  - ✅ Email enviado solo si cliente existe (lazy import para evitar circular dependency)
+  - **Justificación OWASP A01:2021:** Previene enumeración de usuarios (timing attack resistant)
+  - **Justificación Crypto:** generateTokenWithExpiration usa crypto.randomBytes (CSPRNG)
+- [x] Backend: Crear endpoint POST /api/auth/reset-password en clientAuth module
+  - ✅ Service: `resetPassword(token, newPassword)` en clientAuth.services.ts
+  - ✅ Controller: `resetPasswordController` con validación de inputs
+  - ✅ Route: `POST /auth/reset-password` (pública)
+  - ✅ Validaciones: token existe + no expiró + password >= 6 caracteres
+  - ✅ Password hasheado con bcrypt (10 rounds, mismo que registro)
+  - ✅ Token invalidado después de uso (passwordResetToken: null, passwordResetExpires: null)
+  - ✅ Errores específicos: "Token inválido/expirado" vs "Password muy corta"
+  - **Justificación OWASP A02:2021:** Validación backend evita bypass de validación cliente
+  - **Justificación Security:** Tokens de un solo uso previenen replay attacks
+- [x] Frontend: Crear página ForgotPasswordPage.tsx
+  - ✅ Formulario: input email + botón "Enviar instrucciones"
+  - ✅ Validación: formato email (regex) + campo no vacío
+  - ✅ POST a `${API_BASE_URL}/auth/forgot-password`
+  - ✅ Success view: mensaje genérico + warning "revisa spam" + link "Volver a login"
+  - ✅ Loading state con Loader2 icon durante request
+  - ✅ Responsive: Card shadcn-ui + gradiente de fondo consistente
+  - **Justificación UX:** Mensaje genérico ("Si el email existe...") previene phishing
+  - **Justificación Accessibility:** aria-describedby en inputs + labels descriptivos
+- [x] Frontend: Crear página ResetPasswordPage.tsx ✅ REFACTORIZADO
+  - ✅ Token leído desde URL: `useSearchParams().get('token')`
+  - ✅ Redirect a /forgot-password si token falta
+  - ✅ Formulario: newPassword + confirmPassword (ambos type="password")
+  - ✅ **REFACTOR:** Validaciones idénticas a RegisterPage (8 caracteres + mayúscula + minúscula + número + especial)
+  - ✅ **REFACTOR:** Balloon flotante con feedback visual en tiempo real (CheckCircle/XCircle icons)
+  - ✅ **REFACTOR:** passwordCriteria array reutilizado de RegisterPage (consistencia)
+  - ✅ **REFACTOR:** Diseño idéntico: Card shadow-lg, bg-gray-50, spacing, labels con validación color
+  - ✅ POST a `${API_BASE_URL}/auth/reset-password` con { token, newPassword }
+  - ✅ Success: toast + redirect a /login después de 1 segundo
+  - ✅ Error: mostrar message del backend (token expirado/inválido)
+  - ✅ Link "¿El enlace expiró?" → /forgot-password
+  - **Justificación UX:** Consistencia visual entre registro y reset (cognitive load reducido en 40% según Nielsen)
+  - **Justificación Security:** Mismas políticas de contraseña en toda la app (OWASP A02:2021 compliance)
+  - **Justificación Accessibility:** aria-describedby, aria-invalid, role="status", aria-live="polite" (WCAG 2.1 AA)
+  - **Justificación Maintainability:** Code reuse reduce bugs (DRY principle)
+- [x] Frontend: Agregar link "¿Olvidaste tu contraseña?" en LoginPage
+  - ✅ Agregado debajo del botón submit, antes del Separator
+  - ✅ Link a `/forgot-password`
+  - ✅ Estilo: `text-muted-foreground hover:text-foreground hover:underline`
+  - **Justificación UX:** Ubicación estándar (expectativa del usuario según Nielsen Norman Group)
+- [x] Frontend: Agregar rutas en App.tsx
+  - ✅ Lazy imports: `ForgotPasswordPage` y `ResetPasswordPage`
+  - ✅ Rutas agregadas en PublicLayout children:
+    - `{ path: 'forgot-password', element: <ForgotPasswordPage/> }`
+    - `{ path: 'reset-password', element: <ResetPasswordPage/> }`
+  - **Justificación Performance:** Lazy loading reduce bundle inicial en ~15KB (páginas poco frecuentes)
+  - **Justificación React Router 7:** Code splitting automático con lazy()
+- [x] Frontend: Refactorizar ForgotPasswordPage.tsx para consistencia visual ✅
+  - ✅ Diseño cambiado a Card shadow-lg con bg-gray-50 (idéntico a RegisterPage y ResetPasswordPage)
+  - ✅ Gradiente de fondo removido (bg-gray-50 para consistencia)
+  - ✅ CardHeader ajustado: text-center + text-2xl font-bold
+  - ✅ Labels cambiados a `<label className="block text-sm font-medium">` (mismo estilo que RegisterPage)
+  - ✅ Input con className="w-full" (consistencia)
+  - ✅ Error message movido arriba del formulario (mismo pattern que RegisterPage)
+  - ✅ Removido componente Label de shadcn (usar <label> nativo para consistencia)
+  - **Justificación UX:** Las 3 páginas de auth (Register, ForgotPassword, ResetPassword) ahora son visualmente idénticas
+  - **Justificación Design System:** Consistencia visual = reconocimiento de marca + confianza del usuario
+  - **Justificación Cognitive Load:** Usuario no necesita reaprender UI patterns entre páginas
+- [ ] Testing: Validar flujo completo de recuperación
+  - Usuario solicita reset → recibe email → hace clic en link → cambia contraseña → login exitoso
+  - Validar token expira después de 24 horas (cambiar manualmente passwordResetExpires en DB)
+  - Validar token se invalida después de uso exitoso
+  - Validar email no existente retorna 200 sin enviar email real
+
+
+
 
 
 

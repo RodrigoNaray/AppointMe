@@ -23,7 +23,15 @@ export interface ClientJwtPayload {
 }
 
 // El tipo de objeto de cliente que devolveremos (sin campos sensibles)
-export type PublicClient = Omit<Client, "passwordHash" | "emailVerificationToken">;
+// OWASP A02:2021 (Cryptographic Failures): Omitir campos de seguridad
+// - passwordHash: nunca exponer hashes de contraseñas
+// - emailVerificationToken: token temporal para verificación de email
+// - passwordResetToken: token temporal para reset de contraseña
+// - passwordResetExpires: fecha de expiración del token de reset
+export type PublicClient = Omit<
+  Client, 
+  "passwordHash" | "emailVerificationToken" | "passwordResetToken" | "passwordResetExpires"
+>;
 
 // Resultado de la verificación de email con diferentes estados
 export interface EmailVerificationResult {
