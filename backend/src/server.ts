@@ -26,8 +26,9 @@ const app: Express = express();
 
 const PORT: string | number = process.env.PORT || 5000;
 
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173', 
+  origin: process.env.CLIENT_URL, 
   credentials: true, // Si necesitas enviar cookies o cabeceras de autorización
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
