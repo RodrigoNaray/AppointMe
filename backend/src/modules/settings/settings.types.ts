@@ -22,6 +22,26 @@ export interface UpdateBookingRulesDTO {
 }
 
 // ============================================================================
+// Business Hours DTOs
+// ============================================================================
+
+export interface DayScheduleDTO {
+  isOpen: boolean;
+  openTime: string;  // Formato "HH:mm" (ej: "09:00")
+  closeTime: string; // Formato "HH:mm" (ej: "17:00")
+}
+
+export interface BusinessHoursDTO {
+  monday: DayScheduleDTO;
+  tuesday: DayScheduleDTO;
+  wednesday: DayScheduleDTO;
+  thursday: DayScheduleDTO;
+  friday: DayScheduleDTO;
+  saturday: DayScheduleDTO;
+  sunday: DayScheduleDTO;
+}
+
+// ============================================================================
 // Request Types
 // ============================================================================
 

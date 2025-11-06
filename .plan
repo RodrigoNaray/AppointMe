@@ -1,5 +1,5 @@
 # Estado
-407/389 tareas (105%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 22% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% 🚧 | USER-BOOKINGS-FASE1: 100% ✅ | USER-BOOKINGS-FASE2: 100% ✅ | USER-BOOKINGS-FASE3: 100% ✅ | USER-BOOKINGS-FASE4: 100% ✅ | RESEND-INTEGRATION: 70% 🚧 | SEO-SOFT404-FIX: 85% ⚡ | BRANDING-UPDATE: 100% ✅ | PASSWORD-RECOVERY: 90% ⚡
+414/389 tareas (106%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 22% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% 🚧 | USER-BOOKINGS-FASE1: 100% ✅ | USER-BOOKINGS-FASE2: 100% ✅ | USER-BOOKINGS-FASE3: 100% ✅ | USER-BOOKINGS-FASE4: 100% ✅ | RESEND-INTEGRATION: 70% 🚧 | SEO-SOFT404-FIX: 85% ⚡ | BRANDING-UPDATE: 100% ✅ | PASSWORD-RECOVERY: 90% ⚡ | BUSINESS-HOURS-DISPLAY: 100% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + ~~Nodemailer 7.0.9~~ → **Resend 6.4.1 ✅**
@@ -869,6 +869,65 @@
   - Validar token expira después de 24 horas (cambiar manualmente passwordResetExpires en DB)
   - Validar token se invalida después de uso exitoso
   - Validar email no existente retorna 200 sin enviar email real
+
+## FEATURE: Business Hours Display (Horarios en HomePage) 🆕
+- [x] Backend: Crear endpoint público GET /api/settings/business-hours ✅
+  - ✅ Service getBusinessHours() en settings.services.ts
+  - ✅ Devuelve AdminUser.schedule parseado a BusinessHoursDTO
+  - ✅ Formato: `{ monday: { isOpen: boolean, openTime: string, closeTime: string }, ... }`
+  - ✅ Horario por defecto si schedule null: 9:00-17:00 L-V, cerrado S-D
+  - ✅ Helper mapDaySchedule() para transformar datos DB → DTO
+  - ✅ Controller getBusinessHours() con cache headers (max-age=300)
+  - ✅ Types DayScheduleDTO + BusinessHoursDTO en settings.types.ts
+  - **Justificación REST:** Separar business-hours de booking-rules (single responsibility)
+  - **Justificación Caching:** Cache-Control: public, max-age=300 (CDN friendly)
+- [x] Backend: Agregar ruta GET /api/settings/business-hours en settings.routes.ts ✅
+  - ✅ Agregado a settingsRoutes (public, sin autenticación)
+  - **Justificación Security:** Horarios son información pública (no sensible)
+- [x] Frontend: Crear servicio API en settings.ts para business hours ✅
+  - ✅ Función getBusinessHours(): Promise<BusinessHours>
+  - ✅ Types exportados: DaySchedule + BusinessHours
+  - ✅ Reutiliza apiClient de config.ts (withCredentials)
+  - **Justificación TypeScript:** Types previenen errores de typo en días
+- [x] Frontend: Crear componente BusinessHoursCard.tsx ✅
+  - ✅ Props: businessHours (opcional), isLoading
+  - ✅ Mapeo días español: { monday: 'Lunes', ... }
+  - ✅ Punto verde (bg-green-500) si isOpen=true
+  - ✅ Punto gris (bg-gray-400) si isOpen=false
+  - ✅ Formato horario "HH:mm - HH:mm" o "Cerrado"
+  - ✅ Loading skeleton con animate-pulse (7 filas)
+  - ✅ Layout responsive: flex justify-between
+  - ✅ aria-label en badges (Abierto/Cerrado)
+  - **Justificación UX:** Puntitos color = reconocimiento visual instantáneo
+  - **Justificación Accessibility:** role="status" + aria-label (WCAG 2.1)
+- [x] Frontend: Integrar BusinessHoursCard en HomePage.tsx ✅
+  - ✅ Reemplazado hardcoded horarios (líneas 255-276) con <BusinessHoursCard />
+  - ✅ useEffect para cargar datos al montar
+  - ✅ Loading state: isLoading={loadingHours}
+  - ✅ Error handling: mantiene undefined para fallback
+  - ✅ Imports: BusinessHours type + getBusinessHours service
+  - ✅ **FIX TIMEZONE:** Agregada conversión UTC → Local en BusinessHoursCard
+  - ✅ **FIX DATA SYNC:** Endpoint getBusinessHours lee AdminUser.schedule (actualizado por admin panel)
+  - **Justificación Performance:** Fetch en parallel con services
+  - **Justificación Resilience:** Error no bloquea render (muestra skeleton)
+  - **Justificación ARQUITECTURA TIMEZONE:** Conversión en display layer (mismo patrón que AvailabilityPage)
+- [x] Frontend: Optimizar BusinessHoursCard para prevenir re-renders innecesarios ✅
+  - ✅ Implementado React.memo con comparador personalizado arePropsEqual()
+  - ✅ Comparación profunda de 7 días (isOpen, openTime, closeTime)
+  - ✅ useMemo para daysMap (evitar recrear objeto en cada render)
+  - ✅ Solo re-renderiza si businessHours o isLoading REALMENTE cambian
+  - ✅ Previene conversiones UTC→Local innecesarias en re-renders del parent
+  - **Justificación React Best Practices (2025):** memo para componentes puros con props complejas
+  - **Justificación Performance:** Evita 7 conversiones de timezone en cada re-render de HomePage
+  - **Justificación OWASP A04:2021:** Reduce carga computacional innecesaria (previene DoS por re-renders)
+- [ ] Testing: Validar visualización de horarios dinámicos
+  - **Justificación OWASP A04:2021:** Cache policy explícita previene stale data issues
+- [ ] Testing: Validar visualización de horarios dinámicos
+  - Admin cambia horario en SettingsPage → HomePage refleja cambios
+  - Verificar días abiertos muestran punto verde + horario
+  - Verificar días cerrados muestran punto gris + "Cerrado"
+  - Verificar responsive en mobile (texto no se corta)
+  - Verificar horarios se muestran en timezone local del cliente
 
 
 

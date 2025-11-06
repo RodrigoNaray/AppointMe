@@ -7,6 +7,7 @@ import { isAdminAuthenticated } from '../../middlewares/isAdminAuthenticated';
  * 
  * Rutas públicas:
  * - GET /api/settings/booking-rules
+ * - GET /api/settings/business-hours
  * 
  * Rutas admin:
  * - PUT /api/admin/settings/booking-rules
@@ -20,6 +21,9 @@ export const settingsRoutes = Router();
 
 // GET /api/settings/booking-rules - Obtener reglas de reserva (público)
 settingsRoutes.get('/booking-rules', settingsController.getBookingRules);
+
+// GET /api/settings/business-hours - Obtener horarios de apertura (público)
+settingsRoutes.get('/business-hours', settingsController.getBusinessHours);
 
 // ============================================================================
 // ADMIN ROUTES (prefijo /api/admin/settings)

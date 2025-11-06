@@ -8,7 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Clock, Sparkles, ArrowRight, MapPin, Phone, Mail, Star, Scissors } from "lucide-react";
 import ServicesTable from "@/components/shared/ServicesTable";
 import CartSidebar from "@/components/CartSidebar";
+import BusinessHoursCard from "@/components/BusinessHoursCard";
 import type { Service } from "@/types/service";
+import type { BusinessHours } from "@/api/settings";
+import { getBusinessHours } from "@/api/settings";
 import { API_BASE_URL } from "@/api/config";
 
 export default function HomePage() {
@@ -21,6 +24,8 @@ export default function HomePage() {
   const hasProcessedCallback = useRef(false);
   const [services, setServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
+  const [businessHours, setBusinessHours] = useState<BusinessHours | undefined>();
+  const [loadingHours, setLoadingHours] = useState(true);
   const hasItems = cart.length > 0;
 
   // Fetch servicios para preview
@@ -40,6 +45,22 @@ export default function HomePage() {
       }
     };
     fetchServices();
+  }, []);
+
+  // Fetch business hours
+  useEffect(() => {
+    const fetchBusinessHours = async () => {
+      try {
+        const hours = await getBusinessHours();
+        setBusinessHours(hours);
+      } catch (error) {
+        console.error('Error fetching business hours:', error);
+        // Mantener undefined para mostrar fallback
+      } finally {
+        setLoadingHours(false);
+      }
+    };
+    fetchBusinessHours();
   }, []);
 
   useEffect(() => {
@@ -232,29 +253,8 @@ export default function HomePage() {
 
             {/* Grid de Información */}
             <div className="grid gap-6 md:grid-cols-2">
-              {/* Card: Horarios */}
-              <div className="rounded-2xl border border-border bg-background p-5 sm:p-6">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="rounded-xl bg-foreground/5 p-2">
-                    <Clock className="h-5 w-5 text-foreground sm:h-6 sm:w-6" />
-                  </div>
-                  <h4 className="text-lg font-semibold text-foreground sm:text-xl">Horarios</h4>
-                </div>
-                <div className="space-y-2 text-sm text-foreground/70 sm:text-base">
-                  <div className="flex justify-between">
-                    <span>Lunes - Viernes</span>
-                    <span className="font-medium text-foreground">9:00 - 17:00</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Sábado</span>
-                    <span className="font-medium text-foreground">10:00 - 13:00</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Domingo</span>
-                    <span className="font-medium text-foreground">Cerrado</span>
-                  </div>
-                </div>
-              </div>
+              {/* Card: Horarios - Dinámico desde settings */}
+              <BusinessHoursCard businessHours={businessHours} isLoading={loadingHours} />
 
               {/* Card: Contacto */}
               <div className="rounded-2xl border border-border bg-background p-5 sm:p-6">

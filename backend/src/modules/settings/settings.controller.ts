@@ -68,6 +68,60 @@ export const getBookingRules = async (
   }
 };
 
+/**
+ * getBusinessHours - Obtiene horarios de apertura del negocio
+ * 
+ * GET /api/settings/business-hours
+ * Auth: Público (mostrar horarios en HomePage)
+ * 
+ * Response 200:
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "monday": { "isOpen": true, "openTime": "09:00", "closeTime": "17:00" },
+ *     ...
+ *   }
+ * }
+ * 
+ * Justificación Cache:
+ * - Horarios cambian infrecuentemente → cacheable
+ * - Cache-Control: public, max-age=300 (5 minutos)
+ */
+export const getBusinessHours = async (
+  req: GetBookingRulesRequest,
+  res: Response
+) => {
+  try {
+    const data = await service.getBusinessHours();
+
+    // Set cache headers (5 minutos)
+    res.set('Cache-Control', 'public, max-age=300');
+
+    return res.status(200).json({
+      success: true,
+      data
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Error in getBusinessHours controller');
+
+    if (error instanceof Error && 'statusCode' in error) {
+      const settingsError = error as SettingsError;
+      return res.status(settingsError.statusCode).json({
+        success: false,
+        data: null,
+        message: settingsError.message
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      data: null,
+      message: 'Internal server error'
+    });
+  }
+};
+
 // ============================================================================
 // ADMIN ENDPOINTS
 // ============================================================================
