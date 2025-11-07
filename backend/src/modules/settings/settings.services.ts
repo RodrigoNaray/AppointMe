@@ -1,6 +1,6 @@
 import prisma from '../../config/prisma';
 import logger from '../../utils/logger';
-import { BookingRulesDTO, UpdateBookingRulesDTO, BusinessHoursDTO, DayScheduleDTO, SettingsError, SettingsErrorCodes } from './settings.types';
+import { BookingRulesDTO, UpdateBookingRulesDTO, BusinessHoursDTO, DayScheduleDTO, ContactInfoDTO, UpdateContactInfoDTO, SettingsError, SettingsErrorCodes } from './settings.types';
 
 /**
  * Settings Service - Lógica de negocio para configuración del sistema
@@ -227,6 +227,161 @@ export const updateBookingRules = async (
 
   } catch (error) {
     logger.error({ error, adminId, data }, 'Error in updateBookingRules service');
+    throw error;
+  }
+};
+
+/**
+ * getContactInfo - Obtiene información de contacto pública del negocio
+ * 
+ * Endpoint público para mostrar en HomePage/ContactPage
+ * Lee campos businessPhone/Email/Address de AdminUser
+ * 
+ * Valores por defecto si campos null:
+ * - email: Fallback a email admin (login email)
+ * - phone: Placeholder "+598 XXX XXX XXX"
+ * - address: "Dirección no disponible"
+ * 
+ * @returns ContactInfoDTO con datos de contacto
+ * @throws SettingsError si no existe admin
+ * 
+ * Justificación OWASP A04:2021 (Insecure Design):
+ * - Información pública no sensible (no requiere autenticación)
+ * - Diferencia clara entre businessEmail (público) y email (admin login)
+ * 
+ * Justificación Performance:
+ * - Endpoint cacheable por CDN/browser (Cache-Control: public, max-age=300)
+ * - Single query a DB (eficiente)
+ */
+export const getContactInfo = async (): Promise<ContactInfoDTO> => {
+  try {
+    // Single-tenant: obtener primer admin
+    const admin = await prisma.adminUser.findFirst({
+      select: {
+        businessPhone: true,
+        businessEmail: true,
+        businessAddress: true,
+        email: true // Fallback si businessEmail es null
+      }
+    });
+
+    if (!admin) {
+      const error: SettingsError = new Error('No admin configuration found') as SettingsError;
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Valores por defecto con fallbacks
+    return {
+      phone: admin.businessPhone || '+598 XXX XXX XXX',
+      email: admin.businessEmail || admin.email, // Fallback a email admin
+      address: admin.businessAddress || 'Dirección no disponible'
+    };
+
+  } catch (error) {
+    logger.error({ error }, 'Error in getContactInfo service');
+    throw error;
+  }
+};
+
+/**
+ * updateContactInfo - Actualiza información de contacto del negocio
+ * 
+ * Validaciones OWASP A03:2021 (Injection):
+ * - Email: RFC 5322 simplificado (prevenir XSS)
+ * - Phone: E.164 internacional format (+XX XXXXXXXXX)
+ * - Address: trim() + max 500 chars + no HTML tags
+ * 
+ * @param adminId - ID del admin autenticado
+ * @param data - Datos a actualizar
+ * @returns ContactInfoDTO actualizado
+ * @throws SettingsError si validación falla
+ */
+export const updateContactInfo = async (
+  adminId: string,
+  data: UpdateContactInfoDTO
+): Promise<ContactInfoDTO> => {
+  try {
+    // Validación: businessEmail
+    if (data.businessEmail !== undefined && data.businessEmail !== null && data.businessEmail !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(data.businessEmail)) {
+        const error: SettingsError = new Error('Invalid email format') as SettingsError;
+        error.statusCode = 400;
+        throw error;
+      }
+
+      // OWASP: Prevenir email muy largo (DoS)
+      if (data.businessEmail.length > 254) {
+        const error: SettingsError = new Error('Email too long (max 254 chars)') as SettingsError;
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    // Validación: businessPhone
+    if (data.businessPhone !== undefined && data.businessPhone !== null && data.businessPhone !== '') {
+      // E.164 format: + seguido de 1-15 dígitos
+      const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+      if (!phoneRegex.test(data.businessPhone.replace(/[\s\-()]/g, ''))) {
+        const error: SettingsError = new Error('Invalid phone format (use international format: +XX XXXXXXXXX)') as SettingsError;
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    // Validación: businessAddress
+    if (data.businessAddress !== undefined && data.businessAddress !== null) {
+      const sanitizedAddress = data.businessAddress.trim();
+      
+      // Max 500 caracteres
+      if (sanitizedAddress.length > 500) {
+        const error: SettingsError = new Error('Address too long (max 500 chars)') as SettingsError;
+        error.statusCode = 400;
+        throw error;
+      }
+
+      // OWASP: Prevenir HTML tags (XSS)
+      if (/<[^>]*>/g.test(sanitizedAddress)) {
+        const error: SettingsError = new Error('Address cannot contain HTML tags') as SettingsError;
+        error.statusCode = 400;
+        throw error;
+      }
+
+      data.businessAddress = sanitizedAddress;
+    }
+
+    // Actualizar en DB
+    const admin = await prisma.adminUser.update({
+      where: { id: adminId },
+      data: {
+        businessPhone: data.businessPhone,
+        businessEmail: data.businessEmail,
+        businessAddress: data.businessAddress
+      },
+      select: {
+        businessPhone: true,
+        businessEmail: true,
+        businessAddress: true,
+        email: true
+      }
+    });
+
+    logger.info({ 
+      adminId, 
+      hasPhone: !!data.businessPhone,
+      hasEmail: !!data.businessEmail,
+      hasAddress: !!data.businessAddress
+    }, 'Contact info updated');
+
+    return {
+      phone: admin.businessPhone || '+598 XXX XXX XXX',
+      email: admin.businessEmail || admin.email,
+      address: admin.businessAddress || 'Dirección no disponible'
+    };
+
+  } catch (error) {
+    logger.error({ error, adminId, data }, 'Error in updateContactInfo service');
     throw error;
   }
 };

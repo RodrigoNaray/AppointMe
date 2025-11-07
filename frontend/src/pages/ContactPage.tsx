@@ -1,34 +1,42 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import ContactInfoCard from '@/components/ContactInfoCard';
+import type { ContactInfo } from '@/api/settings';
+import { getContactInfo } from '@/api/settings';
 
 export default function ContactPage() {
+  const [contactInfo, setContactInfo] = useState<ContactInfo | undefined>();
+  const [loadingContact, setLoadingContact] = useState(true);
+
+  // Fetch contact info (misma lógica que HomePage para consistency)
+  useEffect(() => {
+    const fetchContactInfo = async () => {
+      try {
+        const contact = await getContactInfo();
+        setContactInfo(contact);
+      } catch (error) {
+        console.error('Error fetching contact info:', error);
+        // Mantener undefined para mostrar fallback en ContactInfoCard
+      } finally {
+        setLoadingContact(false);
+      }
+    };
+    fetchContactInfo();
+  }, []);
+
   return (
-    <div className="container mx-auto py-8">
-      <div className="text-center mb-12">
+    <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      {/* Header */}
+      <div className="text-center mb-8">
         <h1 className="text-4xl font-bold tracking-tight">Contacto</h1>
         <p className="mt-4 text-lg text-muted-foreground">
           Estamos aquí para ayudarte. ¡No dudes en contactarnos!
         </p>
       </div>
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle>Nuestra Información</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Mail className="h-6 w-6 text-primary" />
-            <p className="text-lg">info@appointmepro.com</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Phone className="h-6 w-6 text-primary" />
-            <p className="text-lg">+598 123 456 789</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <MapPin className="h-6 w-6 text-primary" />
-            <p className="text-lg">Av. 18 de Julio 1234, Montevideo, Uruguay</p>
-          </div>
-        </CardContent>
-      </Card>
+
+      {/* Contact Info Card */}
+      <div className="max-w-2xl mx-auto">
+        <ContactInfoCard contactInfo={contactInfo} isLoading={loadingContact} />
+      </div>
     </div>
   );
 }

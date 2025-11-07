@@ -5,13 +5,14 @@ import { useAuthStore, selectCheckSession } from "@/stores/authStore";
 import { useBookingStore, selectCart } from "@/stores/bookingStore";
 import { useOAuthStore, selectGetReturnUrl, selectClearReturnUrl } from "@/stores/oauthStore";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, Sparkles, ArrowRight, MapPin, Phone, Mail, Star, Scissors } from "lucide-react";
+import { Calendar, Clock, Sparkles, ArrowRight, Star, Scissors } from "lucide-react";
 import ServicesTable from "@/components/shared/ServicesTable";
 import CartSidebar from "@/components/CartSidebar";
 import BusinessHoursCard from "@/components/BusinessHoursCard";
+import ContactInfoCard from "@/components/ContactInfoCard";
 import type { Service } from "@/types/service";
-import type { BusinessHours } from "@/api/settings";
-import { getBusinessHours } from "@/api/settings";
+import type { BusinessHours, ContactInfo } from "@/api/settings";
+import { getBusinessHours, getContactInfo } from "@/api/settings";
 import { API_BASE_URL } from "@/api/config";
 
 export default function HomePage() {
@@ -26,6 +27,8 @@ export default function HomePage() {
   const [loadingServices, setLoadingServices] = useState(true);
   const [businessHours, setBusinessHours] = useState<BusinessHours | undefined>();
   const [loadingHours, setLoadingHours] = useState(true);
+  const [contactInfo, setContactInfo] = useState<ContactInfo | undefined>();
+  const [loadingContact, setLoadingContact] = useState(true);
   const hasItems = cart.length > 0;
 
   // Fetch servicios para preview
@@ -61,6 +64,22 @@ export default function HomePage() {
       }
     };
     fetchBusinessHours();
+  }, []);
+
+  // Fetch contact info
+  useEffect(() => {
+    const fetchContactInfo = async () => {
+      try {
+        const contact = await getContactInfo();
+        setContactInfo(contact);
+      } catch (error) {
+        console.error('Error fetching contact info:', error);
+        // Mantener undefined para mostrar fallback
+      } finally {
+        setLoadingContact(false);
+      }
+    };
+    fetchContactInfo();
   }, []);
 
   useEffect(() => {
@@ -256,29 +275,8 @@ export default function HomePage() {
               {/* Card: Horarios - Dinámico desde settings */}
               <BusinessHoursCard businessHours={businessHours} isLoading={loadingHours} />
 
-              {/* Card: Contacto */}
-              <div className="rounded-2xl border border-border bg-background p-5 sm:p-6">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="rounded-xl bg-foreground/5 p-2">
-                    <Phone className="h-5 w-5 text-foreground sm:h-6 sm:w-6" />
-                  </div>
-                  <h4 className="text-lg font-semibold text-foreground sm:text-xl">Contacto</h4>
-                </div>
-                <div className="space-y-3 text-sm text-foreground/70 sm:text-base">
-                  <div className="flex items-start gap-3">
-                    <Phone className="mt-0.5 h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
-                    <span>+34 612 345 678</span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Mail className="mt-0.5 h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
-                    <span className="break-all">carlos@studiomendez.com</span>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
-                    <span>Calle Gran Vía 45, Madrid, 28013</span>
-                  </div>
-                </div>
-              </div>
+              {/* Card: Contacto - Dinámico desde settings */}
+              <ContactInfoCard contactInfo={contactInfo} isLoading={loadingContact} />
             </div>
 
             {/* CTA del Ejemplo */}

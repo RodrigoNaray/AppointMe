@@ -8,9 +8,11 @@ import { isAdminAuthenticated } from '../../middlewares/isAdminAuthenticated';
  * Rutas públicas:
  * - GET /api/settings/booking-rules
  * - GET /api/settings/business-hours
+ * - GET /api/settings/contact-info
  * 
  * Rutas admin:
  * - PUT /api/admin/settings/booking-rules
+ * - PUT /api/admin/settings/contact-info
  */
 
 // ============================================================================
@@ -25,6 +27,9 @@ settingsRoutes.get('/booking-rules', settingsController.getBookingRules);
 // GET /api/settings/business-hours - Obtener horarios de apertura (público)
 settingsRoutes.get('/business-hours', settingsController.getBusinessHours);
 
+// GET /api/settings/contact-info - Obtener información de contacto (público)
+settingsRoutes.get('/contact-info', settingsController.getContactInfo);
+
 // ============================================================================
 // ADMIN ROUTES (prefijo /api/admin/settings)
 // ============================================================================
@@ -36,4 +41,11 @@ adminSettingsRoutes.put(
   '/booking-rules',
   isAdminAuthenticated,
   settingsController.updateBookingRules
+);
+
+// PUT /api/admin/settings/contact-info - Actualizar información de contacto (admin only)
+adminSettingsRoutes.put(
+  '/contact-info',
+  isAdminAuthenticated,
+  settingsController.updateContactInfo
 );

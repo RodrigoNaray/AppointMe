@@ -188,3 +188,125 @@ export const updateBookingRules = async (
     });
   }
 };
+
+/**
+ * getContactInfo - Obtiene información de contacto pública del negocio
+ * 
+ * GET /api/settings/contact-info
+ * Auth: Público (mostrar en HomePage/ContactPage)
+ * 
+ * Response 200:
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "phone": "+598 123 456 789",
+ *     "email": "info@example.com",
+ *     "address": "Av. Principal 123"
+ *   }
+ * }
+ * 
+ * Justificación Cache:
+ * - Información de contacto cambia infrecuentemente → cacheable
+ * - Cache-Control: public, max-age=300 (5 minutos, mismo que business-hours)
+ */
+export const getContactInfo = async (
+  req: GetBookingRulesRequest,
+  res: Response
+) => {
+  try {
+    const data = await service.getContactInfo();
+
+    // Set cache headers (5 minutos, consistente con business-hours)
+    res.set('Cache-Control', 'public, max-age=300');
+
+    return res.status(200).json({
+      success: true,
+      data
+    });
+
+  } catch (error) {
+    logger.error({ error }, 'Error in getContactInfo controller');
+
+    if (error instanceof Error && 'statusCode' in error) {
+      const settingsError = error as SettingsError;
+      return res.status(settingsError.statusCode).json({
+        success: false,
+        data: null,
+        message: settingsError.message
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      data: null,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * updateContactInfo - Actualiza información de contacto del negocio
+ * 
+ * PUT /api/admin/settings/contact-info
+ * Auth: isAdminAuthenticated
+ * 
+ * Body:
+ * {
+ *   "businessPhone": "+598 123 456 789",
+ *   "businessEmail": "info@example.com",
+ *   "businessAddress": "Av. Principal 123"
+ * }
+ * 
+ * Response 200:
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "phone": "+598 123 456 789",
+ *     "email": "info@example.com",
+ *     "address": "Av. Principal 123"
+ *   },
+ *   "message": "Contact info updated successfully"
+ * }
+ */
+export const updateContactInfo = async (
+  req: any,
+  res: Response
+) => {
+  try {
+    const admin = req.user as AdminUser | undefined;
+    
+    if (!admin?.id) {
+      return res.status(401).json({
+        success: false,
+        data: null,
+        message: 'Authentication required'
+      });
+    }
+
+    const data = await service.updateContactInfo(admin.id, req.body);
+
+    return res.status(200).json({
+      success: true,
+      data,
+      message: 'Contact info updated successfully'
+    });
+
+  } catch (error) {
+    logger.error({ error, body: req.body }, 'Error in updateContactInfo controller');
+
+    if (error instanceof Error && 'statusCode' in error) {
+      const settingsError = error as SettingsError;
+      return res.status(settingsError.statusCode).json({
+        success: false,
+        data: null,
+        message: settingsError.message
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      data: null,
+      message: 'Internal server error'
+    });
+  }
+};

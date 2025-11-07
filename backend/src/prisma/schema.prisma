@@ -33,6 +33,11 @@ model AdminUser {
   minBookingNoticeMinutes Int? @default(60)   // Antelación mínima para reservas, en minutos. Por defecto 1 hora.
   minCancellationNoticeMinutes Int? @default(120) // Tiempo mínimo antes de cita para permitir cancelación (2 horas)
 
+  // Información de contacto pública del negocio
+  businessPhone   String?   // Teléfono de contacto del negocio (público en HomePage/ContactPage)
+  businessEmail   String?   // Email de contacto del negocio (diferente del email de login)
+  businessAddress String?   // Dirección física del negocio
+
   services          Service[]
   bookings          Booking[]
   availabilityBlocks AvailabilityBlock[]

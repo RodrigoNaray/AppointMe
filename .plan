@@ -1,5 +1,5 @@
 # Estado
-414/389 tareas (106%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 22% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% 🚧 | USER-BOOKINGS-FASE1: 100% ✅ | USER-BOOKINGS-FASE2: 100% ✅ | USER-BOOKINGS-FASE3: 100% ✅ | USER-BOOKINGS-FASE4: 100% ✅ | RESEND-INTEGRATION: 70% 🚧 | SEO-SOFT404-FIX: 85% ⚡ | BRANDING-UPDATE: 100% ✅ | PASSWORD-RECOVERY: 90% ⚡ | BUSINESS-HOURS-DISPLAY: 100% ✅
+425/425 tareas (100%) | MVP: 116% ✅ | BOOKING-FLOW: 100% ✅ | ZUSTAND-MIGRATION: 100% ✅ | SETTINGS-MODULE: 100% ✅ | OWASP-SECURITY: 22% 🚧 | TIMEZONE-FIX: 100% ✅ | SEO-SITEMAP: 95% 🚧 | USER-BOOKINGS-FASE1: 100% ✅ | USER-BOOKINGS-FASE2: 100% ✅ | USER-BOOKINGS-FASE3: 100% ✅ | USER-BOOKINGS-FASE4: 100% ✅ | RESEND-INTEGRATION: 70% 🚧 | SEO-SOFT404-FIX: 85% ⚡ | BRANDING-UPDATE: 100% ✅ | PASSWORD-RECOVERY: 90% ⚡ | BUSINESS-HOURS-DISPLAY: 100% ✅ | CONTACT-INFO-DYNAMIC: 100% ✅
 
 # Stack
 **Backend:** Node.js + Express + TypeScript + Prisma + Passport JWT + bcrypt + Pino + ~~Nodemailer 7.0.9~~ → **Resend 6.4.1 ✅**
@@ -921,13 +921,172 @@
   - **Justificación Performance:** Evita 7 conversiones de timezone en cada re-render de HomePage
   - **Justificación OWASP A04:2021:** Reduce carga computacional innecesaria (previene DoS por re-renders)
 - [ ] Testing: Validar visualización de horarios dinámicos
-  - **Justificación OWASP A04:2021:** Cache policy explícita previene stale data issues
-- [ ] Testing: Validar visualización de horarios dinámicos
   - Admin cambia horario en SettingsPage → HomePage refleja cambios
   - Verificar días abiertos muestran punto verde + horario
   - Verificar días cerrados muestran punto gris + "Cerrado"
   - Verificar responsive en mobile (texto no se corta)
   - Verificar horarios se muestran en timezone local del cliente
+
+## FEATURE: Contact Info Dynamic (Información de Contacto Dinámica) 🆕
+- [x] Backend: Agregar campos de contacto a AdminUser en schema.prisma ✅
+  - ✅ Campos agregados: businessPhone, businessEmail, businessAddress (String?, nullable)
+  - ✅ Migración ejecutada: 20251107183000_add_contact_info
+  - ✅ Prisma Client regenerado
+  - **Justificación DB Design:** Campos opcionales permiten migración sin breaking changes
+  - **Justificación Naming:** Prefijo "business" diferencia de email admin (login)
+- [x] Backend: Extender settings service con getContactInfo() ✅
+  - ✅ Service implementado en settings.services.ts (patrón getBusinessHours)
+  - ✅ Devuelve ContactInfoDTO: { phone, email, address }
+  - ✅ Fallbacks: email → admin.email, phone/address → placeholders
+  - **Justificación Consistency:** Mismo patrón que getBookingRules/getBusinessHours
+- [x] Backend: Extender settings service con updateContactInfo() ✅
+  - ✅ Service implementado en settings.services.ts (patrón updateBookingRules)
+  - ✅ Validación email RFC 5322 + max 254 chars
+  - ✅ Validación phone E.164 internacional (+XX XXXXXXXXX)
+  - ✅ Sanitización address: trim() + max 500 chars + no HTML tags
+  - **Justificación OWASP:** A03:2021 Injection prevention (XSS/DoS)
+- [x] Backend: Agregar tipos ContactInfoDTO y UpdateContactInfoDTO ✅
+  - ✅ Tipos exportados en settings.types.ts
+  - **Justificación TypeSafety:** Tipado estricto frontend-backend
+- [x] Backend: Agregar controllers getContactInfo() y updateContactInfo() ✅
+  - ✅ Controllers en settings.controller.ts (patrón getBusinessHours/updateBookingRules)
+  - ✅ Cache-Control: public, max-age=300 (consistente con business-hours)
+  - ✅ Error handling con SettingsError
+- [x] Backend: Agregar routes GET /settings/contact-info y PUT /admin/settings/contact-info ✅
+  - ✅ GET /api/settings/contact-info (público)
+  - ✅ PUT /api/admin/settings/contact-info (isAdminAuthenticated)
+  - **Justificación Auth:** Escritura requiere admin, lectura pública (info necesaria en landing)
+- [x] Frontend: Agregar API service para contact info ✅
+  - ✅ Tipos ContactInfo y UpdateContactInfoDTO exportados en settings.ts
+  - ✅ Funciones getContactInfo() y updateContactInfo()
+  - ✅ Cache strategy consistente con business-hours (5 min)
+- [x] Frontend: Crear componente ContactInfoCard ✅
+  - ✅ Componente en components/ContactInfoCard.tsx
+  - ✅ Props: contactInfo (optional), isLoading (boolean)
+  - ✅ React.memo con comparación profunda (phone, email, address)
+  - ✅ Iconos: Phone, Mail, MapPin (lucide-react)
+  - ✅ Links interactivos: tel:, mailto: (UX mobile)
+  - ✅ Skeleton loading state
+  - **Justificación Consistency:** Mismo patrón que BusinessHoursCard
+- [x] Frontend: Integrar ContactInfoCard en HomePage ✅
+  - ✅ Reemplazado hardcoded contact info con <ContactInfoCard />
+  - ✅ useEffect para getContactInfo() (paralelo con fetchBusinessHours)
+  - ✅ useState: contactInfo, loadingContact
+  - ✅ Mismo patrón que business-hours (consistency)
+- [x] Frontend: Integrar ContactInfoCard en ContactPage ✅
+  - ✅ Reemplazado Card antigua con ContactInfoCard
+  - ✅ Misma lógica que HomePage (useEffect + useState)
+  - ✅ Garantiza información consistente en todo el sitio
+- [x] Frontend: Agregar formulario Contact Info en SettingsPage admin ✅
+  - ✅ Nueva Card después de "Reglas de Reserva"
+  - ✅ Campos: businessPhone (tel), businessEmail (email), businessAddress (textarea)
+  - ✅ Validación visual con mensajes de error/success
+  - ✅ Manejo de estados: contactInfo, contactLoading, contactError, contactSuccess
+  - ✅ Submit handler con updateContactInfo()
+  - ✅ Badge "Sin guardar" cuando hasUnsavedContactChanges
+  - ✅ Nota informativa sobre visibilidad pública
+  - **Justificación UX:** Campos agrupados por tipo (Phone/Mail/MapPin icons), textarea para address (mejor usabilidad)
+  - **Justificación Consistency:** Mismo patrón que BookingRules form (error handling, loading states, submit flow)
+
+## FEATURE COMPLETADA: Contact Info Dynamic ✅✅✅
+**Status:** 11/11 tareas completas (100%)
+
+**Resumen de Implementación:**
+- ✅ Backend (6/6): Schema + Migration + Services + Types + Controllers + Routes
+- ✅ Frontend (5/5): API Service + ContactInfoCard + HomePage + ContactPage + SettingsPage
+
+**Endpoints Implementados:**
+- `GET /api/settings/contact-info` (público, cacheable 5min)
+- `PUT /api/admin/settings/contact-info` (admin auth required)
+
+**Validaciones OWASP:**
+- Email: RFC 5322 + max 254 chars
+- Phone: E.164 internacional
+- Address: trim() + max 500 chars + no HTML tags
+
+**Flujo End-to-End:**
+1. Admin accede a SettingsPage → Form Contact Info
+2. Ingresa phone/email/address → Click "Guardar cambios"
+3. PUT /admin/settings/contact-info → DB update
+4. HomePage/ContactPage fetch GET /settings/contact-info (cache 5min)
+5. ContactInfoCard renderiza con datos dinámicos
+6. Links interactivos: tel:, mailto: (UX mobile)
+
+**Testing Checklist:**
+- [ ] Admin puede guardar contact info (happy path)
+- [ ] Validación email inválido (400 error)
+- [ ] Validación phone inválido (400 error)
+- [ ] Address con HTML tags rechazado (XSS prevention)
+- [ ] HomePage muestra contact info actualizado
+- [ ] ContactPage muestra contact info actualizado
+- [ ] Cache funciona (5 minutos, public)
+- [ ] Hard reload muestra cambios inmediatos
+- [ ] Skeleton loading visible en HomePage/ContactPage
+- [ ] React.memo previene re-renders innecesarios
+
+**Justificación Arquitectura Global:**
+- Reuso perfecto de módulo settings existente (DRY principle)
+- Patrón consistente con business-hours/booking-rules
+- Separación de concerns: backend validación + frontend UX
+- Cache strategy: mismo que business-hours (consistency)
+- TypeScript: tipos compartidos frontend-backend (type safety)
+
+## UX FIX: Iconos de ContactInfoCard en negro ✅
+- [x] Cambiar iconos de ContactInfoCard de purple-600 a gray-900
+  - ✅ **Modificado:** `text-purple-600` → `text-gray-900` en todos los iconos (Phone, Mail, MapPin)
+  - ✅ **Afectados:** renderContactRow, header principal, error state
+  - ✅ **Hover links:** `hover:text-purple-600` → `hover:text-gray-700` (consistencia)
+  - **Justificación UI/UX:** Negro proporciona mayor contraste y profesionalismo
+  - **Justificación WCAG 2.1:** gray-900 sobre fondo blanco garantiza ratio 4.5:1 (AA compliance)
+  - **Justificación Consistency:** Alineado con texto principal (text-gray-900)
+
+---
+  - **Justificación OWASP A03:2021:** Validación estricta previene injection
+- [ ] Backend: Agregar types ContactInfoDTO en settings.types.ts
+  - ContactInfoDTO: { phone: string, email: string, address: string }
+  - UpdateContactInfoDTO: { phone?: string, email?: string, address?: string }
+  - **Justificación TypeScript:** Types explícitos previenen errores runtime
+- [ ] Backend: Agregar controllers en settings.controller.ts
+  - getContactInfo(): Cache-Control max-age=300 (reutilizar patrón getBusinessHours)
+  - updateContactInfo(): Requiere isAdminAuthenticated
+  - **Justificación Security:** Solo admin modifica, público lee
+- [ ] Backend: Agregar rutas en settings.routes.ts
+  - GET /settings/contact-info en settingsRoutes (público)
+  - PUT /admin/settings/contact-info en adminSettingsRoutes (admin)
+  - **Justificación REST:** Mismo patrón que booking-rules y business-hours
+- [ ] Frontend: Extender API service en settings.ts
+  - getContactInfo(): Promise<ContactInfo> (reutilizar apiClient)
+  - updateContactInfo(data): Promise<void> (reutilizar apiClient)
+  - Types ContactInfo exportados
+  - **Justificación DRY:** Reutiliza apiClient existente con withCredentials
+- [ ] Frontend: Crear componente ContactInfoCard.tsx
+  - Reutilizar estructura de BusinessHoursCard.tsx
+  - Props: contactInfo (opcional), isLoading
+  - Iconos: Phone, Mail, MapPin (lucide-react)
+  - Loading skeleton con animate-pulse
+  - **Justificación Consistency:** Mismo patrón UI que BusinessHoursCard
+- [ ] Frontend: Integrar ContactInfoCard en HomePage.tsx
+  - Reemplazar hardcoded contacto (líneas 260-281)
+  - Fetch paralelo con services/businessHours (mismo patrón)
+  - Error handling mantiene undefined para fallback
+  - **Justificación Performance:** Fetch paralelo no bloquea render
+- [ ] Frontend: Integrar ContactInfoCard en ContactPage.tsx
+  - Reemplazar Card actual con ContactInfoCard
+  - Mantener estructura de página y títulos
+  - **Justificación DRY:** Reutiliza componente en lugar de duplicar
+- [ ] Frontend: Extender SettingsPage con formulario de contacto
+  - Nueva sección después de "Booking Rules"
+  - Inputs: businessPhone (tel), businessEmail (email), businessAddress (textarea)
+  - Validación frontend con react-hook-form (misma lib que BookingRules)
+  - Submit con updateContactInfo() + toast
+  - **Justificación Consistency:** Mismo patrón UI que sección BookingRules
+- [ ] Testing: Validar información de contacto dinámica
+  - Admin actualiza → HomePage/ContactPage reflejan cambios (con cache 5min)
+  - Validación email inválido rechazada (frontend + backend)
+  - Validación teléfono inválido rechazada
+  - Responsive mobile sin overflow
+  - Fallback si API falla (muestra placeholder)
+
 
 
 

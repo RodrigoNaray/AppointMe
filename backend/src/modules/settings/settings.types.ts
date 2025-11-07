@@ -42,6 +42,22 @@ export interface BusinessHoursDTO {
 }
 
 // ============================================================================
+// Contact Info DTOs
+// ============================================================================
+
+export interface ContactInfoDTO {
+  phone: string;
+  email: string;
+  address: string;
+}
+
+export interface UpdateContactInfoDTO {
+  businessPhone?: string;
+  businessEmail?: string;
+  businessAddress?: string;
+}
+
+// ============================================================================
 // Request Types
 // ============================================================================
 

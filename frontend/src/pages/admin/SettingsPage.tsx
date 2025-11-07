@@ -5,8 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, CheckCircle2, AlertCircle } from 'lucide-react';
-import { getBookingRules, updateBookingRules } from '@/api/settings';
+import { Textarea } from '@/components/ui/textarea';
+import { Clock, CheckCircle2, AlertCircle, Phone, Mail, MapPin } from 'lucide-react';
+import { getBookingRules, updateBookingRules, getContactInfo, updateContactInfo, type ContactInfo, type UpdateContactInfoDTO } from '@/api/settings';
 
 /**
  * SettingsPage - Página de configuración administrativa
@@ -39,6 +40,16 @@ export default function SettingsPage() {
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Estado para información de contacto
+  const [contactInfo, setContactInfo] = useState<ContactInfo>({ phone: '', email: '', address: '' });
+  const [contactError, setContactError] = useState<string | null>(null);
+  const [contactSuccess, setContactSuccess] = useState<string | null>(null);
+  const [contactLoading, setContactLoading] = useState(false);
+  const [initialContactInfo, setInitialContactInfo] = useState<ContactInfo>({ phone: '', email: '', address: '' });
+
+  // Detectar cambios sin guardar en contact info
+  const hasUnsavedContactChanges = JSON.stringify(contactInfo) !== JSON.stringify(initialContactInfo);
 
   // Convertir input a minutos según la unidad seleccionada (RESERVA)
   const getMinutesFromInput = (): number => {
@@ -173,6 +184,21 @@ export default function SettingsPage() {
     fetchSettings();
   }, []);
 
+  // Cargar información de contacto
+  useEffect(() => {
+    const fetchContactInfo = async () => {
+      try {
+        const data = await getContactInfo();
+        setContactInfo(data);
+        setInitialContactInfo(data);
+      } catch (error) {
+        console.error('Error fetching contact info:', error);
+        setContactError('No se pudo cargar la información de contacto');
+      }
+    };
+    fetchContactInfo();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -222,6 +248,41 @@ export default function SettingsPage() {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Manejar submit de información de contacto
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setContactError(null);
+    setContactSuccess(null);
+
+    setContactLoading(true);
+    try {
+      const updateData: UpdateContactInfoDTO = {
+        businessPhone: contactInfo.phone || undefined,
+        businessEmail: contactInfo.email || undefined,
+        businessAddress: contactInfo.address || undefined
+      };
+
+      const updatedData = await updateContactInfo(updateData);
+      setContactInfo(updatedData);
+      setInitialContactInfo(updatedData);
+      setContactSuccess('Información de contacto actualizada correctamente');
+    } catch (error: any) {
+      console.error('Error al actualizar información de contacto:', error);
+      
+      if (error.code === 'ERR_NETWORK') {
+        setContactError('No se pudo conectar con el servidor.');
+      } else if (error.response?.status === 401 || error.response?.status === 403) {
+        setContactError('No tienes permisos para realizar esta acción. Verifica tu sesión.');
+      } else if (error.response?.status === 400) {
+        setContactError(error.response?.data?.message || 'Formato inválido en alguno de los campos.');
+      } else {
+        setContactError('No se pudo guardar la información de contacto. Intenta nuevamente.');
+      }
+    } finally {
+      setContactLoading(false);
     }
   };
 
@@ -514,6 +575,123 @@ export default function SettingsPage() {
                 className="min-w-[140px]"
               >
                 {isLoading ? 'Guardando...' : 'Guardar cambios'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Card de Información de Contacto */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Phone className="h-5 w-5" />
+                Información de Contacto
+              </CardTitle>
+              <CardDescription className="mt-1.5">
+                Configura los datos de contacto que se mostrarán en HomePage y ContactPage
+              </CardDescription>
+            </div>
+            {hasUnsavedContactChanges && (
+              <Badge variant="outline" className="text-xs">
+                Sin guardar
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleContactSubmit} className="space-y-6">
+            {contactError && (
+              <div className="flex items-start gap-3 bg-destructive/15 text-destructive px-4 py-3 rounded-md text-sm">
+                <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                <span>{contactError}</span>
+              </div>
+            )}
+            
+            {contactSuccess && (
+              <div className="flex items-start gap-3 bg-green-50 text-green-700 px-4 py-3 rounded-md text-sm">
+                <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                <span>{contactSuccess}</span>
+              </div>
+            )}
+
+            <div className="space-y-6">
+              {/* Teléfono */}
+              <div className="space-y-2">
+                <Label htmlFor="businessPhone" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  Teléfono de Contacto
+                </Label>
+                <Input
+                  id="businessPhone"
+                  type="tel"
+                  value={contactInfo.phone}
+                  onChange={(e) => setContactInfo({ ...contactInfo, phone: e.target.value })}
+                  placeholder="+598 123 456 789"
+                  disabled={contactLoading}
+                  className="max-w-md"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Formato internacional recomendado: +XX XXX XXX XXX
+                </p>
+              </div>
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="businessEmail" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Email de Contacto
+                </Label>
+                <Input
+                  id="businessEmail"
+                  type="email"
+                  value={contactInfo.email}
+                  onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
+                  placeholder="info@tusitio.com"
+                  disabled={contactLoading}
+                  className="max-w-md"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Email público para consultas (diferente de tu email de administrador)
+                </p>
+              </div>
+
+              {/* Dirección */}
+              <div className="space-y-2">
+                <Label htmlFor="businessAddress" className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Dirección
+                </Label>
+                <Textarea
+                  id="businessAddress"
+                  value={contactInfo.address}
+                  onChange={(e) => setContactInfo({ ...contactInfo, address: e.target.value })}
+                  placeholder="Av. Principal 123, Ciudad, País"
+                  disabled={contactLoading}
+                  rows={3}
+                  className="max-w-md resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Dirección física de tu negocio (máximo 500 caracteres)
+                </p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 px-4 py-3 rounded-md">
+                <p className="text-sm text-blue-900">
+                  <strong>ℹ️ Nota:</strong> Esta información se mostrará públicamente en la página de inicio y contacto. Si dejas campos vacíos, se mostrarán valores por defecto.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button 
+                type="submit" 
+                disabled={contactLoading || !hasUnsavedContactChanges}
+                className="min-w-[140px]"
+              >
+                {contactLoading ? 'Guardando...' : 'Guardar cambios'}
               </Button>
             </div>
           </form>
