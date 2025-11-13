@@ -57,6 +57,6 @@
   },
   "prisma": {
     "schema": "src/prisma/schema.prisma",
-    "seed": "node dist/prisma/seed.js"
+    "seed": "node dist/src/prisma/seed.js"
   }
 }
