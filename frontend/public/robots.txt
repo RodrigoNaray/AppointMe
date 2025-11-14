@@ -6,7 +6,7 @@ Allow: /
 
 # Bloquear rutas privadas/admin de indexación
 Disallow: /admin/
-Disallow: /client/profile
+Disallow: /client/bookings
 Disallow: /book/confirm
 Disallow: /book/success
 

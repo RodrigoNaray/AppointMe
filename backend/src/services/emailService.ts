@@ -343,7 +343,7 @@ export const sendBookingConfirmationEmail = async (data: BookingConfirmationData
             </p>
 
             <div style="text-align: center; margin-top: 30px;">
-                <a href="${process.env.CLIENT_URL}/client/profile" 
+                <a href="${process.env.CLIENT_URL}/client/bookings" 
                    style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
                     Ver Mis Reservas
                 </a>
@@ -378,7 +378,7 @@ ${data.bookings.map(b => `- ${b.serviceName}\n  ${formatDateTime(b.bookingTime, 
 Recordatorio: Por favor, llega 5 minutos antes de tu primera reserva.
 
 Si necesitas cancelar o reagendar, puedes hacerlo desde tu perfil en nuestra plataforma:
-${process.env.CLIENT_URL}/client/profile
+${process.env.CLIENT_URL}/client/bookings
 
 ¿Tienes preguntas? Contáctanos respondiendo este email.
 

@@ -1,9 +1,9 @@
-import { useAuthStore, selectAuthState } from '@/stores/authStore';
+import { useAuthStore, selectAuthState, selectIsLoading } from '@/stores/authStore';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Mail, User, Calendar, Lock } from 'lucide-react';
+import { Mail, User, Calendar, Lock, Loader2 } from 'lucide-react';
 
 /**
  * ClientProfilePage Component
@@ -16,9 +16,19 @@ import { Mail, User, Calendar, Lock } from 'lucide-react';
  */
 export default function ClientProfilePage() {
   const authState = useAuthStore(selectAuthState);
+  const isCheckingAuth = useAuthStore(selectIsLoading);
   const navigate = useNavigate();
 
-  // Redireccionar si no está autenticado
+  // CRÍTICO: Esperar a que termine de cargar el auth state
+  if (isCheckingAuth) {
+    return (
+      <div className="flex justify-center items-center h-[50vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-purple-600" />
+      </div>
+    );
+  }
+
+  // Redireccionar si no está autenticado (DESPUÉS de verificar isCheckingAuth)
   if (!authState.isAuthenticated || authState.type !== 'client') {
     return <Navigate to="/login" replace />;
   }

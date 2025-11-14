@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore, selectAuthState } from '@/stores/authStore';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useAuthStore, selectAuthState, selectIsLoading } from '@/stores/authStore';
 import { getMyBookings, cancelBooking, Booking } from '@/api/bookings';
 import { getBookingRules } from '@/api/settings';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,6 +31,7 @@ import { canCancelBooking } from '@/lib/bookingUtils';
  */
 export default function MyBookingsPage() {
   const authState = useAuthStore(selectAuthState);
+  const isCheckingAuth = useAuthStore(selectIsLoading);
   const navigate = useNavigate();
   
   const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
@@ -48,17 +49,7 @@ export default function MyBookingsPage() {
   const [bookingToCancel, setBookingToCancel] = useState<Booking | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
 
-  // Redireccionar si no está autenticado
-  if (!authState.isAuthenticated || authState.type !== 'client') {
-    navigate('/login', { replace: true });
-    return null;
-  }
-
-  useEffect(() => {
-    fetchBookings();
-    fetchSettings();
-  }, []);
-
+  // Funciones ANTES del useEffect (para evitar warnings de dependencies)
   const fetchSettings = async () => {
     try {
       const rules = await getBookingRules();
@@ -101,6 +92,16 @@ export default function MyBookingsPage() {
       setIsLoading(false);
     }
   };
+
+  // TODOS LOS HOOKS DEBEN ESTAR ANTES DE LOS EARLY RETURNS (Rules of Hooks)
+  useEffect(() => {
+    // Solo ejecutar si ya terminó de cargar el auth state
+    if (!isCheckingAuth && authState.isAuthenticated && authState.type === 'client') {
+      fetchBookings();
+      fetchSettings();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCheckingAuth, authState.isAuthenticated, authState.type]);
 
   const handleCancelClick = (booking: Booking) => {
     setBookingToCancel(booking);
@@ -358,6 +359,21 @@ export default function MyBookingsPage() {
       </Card>
     );
   };
+
+  // GUARDS: Early returns DESPUÉS de todos los hooks (Rules of Hooks)
+  // CRÍTICO: Esperar a que termine de cargar el auth state
+  if (isCheckingAuth) {
+    return (
+      <div className="flex justify-center items-center h-[50vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-purple-600" />
+      </div>
+    );
+  }
+
+  // Redireccionar si no está autenticado (DESPUÉS de verificar isCheckingAuth)
+  if (!authState.isAuthenticated || authState.type !== 'client') {
+    return <Navigate to="/login" replace />;
+  }
 
   if (isLoading) {
     return (

@@ -53,6 +53,39 @@
   - **Justificación CORS:** Evita problemas con proxies/firewalls que bloquean PATCH
   - **Justificación Consistencia:** Mismo patrón que settings module
 
+## FIX: Auth Redirect Loop - Zustand Persist Hydration Race Condition ✅
+- [x] Corregir redirect loop en páginas protegidas de cliente
+  - ❌ **PROBLEMA CRÍTICO:** Usuarios logueados redirigidos a /login en MyBookingsPage y ClientProfilePage
+  - ❌ **ROOT CAUSE:** Componentes verificaban `isAuthenticated` ANTES de que Zustand persist completara hidratación desde sessionStorage
+  - ✅ **SOLUCIÓN (React 19 + Zustand Best Practice):** Suspender rendering hasta que auth state termine de hidratar
+  - ✅ **CAMBIOS:**
+    - MyBookingsPage.tsx: Agregado `isCheckingAuth` guard con Loader2 spinner antes de Navigate
+    - ClientProfilePage.tsx: Mismo patrón aplicado para consistencia
+    - ClientRoute.tsx: Ya implementaba patrón correcto (sin cambios necesarios)
+  - ✅ **PATRÓN IMPLEMENTADO:**
+    ```tsx
+    const isCheckingAuth = useAuthStore(selectIsLoading);
+    
+    // Step 1: Wait for auth hydration
+    if (isCheckingAuth) {
+      return <Loader2 spinner />;
+    }
+    
+    // Step 2: Redirect if unauthorized (AFTER hydration)
+    if (!isAuthenticated || type !== 'client') {
+      return <Navigate to="/login" replace />;
+    }
+    
+    // Step 3: Render protected content
+    return <ProtectedContent />;
+    ```
+  - **Justificación React 19:** Suspense patterns para async operations (oficial React docs)
+  - **Justificación Zustand Persist:** sessionStorage read es asíncrono, necesita tiempo para completar
+  - **Justificación OWASP A01:2021 (Broken Access Control):** Auth check sigue enforced después de hydration (seguridad mantenida)
+  - **Justificación UX:** Loader2 spinner da feedback visual durante carga (mejor que pantalla en blanco)
+  - **Justificación Arquitectura:** Defense-in-depth con guards en route-level (ClientRoute) Y page-level (MyBookingsPage)
+  - **Justificación Consistencia:** authStore.isLoading controla timing central para todos los componentes
+
 ## CLEANUP: Eliminación de console.log de debugging ✅
 - [x] Eliminar todos los console.log/warn/info de debugging del código
   - ✅ **Frontend limpiado (13 archivos):**
