@@ -72,15 +72,38 @@ export function AppMap({
   label = "Ubicación",
 }: AppMapProps) {
   /**
-   * Genera URL para abrir en Google Maps
-   * Funciona en iOS (abre Apple Maps), Android (Google Maps) y desktop (nueva pestaña)
+   * Genera URL para abrir en Google Maps / Apple Maps
+   * 
+   * Estrategia multi-plataforma:
+   * - iOS: Intenta abrir Apple Maps (maps://) primero, fallback a Google Maps web
+   * - Android: Google Maps app via intent, fallback a web
+   * - Desktop: Google Maps web en nueva pestaña
+   * 
+   * OWASP A04:2021: Uso de window.location.href en lugar de window.open() para
+   * evitar popup blockers en iOS Safari
    */
   const handleOpenMaps = () => {
-    // URL universal de Google Maps (funciona en todos los dispositivos)
-    const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+    // Detectar iOS (iPhone, iPad, iPod)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     
-    // Abrir en nueva pestaña (desktop) o app nativa (móvil)
-    window.open(googleMapsUrl, '_blank', 'noopener,noreferrer');
+    if (isIOS) {
+      // iOS: Usar Apple Maps con fallback a Google Maps web
+      // maps:// abre Apple Maps directamente sin prompt
+      const appleMapsUrl = `maps://maps.apple.com/?q=${lat},${lng}`;
+      const googleMapsWebUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+      
+      // Intentar abrir Apple Maps
+      window.location.href = appleMapsUrl;
+      
+      // Fallback a Google Maps web después de 1 segundo si Apple Maps no está instalado
+      setTimeout(() => {
+        window.location.href = googleMapsWebUrl;
+      }, 1000);
+    } else {
+      // Android/Desktop: Abrir Google Maps en nueva pestaña
+      const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+      window.open(googleMapsUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   return (

@@ -119,6 +119,7 @@
 
 **Componentes Implementados:**
 - ✅ AppMap.tsx: Componente reusable con Leaflet + CartoDB Fastly CDN
+- ✅ Deep linking iOS fix: maps:// protocol para Apple Maps + fallback Google Maps web
 - ✅ geocoding.ts: Servicio con Nominatim API + sessionStorage cache
 - ✅ HomePage: Lazy loading + Suspense + geocoding automático/manual
 - ✅ SettingsPage: Form con campos lat/lng opcionales
