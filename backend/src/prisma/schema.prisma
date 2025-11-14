@@ -37,6 +37,8 @@ model AdminUser {
   businessPhone   String?   // Teléfono de contacto del negocio (público en HomePage/ContactPage)
   businessEmail   String?   // Email de contacto del negocio (diferente del email de login)
   businessAddress String?   // Dirección física del negocio
+  businessLatitude  Float?  // Latitud de la ubicación del negocio (rango: -90 a 90, precisión 6 decimales ~10cm)
+  businessLongitude Float?  // Longitud de la ubicación del negocio (rango: -180 a 180)
 
   services          Service[]
   bookings          Booking[]

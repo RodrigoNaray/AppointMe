@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Clock, CheckCircle2, AlertCircle, Phone, Mail, MapPin } from 'lucide-react';
 import { getBookingRules, updateBookingRules, getContactInfo, updateContactInfo, type ContactInfo, type UpdateContactInfoDTO } from '@/api/settings';
+import { AdminMapPicker } from '@/components/AdminMapPicker';
 
 /**
  * SettingsPage - Página de configuración administrativa
@@ -42,11 +43,11 @@ export default function SettingsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Estado para información de contacto
-  const [contactInfo, setContactInfo] = useState<ContactInfo>({ phone: '', email: '', address: '' });
+  const [contactInfo, setContactInfo] = useState<ContactInfo>({ phone: '', email: '', address: '', latitude: null, longitude: null });
   const [contactError, setContactError] = useState<string | null>(null);
   const [contactSuccess, setContactSuccess] = useState<string | null>(null);
   const [contactLoading, setContactLoading] = useState(false);
-  const [initialContactInfo, setInitialContactInfo] = useState<ContactInfo>({ phone: '', email: '', address: '' });
+  const [initialContactInfo, setInitialContactInfo] = useState<ContactInfo>({ phone: '', email: '', address: '', latitude: null, longitude: null });
 
   // Detectar cambios sin guardar en contact info
   const hasUnsavedContactChanges = JSON.stringify(contactInfo) !== JSON.stringify(initialContactInfo);
@@ -262,7 +263,9 @@ export default function SettingsPage() {
       const updateData: UpdateContactInfoDTO = {
         businessPhone: contactInfo.phone || undefined,
         businessEmail: contactInfo.email || undefined,
-        businessAddress: contactInfo.address || undefined
+        businessAddress: contactInfo.address || undefined,
+        businessLatitude: contactInfo.latitude !== null ? contactInfo.latitude : undefined,
+        businessLongitude: contactInfo.longitude !== null ? contactInfo.longitude : undefined
       };
 
       const updatedData = await updateContactInfo(updateData);
@@ -677,6 +680,24 @@ export default function SettingsPage() {
                   Dirección física de tu negocio (máximo 500 caracteres)
                 </p>
               </div>
+
+              {/* Selector Visual de Ubicación (Mapa Interactivo) */}
+              <AdminMapPicker
+                value={{
+                  lat: contactInfo.latitude ?? -34.9011,
+                  lng: contactInfo.longitude ?? -56.1645,
+                  address: contactInfo.address || '',
+                }}
+                onChange={(newValue) => {
+                  setContactInfo({
+                    ...contactInfo,
+                    latitude: newValue.lat,
+                    longitude: newValue.lng,
+                    address: newValue.address,
+                  });
+                }}
+                height="500px"
+              />
 
               <div className="bg-blue-50 border border-blue-200 px-4 py-3 rounded-md">
                 <p className="text-sm text-blue-900">

@@ -261,6 +261,8 @@ export const getContactInfo = async (): Promise<ContactInfoDTO> => {
         businessPhone: true,
         businessEmail: true,
         businessAddress: true,
+        businessLatitude: true,
+        businessLongitude: true,
         email: true // Fallback si businessEmail es null
       }
     });
@@ -275,7 +277,9 @@ export const getContactInfo = async (): Promise<ContactInfoDTO> => {
     return {
       phone: admin.businessPhone || '+598 XXX XXX XXX',
       email: admin.businessEmail || admin.email, // Fallback a email admin
-      address: admin.businessAddress || 'Dirección no disponible'
+      address: admin.businessAddress || 'Dirección no disponible',
+      latitude: admin.businessLatitude,
+      longitude: admin.businessLongitude
     };
 
   } catch (error) {
@@ -351,18 +355,44 @@ export const updateContactInfo = async (
       data.businessAddress = sanitizedAddress;
     }
 
+    // Validación: businessLatitude (rango válido: -90 a 90)
+    if (data.businessLatitude !== undefined && data.businessLatitude !== null) {
+      if (typeof data.businessLatitude !== 'number' || 
+          data.businessLatitude < -90 || 
+          data.businessLatitude > 90) {
+        const error: SettingsError = new Error('Invalid latitude (must be between -90 and 90)') as SettingsError;
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    // Validación: businessLongitude (rango válido: -180 a 180)
+    if (data.businessLongitude !== undefined && data.businessLongitude !== null) {
+      if (typeof data.businessLongitude !== 'number' || 
+          data.businessLongitude < -180 || 
+          data.businessLongitude > 180) {
+        const error: SettingsError = new Error('Invalid longitude (must be between -180 and 180)') as SettingsError;
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
     // Actualizar en DB
     const admin = await prisma.adminUser.update({
       where: { id: adminId },
       data: {
         businessPhone: data.businessPhone,
         businessEmail: data.businessEmail,
-        businessAddress: data.businessAddress
+        businessAddress: data.businessAddress,
+        businessLatitude: data.businessLatitude,
+        businessLongitude: data.businessLongitude
       },
       select: {
         businessPhone: true,
         businessEmail: true,
         businessAddress: true,
+        businessLatitude: true,
+        businessLongitude: true,
         email: true
       }
     });
@@ -371,13 +401,16 @@ export const updateContactInfo = async (
       adminId, 
       hasPhone: !!data.businessPhone,
       hasEmail: !!data.businessEmail,
-      hasAddress: !!data.businessAddress
+      hasAddress: !!data.businessAddress,
+      hasCoordinates: !!(data.businessLatitude && data.businessLongitude)
     }, 'Contact info updated');
 
     return {
       phone: admin.businessPhone || '+598 XXX XXX XXX',
       email: admin.businessEmail || admin.email,
-      address: admin.businessAddress || 'Dirección no disponible'
+      address: admin.businessAddress || 'Dirección no disponible',
+      latitude: admin.businessLatitude,
+      longitude: admin.businessLongitude
     };
 
   } catch (error) {

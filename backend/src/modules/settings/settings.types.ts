@@ -49,12 +49,16 @@ export interface ContactInfoDTO {
   phone: string;
   email: string;
   address: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface UpdateContactInfoDTO {
   businessPhone?: string;
   businessEmail?: string;
   businessAddress?: string;
+  businessLatitude?: number;
+  businessLongitude?: number;
 }
 
 // ============================================================================

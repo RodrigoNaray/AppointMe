@@ -1,5 +1,5 @@
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, lazy, Suspense } from "react";
 import toast from "react-hot-toast";
 import { useAuthStore, selectCheckSession } from "@/stores/authStore";
 import { useBookingStore, selectCart } from "@/stores/bookingStore";
@@ -14,6 +14,10 @@ import type { Service } from "@/types/service";
 import type { BusinessHours, ContactInfo } from "@/api/settings";
 import { getBusinessHours, getContactInfo } from "@/api/settings";
 import { API_BASE_URL } from "@/api/config";
+import { geocodeAddress, type GeocodingResult } from "@/lib/geocoding";
+
+// Lazy load del mapa (Performance: reduce bundle inicial)
+const AppMap = lazy(() => import("@/components/ui/AppMap").then(module => ({ default: module.AppMap })));
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -29,6 +33,8 @@ export default function HomePage() {
   const [loadingHours, setLoadingHours] = useState(true);
   const [contactInfo, setContactInfo] = useState<ContactInfo | undefined>();
   const [loadingContact, setLoadingContact] = useState(true);
+  const [mapCoordinates, setMapCoordinates] = useState<GeocodingResult | null>(null);
+  const [isGeocodingLoading, setIsGeocodingLoading] = useState(false);
   const hasItems = cart.length > 0;
 
   // Fetch servicios para preview
@@ -81,6 +87,41 @@ export default function HomePage() {
     };
     fetchContactInfo();
   }, []);
+
+  // Geocoding: Convertir address a coordenadas (cuando contactInfo carga)
+  useEffect(() => {
+    if (!contactInfo) return;
+
+    // Prioridad 1: Usar coordenadas manuales si existen
+    if (contactInfo.latitude !== null && contactInfo.longitude !== null) {
+      setMapCoordinates({
+        lat: contactInfo.latitude,
+        lng: contactInfo.longitude,
+      });
+      return;
+    }
+
+    // Prioridad 2: Geocoding automático con businessAddress
+    if (contactInfo.address && contactInfo.address !== 'Dirección no disponible') {
+      setIsGeocodingLoading(true);
+      geocodeAddress(contactInfo.address)
+        .then((coords) => {
+          if (coords) {
+            setMapCoordinates(coords);
+          } else {
+            // Geocoding falló, no mostrar mapa
+            setMapCoordinates(null);
+          }
+        })
+        .catch((error) => {
+          console.error('[HomePage] Geocoding error:', error);
+          setMapCoordinates(null);
+        })
+        .finally(() => {
+          setIsGeocodingLoading(false);
+        });
+    }
+  }, [contactInfo]);
 
   useEffect(() => {
     // Evitar procesamiento múltiple del callback
@@ -278,6 +319,26 @@ export default function HomePage() {
               {/* Card: Contacto - Dinámico desde settings */}
               <ContactInfoCard contactInfo={contactInfo} isLoading={loadingContact} />
             </div>
+
+            {/* Mapa Interactivo - Lazy loaded, responsive */}
+            {mapCoordinates && (
+              <div className="mt-6">
+                <h3 className="mb-4 text-xl font-semibold">Ubicación</h3>
+                <Suspense 
+                  fallback={
+                    <div className="h-[300px] w-full animate-pulse rounded-lg bg-muted border" />
+                  }
+                >
+                  <AppMap
+                    lat={mapCoordinates.lat}
+                    lng={mapCoordinates.lng}
+                    zoom={15}
+                    height="400px"
+                    label={contactInfo?.address || "Ubicación del negocio"}
+                  />
+                </Suspense>
+              </div>
+            )}
 
             {/* CTA del Ejemplo */}
             <div className="mt-8 flex justify-center">
