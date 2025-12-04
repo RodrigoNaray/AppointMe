@@ -1,6 +1,11 @@
+
 onlyBuiltDependencies:
   - '@swc/core'
   - '@tailwindcss/oxide'
   - esbuild
 
-minimumReleaseAge: 1440 # 24 horas
+overrides:
+  glob@>=11.0.0 <11.1.0: '>=11.1.0'
+  js-yaml@>=4.0.0 <4.1.1: '>=4.1.1'
+  tar@=7.5.1: '>=7.5.2'
+  vite@>=6.0.0 <=6.4.0: '>=6.4.1'
