@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Clock, CheckCircle2, AlertCircle, Phone, Mail, MapPin } from 'lucide-react';
-import { getBookingRules, updateBookingRules, getContactInfo, updateContactInfo, type ContactInfo, type UpdateContactInfoDTO } from '@/api/settings';
+import { getBookingRules, updateBookingRules, getContactInfo, updateContactInfo, type ContactInfo, type UpdateContactInfoDTO } from '@/api/modules/settings';
 import { AdminMapPicker } from '@/components/AdminMapPicker';
 
 /**

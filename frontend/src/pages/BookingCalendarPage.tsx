@@ -8,8 +8,8 @@ import { useBookingStore, selectCart, selectTotalPrice, selectTotalDuration, sel
 import { useAuthStore, selectAuthState } from '@/stores/authStore';
 import { format, isBefore, startOfToday, parse, addMonths, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { getBookingRules } from '@/api/settings';
-import { API_BASE_URL } from '@/api/config';
+import { getBookingRules } from '@/api/modules/settings';
+import { availabilityService } from '@/api/modules/availability';
 
 /**
  * BookingCalendarPage - Paso 2 + 3 fusionados del flujo de reserva
@@ -187,9 +187,7 @@ export default function BookingCalendarPage() {
 
         while (attempts < maxAttempts) {
           const monthStr = format(searchMonth, 'yyyy-MM');
-          const response = await fetch(
-            `${API_BASE_URL}/availability/month?month=${monthStr}&totalDuration=${totalDuration}`
-          );
+          const response = await availabilityService.getAvailabilityPerMounth({mounth: monthStr, totalDuration: totalDuration});
 
           if (response.ok) {
             const days = await response.json() as string[];
@@ -200,13 +198,7 @@ export default function BookingCalendarPage() {
               const dayDate = parse(dayStr, 'yyyy-MM-dd', new Date());
               const isToday = format(dayDate, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
               
-              // Si no es hoy, asumimos que tiene slots disponibles
-              if (!isToday) return true;
-              
-              // Si es hoy, necesitamos verificar que tenga slots futuros
-              // Por ahora, excluimos hoy si todos los slots ya pasaron
-              // (esto se validará cuando se carguen los slots reales)
-              return false; // Excluir hoy del primer mes, buscar mañana en adelante
+              return true; 
             });
             
             if (validDays.length > 0) {
@@ -243,9 +235,7 @@ export default function BookingCalendarPage() {
       try {
         const month = format(currentMonth, 'yyyy-MM');
         
-        const response = await fetch(
-          `${API_BASE_URL}/availability/month?month=${month}&totalDuration=${totalDuration}`
-        );
+        const response = await availabilityService.getAvailabilityPerMounth({mounth: month,totalDuration: totalDuration});
         
         if (!response.ok) {
           const errorText = await response.text();
@@ -295,9 +285,7 @@ export default function BookingCalendarPage() {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
         
         // CRÍTICO: Usar duración TOTAL del carrito (todos los servicios combinados)
-        const response = await fetch(
-          `${API_BASE_URL}/availability?durationMinutes=${totalDuration}&date=${dateStr}`
-        );
+        const response = await availabilityService.getAvailabilityPerMounth({mounth: dateStr, totalDuration: totalDuration});
         
         if (!response.ok) {
           throw new Error('Error fetching slots');

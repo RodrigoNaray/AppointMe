@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { Clock } from 'lucide-react';
-import type { BusinessHours, DaySchedule } from '@/api/settings';
+import type { BusinessHours, DaySchedule } from '@/api/modules/settings';
 
 interface BusinessHoursCardProps {
   businessHours?: BusinessHours;

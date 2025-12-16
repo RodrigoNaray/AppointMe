@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import ContactInfoCard from '@/components/ContactInfoCard';
-import type { ContactInfo } from '@/api/settings';
-import { getContactInfo } from '@/api/settings';
+import type { ContactInfo } from '@/api/modules/settings';
+import { getContactInfo } from '@/api/modules/settings';
 
 export default function ContactPage() {
   const [contactInfo, setContactInfo] = useState<ContactInfo | undefined>();

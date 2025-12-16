@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Phone, Mail, MapPin } from 'lucide-react';
-import type { ContactInfo } from '@/api/settings';
+import type { ContactInfo } from '@/api/modules/settings';
 
 interface ContactInfoCardProps {
   contactInfo?: ContactInfo;

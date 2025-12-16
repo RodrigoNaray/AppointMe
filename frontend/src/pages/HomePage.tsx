@@ -11,8 +11,8 @@ import CartSidebar from "@/components/CartSidebar";
 import BusinessHoursCard from "@/components/BusinessHoursCard";
 import ContactInfoCard from "@/components/ContactInfoCard";
 import type { Service } from "@/types/service";
-import type { BusinessHours, ContactInfo } from "@/api/settings";
-import { getBusinessHours, getContactInfo } from "@/api/settings";
+import type { BusinessHours, ContactInfo } from "@/api/modules/settings";
+import { getBusinessHours, getContactInfo } from "@/api/modules/settings";
 import { API_BASE_URL } from "@/api/config";
 import { geocodeAddress, type GeocodingResult } from "@/lib/geocoding";
 

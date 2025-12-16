@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore, selectAuthState, selectIsLoading } from '@/stores/authStore';
-import { getMyBookings, cancelBooking, Booking } from '@/api/bookings';
-import { getBookingRules } from '@/api/settings';
+import { getMyBookings, cancelBooking, Booking } from '@/api/modules/bookings';
+import { getBookingRules } from '@/api/modules/settings';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

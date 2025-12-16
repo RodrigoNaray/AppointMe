@@ -6,7 +6,7 @@ import { es } from "date-fns/locale";
 import toast from "react-hot-toast";
 import { DataTable } from "@/components/shared/DataTable";
 import { columns, Booking } from "./columns";
-import bookingService, { Booking as ApiBooking } from "@/api/bookings";
+import bookingService, { Booking as ApiBooking } from "@/api/modules/bookings";
 import { Loader2, Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
