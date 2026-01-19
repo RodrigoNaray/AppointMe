@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import toast from 'react-hot-toast';
-import { clientAuthService } from "@/api/clientAuth";
+import { clientAuthService } from "@/api/modules/clientAuth";
 import { useOAuthStore, selectSaveReturnUrl } from "@/stores/oauthStore";
 import type { RegisterDto } from "@/types/auth";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";

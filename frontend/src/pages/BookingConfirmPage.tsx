@@ -33,12 +33,9 @@ export default function BookingConfirmPage() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [hasValidated, setHasValidated] = useState(false);
 
-  // Leer y validar query params
   const dateParam = searchParams.get('date'); // YYYY-MM-DD
   const timeParam = searchParams.get('time'); // HH:mm
 
-  // Validación OWASP: Query params deben existir y tener formato válido
-  // IMPORTANTE: Solo ejecutar validaciones una vez para evitar toasts repetidos
   useEffect(() => {
     if (hasValidated) return;
     

@@ -10,39 +10,9 @@ import { format, isBefore, startOfToday, parse, addMonths, subMonths } from 'dat
 import { es } from 'date-fns/locale';
 import { getBookingRules } from '@/api/modules/settings';
 import { availabilityService } from '@/api/modules/availability';
+import { es as esCalendarLocale } from 'react-day-picker/locale';
 
-/**
- * BookingCalendarPage - Paso 2 + 3 fusionados del flujo de reserva
- * 
- * Permite al usuario seleccionar fecha Y horario en la misma pantalla.
- * 
- * Flujo UX optimizado:
- * 1. Fetch días disponibles del mes con totalDuration del carrito
- * 2. Auto-selecciona primer día disponible
- * 3. Muestra slots del día seleccionado automáticamente
- * 4. Usuario puede cambiar fecha → slots se actualizan
- * 5. Al seleccionar slot → verifica auth → navega a confirmación
- * 
- * Timezone Strategy (CRÍTICO):
- * - Backend siempre trabaja en UTC
- * - Slots recibidos del API están en formato "HH:mm" UTC
- * - Frontend convierte UTC → Local timezone para display
- * - Al enviar: Local timezone → UTC ISO string
- * 
- * Mejores prácticas:
- * - React 19: useState + useEffect con cleanup
- * - UX: Reduce clicks (fusión calendario + horarios)
- * - Performance: Batch API calls (month + first day slots)
- * - Mobile-first: Grid responsive 3 columnas
- * - Timezone: Mostrar hora local, almacenar UTC (best practice internacional)
- */
 
-/**
- * Convierte slot UTC "HH:mm" a hora local del navegador
- * @param slotUTC - Slot en formato "HH:mm" UTC (ej: "09:00" = 09:00 UTC)
- * @param date - Fecha base para el slot
- * @returns Hora local en formato "HH:mm" (ej: "06:00" para UTC-3)
- */
 function convertSlotUTCToLocal(slotUTC: string, date: Date): string {
   const [hours, minutes] = slotUTC.split(':').map(Number);
   
@@ -183,31 +153,17 @@ export default function BookingCalendarPage() {
         let searchMonth = startOfToday();
         let attempts = 0;
         const maxAttempts = 12; // Buscar hasta 12 meses adelante
-        const now = new Date();
 
         while (attempts < maxAttempts) {
           const monthStr = format(searchMonth, 'yyyy-MM');
-          const response = await availabilityService.getAvailabilityPerMounth({mounth: monthStr, totalDuration: totalDuration});
-
-          if (response.ok) {
-            const days = await response.json() as string[];
-            
-            // Filtrar días que realmente tienen slots disponibles
-            // Si es hoy, verificar que tenga slots después del tiempo mínimo
-            const validDays = days.filter(dayStr => {
-              const dayDate = parse(dayStr, 'yyyy-MM-dd', new Date());
-              const isToday = format(dayDate, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
-              
-              return true; 
-            });
-            
-            if (validDays.length > 0) {
-              // Encontrado primer mes con disponibilidad válida
-              setCurrentMonth(searchMonth);
-              return;
-            }
+          const validDays: string[] = await availabilityService.getAvailabilityPerMonth({month: monthStr, totalDuration: totalDuration});
+    
+          if (validDays.length > 0) {
+            // Encontrado primer mes con disponibilidad válida
+            setCurrentMonth(searchMonth);
+            return;
           }
-
+          
           // Buscar siguiente mes
           searchMonth = addMonths(searchMonth, 1);
           attempts++;
@@ -224,9 +180,8 @@ export default function BookingCalendarPage() {
     };
 
     findFirstAvailableMonth();
-  }, [totalDuration, dateParam, minBookingAdvanceMinutes]); // Agregar minBookingAdvanceMinutes
+  }, [totalDuration, dateParam, minBookingAdvanceMinutes]); 
 
-  // Fetch disponibilidad mensual + auto-select primera fecha
   useEffect(() => {
     if (!currentMonth) return; // Esperar a que currentMonth se inicialice
 
@@ -235,29 +190,10 @@ export default function BookingCalendarPage() {
       try {
         const month = format(currentMonth, 'yyyy-MM');
         
-        const response = await availabilityService.getAvailabilityPerMounth({mounth: month,totalDuration: totalDuration});
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('[BookingCalendar] Error response:', errorText);
-          throw new Error(`Error fetching month availability: ${response.status}`);
-        }
-
-        const days = await response.json() as string[];
-        
-        // Filtrar días que realmente tienen slots disponibles
-        // Si es hoy, excluir porque probablemente no tenga slots futuros
-        const now = new Date();
-        const validDays = days.filter(dayStr => {
-          const dayDate = parse(dayStr, 'yyyy-MM-dd', new Date());
-          const isToday = format(dayDate, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
-          // Excluir hoy del mes disponible (los slots de hoy se validarán dinámicamente)
-          return !isToday;
-        });
+        const validDays: string[] = await availabilityService.getAvailabilityPerMonth({month: month,totalDuration: totalDuration});
         
         setAvailableDays(validDays);
 
-        // Auto-seleccionar primer día disponible
         if (validDays.length > 0 && !selectedDate) {
           const firstDay = parse(validDays[0], 'yyyy-MM-dd', new Date());
           setSelectedDate(firstDay);
@@ -271,7 +207,7 @@ export default function BookingCalendarPage() {
     };
 
     fetchMonthAvailability();
-  }, [currentMonth, totalDuration]); // No incluir selectedDate para evitar loop
+  }, [currentMonth, totalDuration]); 
 
   // Fetch slots cuando cambia la fecha seleccionada
   useEffect(() => {
@@ -283,15 +219,10 @@ export default function BookingCalendarPage() {
       
       try {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
-        
         // CRÍTICO: Usar duración TOTAL del carrito (todos los servicios combinados)
-        const response = await availabilityService.getAvailabilityPerMounth({mounth: dateStr, totalDuration: totalDuration});
+        const response = await availabilityService.getAvailableSlots({date: dateStr, durationMinutes: totalDuration})
         
-        if (!response.ok) {
-          throw new Error('Error fetching slots');
-        }
-
-        const slotsUTC = await response.json() as string[];
+        const slotsUTC = response as string[];
         
         // PASO 1: Convertir slots UTC → Local timezone para display
         const slotsLocal = slotsUTC.map(slotUTC => convertSlotUTCToLocal(slotUTC, selectedDate));
@@ -302,12 +233,10 @@ export default function BookingCalendarPage() {
         
         const filteredSlots = isToday 
           ? slotsLocal.filter(timeSlot => {
-              // Parsear hora del slot en LOCAL timezone
+              
               const [hours, minutes] = timeSlot.split(':').map(Number);
               const slotTime = new Date(selectedDate);
               slotTime.setHours(hours, minutes, 0, 0);
-              
-              // Usar tiempo mínimo de anticipación dinámico (configurable por admin)
               const minimumTime = new Date(now.getTime() + minBookingAdvanceMinutes * 60 * 1000);
               
               return slotTime >= minimumTime;
@@ -424,7 +353,6 @@ export default function BookingCalendarPage() {
                     </CardTitle>
                   </div>
                   
-                  {/* Navegación de meses compacta (mobile y desktop) */}
                   <div className="flex items-center justify-center gap-3">
                     <Button
                       variant="outline"
@@ -476,12 +404,10 @@ export default function BookingCalendarPage() {
                     onSelect={handleDateSelect}
                     onMonthChange={handleMonthChange}
                     disabled={(date) => {
-                      // Deshabilitar días pasados
                       if (isBefore(date, startOfToday())) return true;
-                      // Deshabilitar días sin disponibilidad
                       return !isDateAvailable(date);
                     }}
-                    locale={es}
+                    locale={esCalendarLocale}
                     className="rounded-md border w-full"
                   />
                 )}

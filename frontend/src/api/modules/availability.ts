@@ -1,16 +1,19 @@
 import apiClient from "../client"
 
 
-interface AvailabilityParams {
-    mounth: string;
-    totalDuration: number;
-}
+
 
 export const availabilityService = {
 
-    getAvailabilityPerMounth: async (params: AvailabilityParams) => { 
-        const response = await apiClient.get('/availability/month', { params });
-        return response.data.data;
+    getAvailabilityPerMonth: async (params: {month:string, totalDuration: number}) => { 
+        const { data } = await apiClient.get('/availability/month', { params });
+        return data;
+
+    },
+
+    getAvailableSlots: async (params: {date: string, durationMinutes: number}) => {
+        const response = await apiClient.get('/availability',{params});
+        return response.data;
     }
 
 } as const

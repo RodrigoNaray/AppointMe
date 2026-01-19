@@ -1,20 +1,8 @@
 import { Request, Response } from 'express';
-import * as publicService from './availability.public.services';
+import * as availabilityPublicService from './availability.public.services';
 import logger from '../../../utils/logger';
 
-/**
- * getAvailableSlotsController - Endpoint para obtener slots disponibles
- * 
- * Query params:
- * - date: YYYY-MM-DD (ej: "2025-10-29")
- * - durationMinutes: número de minutos requeridos (ej: 90)
- * 
- * Response: string[] de horarios HH:mm disponibles
- * 
- * Mejores prácticas:
- * - Acepta durationMinutes directamente (más flexible que serviceId)
- * - Permite calcular slots para múltiples servicios combinados
- */
+
 export const getAvailableSlotsController = async (req: Request, res: Response) => {
   const { durationMinutes, date } = req.query;
   
@@ -36,7 +24,7 @@ export const getAvailableSlotsController = async (req: Request, res: Response) =
       return res.status(400).json({ message: 'Formato de fecha inválido. Use YYYY-MM-DD.' });
     }
     
-    const slots = await publicService.getAvailableSlots(utcDate, duration);
+    const slots = await availabilityPublicService.getAvailableSlots(utcDate, duration);
     res.status(200).json(slots);
   } catch (error) {
     logger.error(error, "Error al calcular los slots de disponibilidad");
@@ -44,23 +32,10 @@ export const getAvailableSlotsController = async (req: Request, res: Response) =
   }
 };
 
-/**
- * getMonthAvailabilityController - Endpoint para obtener días disponibles del mes
- * 
- * Query params:
- * - month: YYYY-MM (ej: "2025-10")
- * - totalDuration: número de minutos requeridos (ej: 90)
- * 
- * Response: string[] de fechas YYYY-MM-DD con disponibilidad
- * 
- * Mejores prácticas:
- * - OWASP: Validación de input (month format, totalDuration > 0)
- * - Error handling con logger (Pino)
- * - Status codes HTTP semánticos (400, 500)
- */
 export const getMonthAvailabilityController = async (req: Request, res: Response) => {
+  console.log(req.query)
   const { month, totalDuration } = req.query;
-  
+  console.log( month, totalDuration)
   // Validación de parámetros
   if (!month || !totalDuration || typeof month !== 'string' || typeof totalDuration !== 'string') {
     return res.status(400).json({ 
@@ -86,7 +61,7 @@ export const getMonthAvailabilityController = async (req: Request, res: Response
       });
     }
 
-    const availableDays = await publicService.getMonthAvailability(monthDate, duration);
+    const availableDays: string[] = await availabilityPublicService.getMonthAvailability(monthDate, duration);
     res.status(200).json(availableDays);
   } catch (error) {
     logger.error(error, "Error al calcular disponibilidad mensual");

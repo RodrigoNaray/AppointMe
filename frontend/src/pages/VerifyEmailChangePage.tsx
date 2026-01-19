@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
-import { clientAuthService } from '@/api/clientAuth';
+import { clientAuthService } from '@/api/modules/clientAuth';
 
 /**
  * Página para verificar el cambio de email mediante token

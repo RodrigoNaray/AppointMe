@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
-import { clientAuthService } from '@/api/clientAuth';
+import { clientAuthService } from '@/api/modules/clientAuth';
 import { useAuthStore, selectAuthState } from '@/stores/authStore';
 
 /**

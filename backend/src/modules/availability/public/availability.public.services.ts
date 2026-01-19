@@ -1,25 +1,11 @@
-// backend/src/modules/availability/availability.public.service.ts
-
 import prisma from '../../../config/prisma';
 import { WeeklySchedule } from './availability.public.types';
 import { addMinutes, format, startOfDay, endOfDay, parse, startOfMonth, endOfMonth, eachDayOfInterval, addDays } from 'date-fns';
 import { hasTimeConflictOptimized, TimePeriod } from '../../../utils/timeConflictUtils';
 
-// Mapeo de los días de la semana de JavaScript (0=Domingo) a nuestros strings
 const dayMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
-/**
- * getAvailableSlots - Obtiene slots disponibles para una fecha y duración específica
- * 
- * @param date - Fecha para buscar slots
- * @param durationMinutes - Duración total requerida en minutos
- * @returns Array de slots disponibles en formato "HH:mm"
- * 
- * Optimizaciones:
- * - Batch query: bookings + blocks del día en paralelo
- * - hasTimeConflictOptimized: O(log n) conflict detection
- * - Snapshot durationMinutes: evita JOIN con Service
- */
+
 export const getAvailableSlots = async (date: Date, durationMinutes: number) => {
   // 1. Calcular inicio y fin del día en UTC explícitamente
   const startOfDayUTC = new Date(date);
@@ -119,18 +105,7 @@ export const getAvailableSlots = async (date: Date, durationMinutes: number) => 
   return availableSlots;
 };
 
-/**
- * getMonthAvailability - Obtiene días del mes con disponibilidad suficiente
- * 
- * @param month - Fecha del mes (YYYY-MM-DD o Date)
- * @param totalDuration - Duración total requerida en minutos
- * @returns Array de fechas (YYYY-MM-DD) con disponibilidad >= totalDuration
- * 
- * Mejores prácticas:
- * - Batch query optimization: fetch schedule + bookings + blocks de todo el mes
- * - O(n) complexity: single pass por día
- * - date-fns: eachDayOfInterval para iterar días del mes
- */
+
 export const getMonthAvailability = async (month: Date, totalDuration: number) => {
   // 1. Obtener rango del mes en UTC explícitamente
   const monthStart = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), 1, 0, 0, 0, 0));
@@ -250,3 +225,4 @@ export const getMonthAvailability = async (month: Date, totalDuration: number) =
 
   return availableDays;
 };
+

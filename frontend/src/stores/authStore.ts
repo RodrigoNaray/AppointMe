@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import apiClient from '../api/client';
-import clientAuthService from '../api/clientAuth';
+import clientAuthService from '@/api/modules/clientAuth';
 import { useBookingStore } from './bookingStore';
 import type { LoginDto, RegisterDto, AuthState, AdminUser } from '../types/auth';
 

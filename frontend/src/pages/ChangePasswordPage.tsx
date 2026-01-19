@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Lock, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { clientAuthService } from '@/api/clientAuth';
+import { clientAuthService } from '@/api/modules/clientAuth';
 import { useAuthStore, selectAuthState, selectLogoutClient } from '@/stores/authStore';
 import toast from 'react-hot-toast';
 
