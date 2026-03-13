@@ -1,6 +1,6 @@
 import prisma from '../../../config/prisma';
 import { WeeklySchedule } from './availability.public.types';
-import { addMinutes, format, startOfDay, endOfDay, parse, startOfMonth, endOfMonth, eachDayOfInterval, addDays } from 'date-fns';
+import { addMinutes, format, startOfDay, endOfDay, parse, startOfMonth, endOfMonth, eachDayOfInterval, addDays, addMonths } from 'date-fns';
 import { hasTimeConflictOptimized, TimePeriod } from '../../../utils/timeConflictUtils';
 
 const dayMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -226,3 +226,22 @@ export const getMonthAvailability = async (month: Date, totalDuration: number) =
   return availableDays;
 };
 
+export const getFirstMonthAvailable = async (totalDuration: number, mesesMaximos: number)  => {
+  
+  const fechaActual = new Date();
+  let mesBusqueda = new Date(Date.UTC(fechaActual.getUTCFullYear(), fechaActual.getUTCMonth(),1,0,0,0,0));
+  
+  for(let i = 0; i < mesesMaximos; i++ ){
+    const diasDisponibles = await getMonthAvailability(mesBusqueda, totalDuration);
+
+    if (diasDisponibles.length > 0){
+      const anio = mesBusqueda.getUTCFullYear();
+      const mes = String(mesBusqueda.getUTCMonth()+1).padStart(2,'0');
+      return `${anio}-${mes}`
+    }
+
+    mesBusqueda = addMonths(mesBusqueda, 1);
+  }
+
+  return null //Si no hay meses disponibles.
+}

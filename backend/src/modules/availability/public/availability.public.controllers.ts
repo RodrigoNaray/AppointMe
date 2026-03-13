@@ -33,9 +33,7 @@ export const getAvailableSlotsController = async (req: Request, res: Response) =
 };
 
 export const getMonthAvailabilityController = async (req: Request, res: Response) => {
-  console.log(req.query)
   const { month, totalDuration } = req.query;
-  console.log( month, totalDuration)
   // Validación de parámetros
   if (!month || !totalDuration || typeof month !== 'string' || typeof totalDuration !== 'string') {
     return res.status(400).json({ 
@@ -68,3 +66,27 @@ export const getMonthAvailabilityController = async (req: Request, res: Response
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
+
+export const getFirstMonthAvailable = async (req: Request, res: Response) => {
+  const { totalDuration , mesesMaximos} = req.body;
+  
+  if( totalDuration === undefined || typeof totalDuration !== 'number' || Number.isNaN(totalDuration) || totalDuration <= 0){
+    return res.status(400).json({
+      message: 'El parametro "totalDuration" (minutos) es requerido y debe ser un numero mayor que 0'
+    })
+  }
+
+  const maxMeses = typeof mesesMaximos === 'number' && mesesMaximos > 0 ? mesesMaximos: 12;
+
+  try{
+    const mesDisponible = await availabilityPublicService.getFirstMonthAvailable(totalDuration,maxMeses);
+    if (!mesDisponible) {
+      return res.status(404).json({ message: 'No se encontro disponibilidad en los proximos meses.'})
+    }
+    return res.status(200).json({ month: mesDisponible});
+  }catch (error){
+    logger.error(error, 'Error al calcular el primer mes disponible');
+    return res.status(500).json({ message: 'Error interno del servidor'});
+  }
+
+}

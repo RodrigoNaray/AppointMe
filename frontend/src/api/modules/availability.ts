@@ -14,6 +14,11 @@ export const availabilityService = {
     getAvailableSlots: async (params: {date: string, durationMinutes: number}) => {
         const response = await apiClient.get('/availability',{params});
         return response.data;
+    },
+
+    getFirstMonthAvailable: async (body: { totalDuration: number; maxMonthsAhead?: number}) => {
+        const response = await apiClient.post('/availability/firstMonthAvailable', body);
+        return response.data; // { month: "YYYY-MM" }
     }
 
 } as const

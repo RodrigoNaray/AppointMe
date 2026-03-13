@@ -12,4 +12,6 @@ router.get('/month', controller.getMonthAvailabilityController);
 // GET /api/availability?serviceId=X&date=YYYY-MM-DD
 router.get('/', controller.getAvailableSlotsController);
 
+router.post('/firstMonthAvailable', controller.getFirstMonthAvailable);
+
 export default router;
