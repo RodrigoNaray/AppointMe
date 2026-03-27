@@ -1,10 +1,13 @@
 import { Strategy as JwtStrategy, StrategyOptions } from 'passport-jwt';
 import { Strategy as GoogleStrategy, Profile as GoogleProfile } from 'passport-google-oauth20';
 import { Request } from 'express';
+import { Client } from '@prisma/client';
 import prisma from './prisma';
 import logger from '../utils/logger';
 import { ClientJwtPayload } from '../modules/clientAuth/clientAuth.types';
 import { ACCESS_CLIENT_TOKEN_COOKIE_NAME, JWT_SECRET } from './auth.config';
+
+type GoogleDoneCallback = (error: Error | null, user?: Client | false) => void;
 
 // Validación crítica de seguridad - Consistente con passportAdmin.ts
 if (!process.env.JWT_SECRET) {
@@ -62,7 +65,7 @@ export const googleStrategy = new GoogleStrategy(
     callbackURL: `${process.env.API_URL}/auth/client/google/callback`,
     scope: ['profile', 'email'],
   },
-  async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: any) => {
+  async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: GoogleDoneCallback) => {
     try {
       // Extraer información del perfil de Google
       const email = profile.emails?.[0]?.value;

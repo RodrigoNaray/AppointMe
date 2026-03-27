@@ -74,6 +74,11 @@ export interface UpdateBookingRulesRequest extends Request {
   body: UpdateBookingRulesDTO;
 }
 
+export interface UpdateContactInfoRequest extends Request {
+  user?: AdminUser; // Viene del middleware isAdminAuthenticated
+  body: UpdateContactInfoDTO;
+}
+
 // ============================================================================
 // Response Types
 // ============================================================================

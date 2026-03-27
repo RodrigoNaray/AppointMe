@@ -47,7 +47,7 @@ export interface BookingWithDetails extends Booking {
 
 export interface CreateBookingResponse {
   success: boolean;
-  booking: BookingWithDetails;
+  booking?: BookingWithDetails;
   message: string;
 }
 

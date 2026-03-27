@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import * as availabilityPublicService from './availability.public.services';
 import logger from '../../../utils/logger';
 
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const MONTH_REGEX = /^\d{4}-\d{2}$/;
+
 
 export const getAvailableSlotsController = async (req: Request, res: Response) => {
   const { durationMinutes, date } = req.query;
@@ -13,6 +16,10 @@ export const getAvailableSlotsController = async (req: Request, res: Response) =
   const duration = parseInt(durationMinutes, 10);
   if (isNaN(duration) || duration <= 0) {
     return res.status(400).json({ message: 'El parámetro "durationMinutes" debe ser un número positivo.' });
+  }
+
+  if (!DATE_REGEX.test(date)) {
+    return res.status(400).json({ message: 'Formato de fecha inválido. Use YYYY-MM-DD.' });
   }
   
   try {
@@ -33,9 +40,8 @@ export const getAvailableSlotsController = async (req: Request, res: Response) =
 };
 
 export const getMonthAvailabilityController = async (req: Request, res: Response) => {
-  console.log(req.query)
   const { month, totalDuration } = req.query;
-  console.log( month, totalDuration)
+
   // Validación de parámetros
   if (!month || !totalDuration || typeof month !== 'string' || typeof totalDuration !== 'string') {
     return res.status(400).json({ 
@@ -47,6 +53,12 @@ export const getMonthAvailabilityController = async (req: Request, res: Response
   if (isNaN(duration) || duration <= 0) {
     return res.status(400).json({ 
       message: 'El parámetro "totalDuration" debe ser un número mayor a 0.' 
+    });
+  }
+
+  if (!MONTH_REGEX.test(month)) {
+    return res.status(400).json({ 
+      message: 'El parámetro "month" debe tener formato YYYY-MM.' 
     });
   }
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from 'react';
+import axios from 'axios';
 import apiClient from '@/api/client';
 import { Category } from '@/types/service';
 import { DataTable } from '@/components/shared/DataTable';
@@ -92,11 +93,13 @@ export default function CategoriesPage() {
       }
       setIsModalOpen(false);
       fetchCategories();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error al guardar la categoría:', err);
       
       // Manejo de errores específicos
-      const errorMessage = err.response?.data?.message || 'Error desconocido';
+      const errorMessage = axios.isAxiosError<{ message?: string }>(err)
+        ? err.response?.data?.message || 'Error desconocido'
+        : 'Error desconocido';
       
       toast.error('Error al guardar categoría', {
         description: errorMessage,
@@ -126,10 +129,12 @@ export default function CategoriesPage() {
           description: `La categoría "${categoryName}" se eliminó correctamente.`,
         });
         fetchCategories();
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error al eliminar la categoría:', err);
         
-        const errorMessage = err.response?.data?.message || 'Error al eliminar la categoría';
+        const errorMessage = axios.isAxiosError<{ message?: string }>(err)
+          ? err.response?.data?.message || 'Error al eliminar la categoría'
+          : 'Error al eliminar la categoría';
         
         toast.error('Error al eliminar', {
           description: errorMessage,

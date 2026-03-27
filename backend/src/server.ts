@@ -75,8 +75,10 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(500).json({ message: 'Algo salió mal en el servidor.' });
 });
 
-app.listen(PORT, () => {
-  console.log(`[server]: 🚀 Servidor backend corriendo en http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`[server]: 🚀 Servidor backend corriendo en http://localhost:${PORT}`);
+  });
+}
 
 export default app; 

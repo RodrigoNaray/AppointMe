@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuthStore, selectAuthState, selectIsLoading } from '@/stores/authStore';
 import { getMyBookings, cancelBooking, Booking } from '@/api/modules/bookings';
 import { getBookingRules } from '@/api/modules/settings';
@@ -122,9 +123,12 @@ export default function MyBookingsPage() {
       
       // Refrescar datos del servidor
       await fetchBookings();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error cancelling booking:', error);
-      toast.error(error.response?.data?.message || 'Error al cancelar la reserva');
+      const errorMessage = axios.isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message
+        : undefined;
+      toast.error(errorMessage || 'Error al cancelar la reserva');
     } finally {
       setIsCancelling(false);
     }

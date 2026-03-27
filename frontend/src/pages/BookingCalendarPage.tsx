@@ -11,55 +11,7 @@ import { es } from 'date-fns/locale';
 import { getBookingRules } from '@/api/modules/settings';
 import { availabilityService } from '@/api/modules/availability';
 import { es as esCalendarLocale } from 'react-day-picker/locale';
-
-
-function convertSlotUTCToLocal(slotUTC: string, date: Date): string {
-  const [hours, minutes] = slotUTC.split(':').map(Number);
-  
-  // Crear fecha UTC explícita
-  const utcDate = new Date(Date.UTC(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
-    hours,
-    minutes,
-    0,
-    0
-  ));
-  
-  // Convertir a hora local del navegador
-  const localHours = utcDate.getHours();
-  const localMinutes = utcDate.getMinutes();
-  
-  return `${String(localHours).padStart(2, '0')}:${String(localMinutes).padStart(2, '0')}`;
-}
-
-/**
- * Convierte hora local "HH:mm" de vuelta a UTC para enviar al backend
- * @param slotLocal - Slot en formato "HH:mm" local (ej: "06:00" hora local)
- * @param date - Fecha base para el slot
- * @returns Hora UTC en formato "HH:mm" (ej: "09:00" UTC)
- */
-function convertSlotLocalToUTC(slotLocal: string, date: Date): string {
-  const [hours, minutes] = slotLocal.split(':').map(Number);
-  
-  // Crear fecha local
-  const localDate = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
-    hours,
-    minutes,
-    0,
-    0
-  );
-  
-  // Extraer componentes UTC
-  const utcHours = localDate.getUTCHours();
-  const utcMinutes = localDate.getUTCMinutes();
-  
-  return `${String(utcHours).padStart(2, '0')}:${String(utcMinutes).padStart(2, '0')}`;
-}
+import { convertSlotLocalToUTC, convertSlotUTCToLocal } from '@/lib/timezoneSlots';
 
 export default function BookingCalendarPage() {
   const navigate = useNavigate();

@@ -49,7 +49,7 @@ export default function LoginPage() {
             } else {
                 navigate('/');
             }
-        } catch (error: any) {
+        } catch (_error: unknown) {
             toast.error('Usuario o contraseña incorrecta');
         } finally {
             setIsLoading(false);

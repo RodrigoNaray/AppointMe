@@ -3,6 +3,23 @@ import logger from '../../utils/logger';
 import { CreateServiceDto, UpdateServiceDto } from './services.types';
 import { ConflictError, NotFoundError } from '../../utils/error';
 
+export class ServiceValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ServiceValidationError';
+  }
+}
+
+const validateServicePayload = (data: CreateServiceDto | UpdateServiceDto): void => {
+  if (typeof data.durationMinutes === 'number' && data.durationMinutes <= 0) {
+    throw new ServiceValidationError('La duración debe ser mayor a 0 minutos.');
+  }
+
+  if (typeof data.price === 'number' && data.price < 0) {
+    throw new ServiceValidationError('El precio no puede ser negativo.');
+  }
+};
+
 /**
  * Obtiene todos los servicios con sus categorías asociadas
  * React 19 best practice: Incluir relaciones necesarias para evitar N+1 queries
@@ -47,6 +64,8 @@ const validateCategoryExists = async (categoryId: string) => {
 };
 
 export const createService = async (data: CreateServiceDto, adminId: string) => {
+  validateServicePayload(data);
+
   // Validar que la categoría existe y está activa
   await validateCategoryExists(data.categoryId);
   
@@ -67,6 +86,8 @@ export const createService = async (data: CreateServiceDto, adminId: string) => 
 };
 
 export const updateService = async (id: string, data: UpdateServiceDto) => {
+  validateServicePayload(data);
+
   await getServiceById(id);
   
   // Si se está actualizando la categoría, validar que existe

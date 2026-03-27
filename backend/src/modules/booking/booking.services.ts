@@ -1,4 +1,5 @@
-import  prisma from '../../config/prisma'
+import prisma from '../../config/prisma'
+import { Prisma } from '@prisma/client';
 import { 
   CreateBookingDTO, 
   BookingFiltersDTO, 
@@ -6,7 +7,7 @@ import {
   BookingError,
   BookingErrorCodes 
 } from './booking.types';
-import { addMinutes, format, startOfDay, endOfDay, parse } from 'date-fns';
+import { addMinutes } from 'date-fns';
 import { hasTimeConflictOptimized, TimePeriod } from '../../utils/timeConflictUtils';
 import logger from '../../utils/logger';
 
@@ -21,18 +22,41 @@ interface WeeklySchedule {
   };
 }
 
+type BookingValidationDb = Pick<typeof prisma, 'adminUser' | 'booking' | 'availabilityBlock'>;
+
+const getUtcDayRange = (date: Date): { start: Date; endExclusive: Date } => {
+  const start = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
+  const endExclusive = new Date(start);
+  endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+  return { start, endExclusive };
+};
+
+const buildBookingError = (
+  message: string,
+  statusCode: number,
+  code: BookingErrorCodes
+): BookingError => {
+  const error = new Error(message) as BookingError;
+  error.statusCode = statusCode;
+  error.code = code;
+  return error;
+};
+
 /**
  * Valida si una hora específica está disponible para una reserva
  */
 const validateTimeSlotAvailability = async (
-  serviceId: string,
+  db: BookingValidationDb,
   requestedTime: Date,
   serviceDuration: number,
-  adminId: string
+  adminId: string,
+  serviceId: string
 ): Promise<boolean> => {
   try {
+    const { start: dayStartUTC, endExclusive: dayEndUTCExclusive } = getUtcDayRange(requestedTime);
+
     // 1. Obtener el admin y su horario
-    const adminUser = await prisma.adminUser.findUnique({
+    const adminUser = await db.adminUser.findUnique({
       where: { id: adminId },
       select: { schedule: true }
     });
@@ -72,26 +96,25 @@ const validateTimeSlotAvailability = async (
 
     // 4. Obtener todos los conflictos potenciales del día (excluir canceladas)
     const [bookings, blocks] = await Promise.all([
-      prisma.booking.findMany({
+      db.booking.findMany({
         where: {
           adminId,
           bookingTime: {
-            gte: startOfDay(requestedTime),
-            lte: endOfDay(requestedTime)
+            gte: dayStartUTC,
+            lt: dayEndUTCExclusive
           },
           status: 'CONFIRMED' // Solo considerar reservas confirmadas para conflictos
         },
-        include: {
-          service: {
-            select: { durationMinutes: true }
-          }
+        select: {
+          bookingTime: true,
+          durationMinutes: true
         }
       }),
-      prisma.availabilityBlock.findMany({
+      db.availabilityBlock.findMany({
         where: {
           adminId,
-          startTime: { lte: endOfDay(requestedTime) },
-          endTime: { gte: startOfDay(requestedTime) }
+          startTime: { lt: dayEndUTCExclusive },
+          endTime: { gte: dayStartUTC }
         }
       })
     ]);
@@ -100,7 +123,7 @@ const validateTimeSlotAvailability = async (
     const busyPeriods: TimePeriod[] = [
       ...bookings.map(b => ({
         start: b.bookingTime,
-        end: addMinutes(b.bookingTime, b.service.durationMinutes)
+        end: addMinutes(b.bookingTime, b.durationMinutes)
       })),
       ...blocks.map(b => ({
         start: b.startTime,
@@ -136,103 +159,124 @@ export const createBooking = async (
   data: CreateBookingDTO
 ): Promise<BookingWithDetails> => {
   try {
-    // 1. Verificar que el servicio existe y está activo
-    const service = await prisma.service.findUnique({
-      where: { id: data.serviceId },
-      include: { 
-        admin: {
-          select: {
-            id: true,
-            minBookingNoticeMinutes: true,
-            schedule: true
+    const booking = await prisma.$transaction(
+      async (tx) => {
+        // 1. Verificar que el servicio existe y está activo
+        const service = await tx.service.findUnique({
+          where: { id: data.serviceId },
+          include: {
+            admin: {
+              select: {
+                id: true,
+                minBookingNoticeMinutes: true,
+                schedule: true
+              }
+            }
           }
+        });
+
+        if (!service || !service.isActive) {
+          throw buildBookingError(
+            'Service not found or inactive',
+            404,
+            BookingErrorCodes.SERVICE_NOT_FOUND
+          );
         }
-      }
-    });
 
-    if (!service || !service.isActive) {
-      const error: BookingError = new Error('Service not found or inactive') as BookingError;
-      error.statusCode = 404;
-      error.code = BookingErrorCodes.SERVICE_NOT_FOUND;
-      throw error;
-    }
+        if (!service.admin) {
+          throw buildBookingError(
+            'Admin not found for this service',
+            404,
+            BookingErrorCodes.ADMIN_NOT_FOUND
+          );
+        }
 
-    if (!service.admin) {
-      const error: BookingError = new Error('Admin not found for this service') as BookingError;
-      error.statusCode = 404;
-      error.code = BookingErrorCodes.ADMIN_NOT_FOUND;
-      throw error;
-    }
+        // 2. Validar tiempo mínimo de antelación (valida futuro + notice en una sola lógica)
+        const now = new Date();
+        const minNoticeMinutes = service.admin.minBookingNoticeMinutes || 60; // Default 1 hora
+        const minBookingTime = addMinutes(now, minNoticeMinutes);
 
-    // 2. Validar tiempo mínimo de antelación (valida futuro + notice en una sola lógica)
-    const now = new Date();
-    const minNoticeMinutes = service.admin.minBookingNoticeMinutes || 60; // Default 1 hora
-    const minBookingTime = addMinutes(now, minNoticeMinutes);
-    
-    if (data.bookingTime < minBookingTime) {
-      const error: BookingError = new Error(
-        `Booking must be made at least ${minNoticeMinutes} minutes in advance`
-      ) as BookingError;
-      error.statusCode = 400;
-      error.code = BookingErrorCodes.INSUFFICIENT_NOTICE;
-      throw error;
-    }
+        if (data.bookingTime < minBookingTime) {
+          throw buildBookingError(
+            `Booking must be made at least ${minNoticeMinutes} minutes in advance`,
+            400,
+            BookingErrorCodes.INSUFFICIENT_NOTICE
+          );
+        }
 
-    // 4. Validar disponibilidad completa (horario de trabajo, conflictos, duración)
-    const isAvailable = await validateTimeSlotAvailability(
-      data.serviceId,
-      data.bookingTime,
-      service.durationMinutes,
-      service.adminId
-    );
+        // 3. Validar disponibilidad completa (horario de trabajo, conflictos, duración)
+        const isAvailable = await validateTimeSlotAvailability(
+          tx,
+          data.bookingTime,
+          service.durationMinutes,
+          service.adminId,
+          data.serviceId
+        );
 
-    if (!isAvailable) {
-      const error: BookingError = new Error('The requested time slot is not available') as BookingError;
-      error.statusCode = 409;
-      error.code = BookingErrorCodes.UNAVAILABLE_TIME;
-      throw error;
-    }
+        if (!isAvailable) {
+          throw buildBookingError(
+            'The requested time slot is not available',
+            409,
+            BookingErrorCodes.UNAVAILABLE_TIME
+          );
+        }
 
-    // 5. Crear la reserva con snapshot de duración
-    const booking = await prisma.booking.create({
-      data: {
-        clientId,
-        serviceId: data.serviceId,
-        adminId: service.adminId,
-        bookingTime: data.bookingTime,
-        durationMinutes: service.durationMinutes, // Snapshot de duración al momento de reservar
+        // 4. Crear la reserva con snapshot de duración
+        return tx.booking.create({
+          data: {
+            clientId,
+            serviceId: data.serviceId,
+            adminId: service.adminId,
+            bookingTime: data.bookingTime,
+            durationMinutes: service.durationMinutes, // Snapshot de duración al momento de reservar
+          },
+          include: {
+            service: {
+              select: {
+                id: true,
+                name: true,
+                durationMinutes: true,
+                price: true
+              }
+            },
+            client: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true
+              }
+            }
+          }
+        });
       },
-      include: {
-        service: {
-          select: {
-            id: true,
-            name: true,
-            durationMinutes: true,
-            price: true
-          }
-        },
-        client: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true
-          }
-        }
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable
       }
-    });
+    );
 
     logger.info({
       bookingId: booking.id,
       clientId,
       serviceId: data.serviceId,
       bookingTime: data.bookingTime,
-      adminId: service.adminId
+      adminId: booking.adminId
     }, 'Booking created successfully with enhanced validation');
 
     return booking as BookingWithDetails;
 
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === 'P2002' || error.code === 'P2034')
+    ) {
+      throw buildBookingError(
+        'The requested time slot is not available',
+        409,
+        BookingErrorCodes.UNAVAILABLE_TIME
+      );
+    }
+
     logger.error({ error, clientId, data }, 'Error creating booking');
     throw error;
   }
@@ -246,25 +290,18 @@ export const getClientBookings = async (
   filters: BookingFiltersDTO
 ): Promise<{ bookings: BookingWithDetails[]; total: number }> => {
   try {
-    const where: any = {
-      clientId
+    const where: Prisma.BookingWhereInput = {
+      clientId,
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.from || filters.to
+        ? {
+            bookingTime: {
+              ...(filters.from ? { gte: filters.from } : {}),
+              ...(filters.to ? { lte: filters.to } : {})
+            }
+          }
+        : {})
     };
-
-    // Filtros de fecha
-    if (filters.from || filters.to) {
-      where.bookingTime = {};
-      if (filters.from) {
-        where.bookingTime.gte = filters.from;
-      }
-      if (filters.to) {
-        where.bookingTime.lte = filters.to;
-      }
-    }
-
-    // Filtro de status
-    if (filters.status) {
-      where.status = filters.status;
-    }
 
     const [bookings, total] = await Promise.all([
       prisma.booking.findMany({
@@ -312,25 +349,18 @@ export const getAdminBookings = async (
   filters: BookingFiltersDTO
 ): Promise<{ bookings: BookingWithDetails[]; total: number }> => {
   try {
-    const where: any = {
-      adminId
+    const where: Prisma.BookingWhereInput = {
+      adminId,
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.from || filters.to
+        ? {
+            bookingTime: {
+              ...(filters.from ? { gte: filters.from } : {}),
+              ...(filters.to ? { lte: filters.to } : {})
+            }
+          }
+        : {})
     };
-
-    // Filtros de fecha
-    if (filters.from || filters.to) {
-      where.bookingTime = {};
-      if (filters.from) {
-        where.bookingTime.gte = filters.from;
-      }
-      if (filters.to) {
-        where.bookingTime.lte = filters.to;
-      }
-    }
-
-    // Filtro de status
-    if (filters.status) {
-      where.status = filters.status;
-    }
 
     const [bookings, total] = await Promise.all([
       prisma.booking.findMany({
@@ -494,14 +524,12 @@ export const getBookingById = async (
   clientId?: string
 ): Promise<BookingWithDetails> => {
   try {
-    const where: any = { id: bookingId };
-    
-    // Si se especifica clientId, filtrar por cliente
-    if (clientId) {
-      where.clientId = clientId;
-    }
+    const where: Prisma.BookingWhereInput = {
+      id: bookingId,
+      ...(clientId ? { clientId } : {})
+    };
 
-    const booking = await prisma.booking.findUnique({
+    const booking = await prisma.booking.findFirst({
       where,
       include: {
         service: {

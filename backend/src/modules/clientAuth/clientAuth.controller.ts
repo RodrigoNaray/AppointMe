@@ -1,8 +1,12 @@
 import { Request, Response } from 'express';
 import * as service from './clientAuth.services';
-import { RegisterClientDto, LoginClientDto } from './clientAuth.types';
+import { RegisterClientDto, LoginClientDto, PublicClient } from './clientAuth.types';
 import {ACCESS_CLIENT_TOKEN_COOKIE_NAME, ACCESS_ADMIN_TOKEN_COOKIE_NAME, cookieOptions, clearCookieOptions} from '../../config/auth.config'
 import logger from '../../utils/logger';
+
+const getErrorMessage = (error: unknown): string => {
+  return error instanceof Error ? error.message : 'Error desconocido';
+};
 
 export const registerClientController = async (req: Request, res: Response) => {
   try {
@@ -10,9 +14,9 @@ export const registerClientController = async (req: Request, res: Response) => {
     const newClient = await service.registerClient(clientData);
     logger.info({ clientId: newClient.id }, "Nuevo cliente registrado");
     res.status(201).json({ message: 'Cliente registrado exitosamente', client: newClient });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error, "Error en el registro de cliente");
-    if (error.name === 'ConflictError') {
+    if (error instanceof Error && error.name === 'ConflictError') {
       return res.status(409).json({ message: error.message });
     }
     res.status(500).json({ message: 'Error interno del servidor' });
@@ -40,7 +44,7 @@ export const loginClientController = async (req: Request, res: Response) => {
 
     logger.info({ clientId: client.id }, "Login de cliente exitoso (sesión admin invalidada si existía)");
     res.status(200).json({ message: 'Inicio de sesión exitoso', client });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error, "Error en el login de cliente");
     res.status(500).json({ message: 'Error interno del servidor' });
   }
@@ -52,7 +56,7 @@ export const logoutClientController = (req: Request, res: Response) => {
     res.clearCookie(ACCESS_CLIENT_TOKEN_COOKIE_NAME, clearCookieOptions);
     logger.info("Sesión de cliente cerrada");
     res.status(200).json({ message: 'Sesión cerrada exitosamente' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error, "Error en el logout de cliente");
     res.status(500).json({ message: 'Error interno del servidor' });
   }
@@ -84,7 +88,7 @@ export const getClientProfileController = async (req: Request, res: Response) =>
         type: 'client' as const
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error, "Error obteniendo perfil de cliente");
     res.status(500).json({ message: 'Error interno del servidor' });
   }
@@ -123,7 +127,7 @@ export const updateClientProfileController = async (req: Request, res: Response)
       message: 'Perfil actualizado exitosamente',
       client: updatedClient
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error, 'Error actualizando perfil de cliente');
     res.status(500).json({ message: 'Error interno del servidor' });
   }
@@ -160,7 +164,7 @@ export const verifyEmailController = async (req: Request, res: Response) => {
       client: result.client,
       alreadyVerified: result.alreadyVerified
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error, "Error en la verificación de email");
     res.status(500).json({ message: 'Error interno del servidor' });
   }
@@ -190,7 +194,7 @@ export const resendVerificationController = async (req: Request, res: Response) 
     res.status(200).json({ 
       message: 'Email de verificación enviado exitosamente. Revisa tu bandeja de entrada.' 
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error, "Error al reenviar verificación");
     res.status(500).json({ message: 'Error interno del servidor' });
   }
@@ -223,7 +227,7 @@ export const requestEmailChangeController = async (req: Request, res: Response) 
 
     logger.info({ clientId }, "Email change request sent");
     res.status(200).json({ message: result.message });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error, "Error requesting email change");
     res.status(500).json({ message: 'Error interno del servidor' });
   }
@@ -248,7 +252,7 @@ export const verifyEmailChangeController = async (req: Request, res: Response) =
 
     logger.info("Email change verified successfully");
     res.status(200).json({ message: result.message });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error, "Error verifying email change");
     res.status(500).json({ message: 'Error interno del servidor' });
   }
@@ -300,7 +304,7 @@ export const changePasswordController = async (req: Request, res: Response) => {
 
     logger.info({ clientId: user.id }, "Password changed successfully");
     res.status(200).json({ message: result.message });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error, "Error changing password");
     res.status(500).json({ message: 'Error interno del servidor' });
   }
@@ -317,7 +321,7 @@ export const changePasswordController = async (req: Request, res: Response) => {
 export const googleCallbackController = (req: Request, res: Response) => {
   try {
     // req.user fue establecido por Passport después de autenticar con Google
-    const user = req.user as any;
+    const user = req.user as PublicClient | undefined;
 
     if (!user) {
       logger.warn("Google OAuth callback sin usuario autenticado");
@@ -338,7 +342,7 @@ export const googleCallbackController = (req: Request, res: Response) => {
     // Redireccionar al frontend home con flag de éxito
     // El frontend (HomePage) leerá returnUrl desde oauthStore (sessionStorage)
     res.redirect(`${process.env.CLIENT_URL}/?login=success`);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error, "Error en callback de Google OAuth");
     res.redirect(`${process.env.CLIENT_URL}/login?error=server_error`);
   }
@@ -368,7 +372,7 @@ export const forgotPasswordController = async (req: Request, res: Response) => {
     res.status(200).json({ 
       message: 'Si el email existe en nuestro sistema, recibirás instrucciones de recuperación.' 
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(error, 'Error en forgot password controller');
     // Retornar mensaje genérico incluso en error
     res.status(200).json({ 
@@ -402,10 +406,11 @@ export const resetPasswordController = async (req: Request, res: Response) => {
 
     logger.info({ token: token.substring(0, 10) + '...' }, 'Password reset successful');
     res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
-  } catch (error: any) {
-    logger.error({ error: error.message }, 'Error en reset password controller');
+  } catch (error: unknown) {
+    const errorMessage = getErrorMessage(error);
+    logger.error({ error: errorMessage }, 'Error en reset password controller');
     
     // Retornar error específico (token expirado, password inválida, etc)
-    res.status(400).json({ message: error.message || 'Error al restablecer contraseña' });
+    res.status(400).json({ message: errorMessage || 'Error al restablecer contraseña' });
   }
 };

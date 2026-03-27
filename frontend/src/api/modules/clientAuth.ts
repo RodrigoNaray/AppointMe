@@ -1,4 +1,5 @@
 import type { LoginDto, RegisterDto, ClientUser } from '../../types/auth';
+import axios from 'axios';
 import apiClient from '../client';
 
 const clientAuthApi = apiClient
@@ -13,6 +14,13 @@ clientAuthApi.interceptors.response.use(
 
 export const clientAuthService = {
 
+  getErrorData: (error: unknown): { message?: string; alreadyVerified?: boolean } | null => {
+    if (axios.isAxiosError<{ message?: string; alreadyVerified?: boolean }>(error)) {
+      return error.response?.data ?? null;
+    }
+    return null;
+  },
+
   login: async (data: LoginDto): Promise<ClientUser> => {
     const response = await clientAuthApi.post<{ message: string; client: ClientUser }>('/auth/client/login', data);
     return { ...response.data.client, type: 'client' as const };
@@ -20,34 +28,36 @@ export const clientAuthService = {
 
   register: async (data: RegisterDto): Promise<{ success: boolean; message: string }> => {
     try {
-      const response = await clientAuthApi.post<{ message: string; client: any }>('/auth/client/register', data);
+      const response = await clientAuthApi.post<{ message: string; client: Record<string, unknown> }>('/auth/client/register', data);
       return {
         success: true,
         message: response.data.message
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorData = clientAuthService.getErrorData(error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Error en el registro'
+        message: errorData?.message || 'Error en el registro'
       };
     }
   },
 
-  verifyEmail: async (token: string): Promise<{ success: boolean; message: string; client?: any; alreadyVerified?: boolean }> => {
+  verifyEmail: async (token: string): Promise<{ success: boolean; message: string; client?: Record<string, unknown>; alreadyVerified?: boolean }> => {
     try {
-      const response = await clientAuthApi.post<{ message: string; client: any; alreadyVerified?: boolean }>('/auth/client/verify-email', { token });
+      const response = await clientAuthApi.post<{ message: string; client: Record<string, unknown>; alreadyVerified?: boolean }>('/auth/client/verify-email', { token });
       return {
         success: true,
         message: response.data.message,
         client: response.data.client,
         alreadyVerified: response.data.alreadyVerified
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Si el error indica que ya está verificado, tratarlo como éxito
-      const alreadyVerified = error.response?.data?.alreadyVerified === true;
+      const errorData = clientAuthService.getErrorData(error);
+      const alreadyVerified = errorData?.alreadyVerified === true;
       return {
         success: alreadyVerified, // Éxito si ya está verificado
-        message: error.response?.data?.message || 'Error en la verificación',
+        message: errorData?.message || 'Error en la verificación',
         alreadyVerified
       };
     }
@@ -60,10 +70,11 @@ export const clientAuthService = {
         success: true,
         message: response.data.message
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorData = clientAuthService.getErrorData(error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Error al reenviar verificación'
+        message: errorData?.message || 'Error al reenviar verificación'
       };
     }
   },
@@ -87,10 +98,11 @@ export const clientAuthService = {
         success: true,
         message: response.data.message
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorData = clientAuthService.getErrorData(error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Error al solicitar cambio de email'
+        message: errorData?.message || 'Error al solicitar cambio de email'
       };
     }
   },
@@ -102,10 +114,11 @@ export const clientAuthService = {
         success: true,
         message: response.data.message
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorData = clientAuthService.getErrorData(error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Error al verificar cambio de email'
+        message: errorData?.message || 'Error al verificar cambio de email'
       };
     }
   },
@@ -123,10 +136,11 @@ export const clientAuthService = {
         success: true,
         message: response.data.message
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorData = clientAuthService.getErrorData(error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Error al cambiar la contraseña'
+        message: errorData?.message || 'Error al cambiar la contraseña'
       };
     }
   },

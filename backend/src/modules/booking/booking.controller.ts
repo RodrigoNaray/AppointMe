@@ -27,7 +27,7 @@ export const createBooking = async (
     if (!client?.id) {
       return res.status(401).json({
         success: false,
-        booking: undefined as any,
+        booking: undefined,
         message: 'Authentication required'
       });
     }
@@ -38,7 +38,7 @@ export const createBooking = async (
     if (!serviceId || !bookingTime || !clientTimezone) {
       return res.status(400).json({
         success: false,
-        booking: undefined as any,
+        booking: undefined,
         message: 'Service ID, booking time, and client timezone are required'
       });
     }
@@ -47,7 +47,7 @@ export const createBooking = async (
     if (isNaN(bookingTimeDate.getTime())) {
       return res.status(400).json({
         success: false,
-        booking: undefined as any,
+        booking: undefined,
         message: 'Invalid booking time format'
       });
     }
@@ -92,14 +92,14 @@ export const createBooking = async (
       const bookingError = error as BookingError;
       return res.status(bookingError.statusCode).json({
         success: false,
-        booking: undefined as any,
+        booking: undefined,
         message: bookingError.message
       });
     }
 
     return res.status(500).json({
       success: false,
-      booking: undefined as any,
+      booking: undefined,
       message: 'Internal server error'
     });
   }
@@ -271,7 +271,7 @@ export const getAllBookings = async (
  */
 export const getBookingById = async (
   req: GetBookingsRequest,
-  res: Response<{ success: boolean; booking?: any; message: string }>
+  res: Response<{ success: boolean; booking?: BookingWithDetails; message: string }>
 ) => {
   try {
     const { id } = req.params;

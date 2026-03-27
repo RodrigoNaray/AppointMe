@@ -4,6 +4,7 @@ import logger from '../../utils/logger';
 import {
   GetBookingRulesRequest,
   UpdateBookingRulesRequest,
+  UpdateContactInfoRequest,
   BookingRulesResponse,
   UpdateBookingRulesResponse,
   SettingsError
@@ -147,7 +148,7 @@ export const getBusinessHours = async (
  * }
  */
 export const updateBookingRules = async (
-  req: any, // Type simplificado para compatibilidad con middleware
+  req: UpdateBookingRulesRequest,
   res: Response<UpdateBookingRulesResponse>
 ) => {
   try {
@@ -269,7 +270,7 @@ export const getContactInfo = async (
  * }
  */
 export const updateContactInfo = async (
-  req: any,
+  req: UpdateContactInfoRequest,
   res: Response
 ) => {
   try {

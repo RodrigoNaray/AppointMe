@@ -189,7 +189,7 @@ export const useBookingStore = create<BookingState>()(
       version: 1, // Versión del schema (para migraciones futuras)
       
       // Opcional: Migración de versiones antiguas
-      // migrate: (persistedState: any, version: number) => {
+      // migrate: (persistedState: unknown, version: number) => {
       //   if (version === 0) {
       //     // Migrar de v0 a v1
       //   }

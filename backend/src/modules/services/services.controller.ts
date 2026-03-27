@@ -29,6 +29,11 @@ export const create = async (req: Request<{}, {}, CreateServiceDto>, res: Respon
     
     res.status(201).json(newService);
   } catch (error) {
+    if (error instanceof service.ServiceValidationError) {
+      logger.warn(error.message);
+      return res.status(400).json({ message: error.message });
+    }
+
     if (error instanceof ConflictError) {
       logger.warn(error.message);
       return res.status(409).json({ message: error.message });
@@ -43,6 +48,11 @@ export const update = async (req: Request<{ id: string }, {}, UpdateServiceDto>,
     const updatedService = await service.updateService(req.params.id, req.body);
     res.status(200).json(updatedService);
   } catch (error) {
+    if (error instanceof service.ServiceValidationError) {
+      logger.warn(error.message);
+      return res.status(400).json({ message: error.message });
+    }
+
     if (error instanceof NotFoundError) {
       logger.warn(error.message);
       return res.status(404).json({ message: error.message });

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -234,15 +235,16 @@ export default function SettingsPage() {
       setInitialValue(minutes);
       setInitialCancelValue(cancelMinutes);
       setSuccessMessage('Configuración actualizada correctamente');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error al actualizar configuración:', error);
+      const responseStatus = axios.isAxiosError(error) ? error.response?.status : undefined;
       
       // Manejo de errores específicos (OWASP: no exponer detalles técnicos al usuario)
-      if (error.code === 'ERR_NETWORK') {
+      if (axios.isAxiosError(error) && error.code === 'ERR_NETWORK') {
         setError('No se pudo conectar con el servidor.');
-      } else if (error.response?.status === 401 || error.response?.status === 403) {
+      } else if (responseStatus === 401 || responseStatus === 403) {
         setError('No tienes permisos para realizar esta acción. Verifica tu sesión.');
-      } else if (error.response?.status === 400) {
+      } else if (responseStatus === 400) {
         setError('Valor inválido. Verifica que esté dentro del rango permitido.');
       } else {
         setError('No se pudo guardar la configuración. Intenta nuevamente.');
@@ -272,15 +274,19 @@ export default function SettingsPage() {
       setContactInfo(updatedData);
       setInitialContactInfo(updatedData);
       setContactSuccess('Información de contacto actualizada correctamente');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error al actualizar información de contacto:', error);
+      const responseStatus = axios.isAxiosError(error) ? error.response?.status : undefined;
+      const responseMessage = axios.isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message
+        : undefined;
       
-      if (error.code === 'ERR_NETWORK') {
+      if (axios.isAxiosError(error) && error.code === 'ERR_NETWORK') {
         setContactError('No se pudo conectar con el servidor.');
-      } else if (error.response?.status === 401 || error.response?.status === 403) {
+      } else if (responseStatus === 401 || responseStatus === 403) {
         setContactError('No tienes permisos para realizar esta acción. Verifica tu sesión.');
-      } else if (error.response?.status === 400) {
-        setContactError(error.response?.data?.message || 'Formato inválido en alguno de los campos.');
+      } else if (responseStatus === 400) {
+        setContactError(responseMessage || 'Formato inválido en alguno de los campos.');
       } else {
         setContactError('No se pudo guardar la información de contacto. Intenta nuevamente.');
       }
