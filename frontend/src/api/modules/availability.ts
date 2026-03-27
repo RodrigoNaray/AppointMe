@@ -48,6 +48,11 @@ export const availabilityService = {
 
         const response = await apiClient.get<string[]>('/availability', { params });
         return response.data;
+    },
+
+    getFirstMonthAvailable: async (body: { totalDuration: number; maxMonthsAhead?: number}) => {
+        const response = await apiClient.post('/availability/firstMonthAvailable', body);
+        return response.data; // { month: "YYYY-MM" }
     }
 
 } as const
