@@ -10,6 +10,15 @@ interface SlotsAvailabilityParams {
     durationMinutes: number;
 }
 
+interface FirstMonthAvailableRequest {
+    totalDuration: number;
+    maxMonthsAhead?: number;
+}
+
+interface FirstMonthAvailableResponse {
+    month: string | null;
+}
+
 const MONTH_REGEX = /^\d{4}-\d{2}$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -33,6 +42,19 @@ const assertValidSlotsParams = (params: SlotsAvailabilityParams): void => {
     }
 };
 
+const assertValidFirstMonthParams = (params: FirstMonthAvailableRequest): void => {
+    if (!Number.isInteger(params.totalDuration) || params.totalDuration <= 0) {
+        throw new Error('totalDuration debe ser un entero mayor a 0');
+    }
+
+    if (
+        params.maxMonthsAhead !== undefined &&
+        (!Number.isInteger(params.maxMonthsAhead) || params.maxMonthsAhead <= 0)
+    ) {
+        throw new Error('maxMonthsAhead debe ser un entero mayor a 0');
+    }
+};
+
 export const availabilityService = {
 
     getAvailabilityPerMonth: async (params: MonthAvailabilityParams): Promise<string[]> => {
@@ -50,9 +72,11 @@ export const availabilityService = {
         return response.data;
     },
 
-    getFirstMonthAvailable: async (body: { totalDuration: number; maxMonthsAhead?: number}) => {
-        const response = await apiClient.post('/availability/firstMonthAvailable', body);
-        return response.data; // { month: "YYYY-MM" }
+    getFirstMonthAvailable: async (body: FirstMonthAvailableRequest): Promise<FirstMonthAvailableResponse> => {
+        assertValidFirstMonthParams(body);
+
+        const response = await apiClient.post<FirstMonthAvailableResponse>('/availability/firstMonthAvailable', body);
+        return response.data;
     }
 
 } as const

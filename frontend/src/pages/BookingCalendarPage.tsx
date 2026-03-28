@@ -6,12 +6,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowLeft, Calendar as CalendarIcon, Clock, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useBookingStore, selectCart, selectTotalPrice, selectTotalDuration, selectClearCart } from '@/stores/bookingStore';
 import { useAuthStore, selectAuthState } from '@/stores/authStore';
-import { format, isBefore, startOfToday, parse, addMonths, subMonths } from 'date-fns';
+import { format, isBefore, startOfToday, parse, addMonths, subMonths, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { getBookingRules } from '@/api/modules/settings';
 import { availabilityService } from '@/api/modules/availability';
-import { es as esCalendarLocale } from 'react-day-picker/locale';
 import { convertSlotLocalToUTC, convertSlotUTCToLocal } from '@/lib/timezoneSlots';
+
+const FIRST_MONTH_REGEX = /^(\d{4})-(\d{2})$/;
+
+export const parseFirstAvailableMonth = (month: string): Date | null => {
+  const match = FIRST_MONTH_REGEX.exec(month);
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]);
+  if (!Number.isInteger(year) || !Number.isInteger(monthIndex) || monthIndex < 1 || monthIndex > 12) {
+    return null;
+  }
+
+  // Use local midnight for calendar navigation to avoid UTC offset rolling to previous month.
+  return new Date(year, monthIndex - 1, 1, 0, 0, 0, 0);
+};
 
 export default function BookingCalendarPage() {
   const navigate = useNavigate();
@@ -102,23 +119,15 @@ export default function BookingCalendarPage() {
     const findFirstAvailableMonth = async () => {
       setLoadingMonth(true);
       try {
-        let searchMonth = startOfToday();
-        let attempts = 0;
-        const maxAttempts = 12; // Buscar hasta 12 meses adelante
+        const response = await availabilityService.getFirstMonthAvailable({
+          totalDuration,
+          maxMonthsAhead: 12,
+        });
 
-        while (attempts < maxAttempts) {
-          const monthStr = format(searchMonth, 'yyyy-MM');
-          const validDays: string[] = await availabilityService.getAvailabilityPerMonth({month: monthStr, totalDuration: totalDuration});
-    
-          if (validDays.length > 0) {
-            // Encontrado primer mes con disponibilidad válida
-            setCurrentMonth(searchMonth);
-            return;
-          }
-          
-          // Buscar siguiente mes
-          searchMonth = addMonths(searchMonth, 1);
-          attempts++;
+        const parsedMonth = response.month ? parseFirstAvailableMonth(response.month) : null;
+        if (parsedMonth) {
+          setCurrentMonth(parsedMonth);
+          return;
         }
 
         // No se encontró disponibilidad en 12 meses, iniciar en mes actual
@@ -132,7 +141,7 @@ export default function BookingCalendarPage() {
     };
 
     findFirstAvailableMonth();
-  }, [totalDuration, dateParam, minBookingAdvanceMinutes]); 
+  }, [totalDuration, dateParam, currentMonth]); 
 
   useEffect(() => {
     if (!currentMonth) return; // Esperar a que currentMonth se inicialice
@@ -181,7 +190,8 @@ export default function BookingCalendarPage() {
         
         // PASO 2: FILTRO CRÍTICO - Si es hoy, eliminar horarios que ya pasaron (comparar en LOCAL)
         const now = new Date();
-        const isToday = format(selectedDate, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
+        const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+        const isToday = selectedDateStr === format(now, 'yyyy-MM-dd');
         
         const filteredSlots = isToday 
           ? slotsLocal.filter(timeSlot => {
@@ -194,6 +204,20 @@ export default function BookingCalendarPage() {
               return slotTime >= minimumTime;
             })
           : slotsLocal;
+
+        // Si hoy no tiene slots válidos por anticipación, avanzar al próximo día disponible.
+        if (isToday && filteredSlots.length === 0) {
+          const nextAvailableDay = availableDays.find((day) => day > selectedDateStr);
+
+          if (nextAvailableDay) {
+            const nextDate = parse(nextAvailableDay, 'yyyy-MM-dd', new Date());
+            if (!isNaN(nextDate.getTime())) {
+              setAvailableSlots([]);
+              setSelectedDate(nextDate);
+              return;
+            }
+          }
+        }
         
         setAvailableSlots(filteredSlots);
       } catch (error) {
@@ -205,7 +229,7 @@ export default function BookingCalendarPage() {
     };
 
     fetchSlots();
-  }, [selectedDate, cart, minBookingAdvanceMinutes]);
+  }, [selectedDate, totalDuration, minBookingAdvanceMinutes, availableDays]);
 
   // Determinar si una fecha está disponible
   const isDateAvailable = (date: Date): boolean => {
@@ -255,10 +279,10 @@ export default function BookingCalendarPage() {
   const canNavigateToPrevMonth = (): boolean => {
     if (!currentMonth) return false;
     const prevMonth = subMonths(currentMonth, 1);
-    const today = startOfToday();
+    const currentMonthStart = startOfMonth(startOfToday());
     
-    // No permitir meses anteriores al actual
-    return !isBefore(prevMonth, today);
+    // No permitir meses anteriores al mes actual, pero sí volver al mes en curso.
+    return !isBefore(startOfMonth(prevMonth), currentMonthStart);
   };
 
   // Verificar si se puede navegar al mes siguiente
@@ -309,6 +333,7 @@ export default function BookingCalendarPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Mes anterior"
                       onClick={() => currentMonth && handleMonthChange(subMonths(currentMonth, 1))}
                       disabled={loadingMonth || !canNavigateToPrevMonth()}
                       className="h-8 w-8"
@@ -325,6 +350,7 @@ export default function BookingCalendarPage() {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Mes siguiente"
                       onClick={() => currentMonth && handleMonthChange(addMonths(currentMonth, 1))}
                       disabled={loadingMonth || !canNavigateToNextMonth()}
                       className="h-8 w-8"
@@ -359,7 +385,7 @@ export default function BookingCalendarPage() {
                       if (isBefore(date, startOfToday())) return true;
                       return !isDateAvailable(date);
                     }}
-                    locale={esCalendarLocale}
+                    locale={es}
                     className="rounded-md border w-full"
                   />
                 )}

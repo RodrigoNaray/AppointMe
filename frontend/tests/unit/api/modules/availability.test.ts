@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockGet } = vi.hoisted(() => ({
+const { mockGet, mockPost } = vi.hoisted(() => ({
   mockGet: vi.fn(),
+  mockPost: vi.fn(),
 }));
 
 vi.mock('@/api/client', () => ({
   default: {
     get: mockGet,
+    post: mockPost,
   },
 }));
 
@@ -87,5 +89,54 @@ describe('availabilityService', () => {
     ).rejects.toThrow('durationMinutes debe ser un entero mayor a 0');
 
     expect(mockGet).not.toHaveBeenCalled();
+  });
+
+  it('requests first available month with valid payload', async () => {
+    mockPost.mockResolvedValue({ data: { month: '2030-02' } });
+
+    const data = await availabilityService.getFirstMonthAvailable({
+      totalDuration: 60,
+      maxMonthsAhead: 12,
+    });
+
+    expect(data).toEqual({ month: '2030-02' });
+    expect(mockPost).toHaveBeenCalledWith('/availability/firstMonthAvailable', {
+      totalDuration: 60,
+      maxMonthsAhead: 12,
+    });
+  });
+
+  it('supports null month response when no month is available', async () => {
+    mockPost.mockResolvedValue({ data: { month: null } });
+
+    const data = await availabilityService.getFirstMonthAvailable({
+      totalDuration: 60,
+    });
+
+    expect(data).toEqual({ month: null });
+    expect(mockPost).toHaveBeenCalledWith('/availability/firstMonthAvailable', {
+      totalDuration: 60,
+    });
+  });
+
+  it('throws on invalid firstMonthAvailable totalDuration', async () => {
+    await expect(
+      availabilityService.getFirstMonthAvailable({
+        totalDuration: 0,
+      })
+    ).rejects.toThrow('totalDuration debe ser un entero mayor a 0');
+
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  it('throws on invalid firstMonthAvailable maxMonthsAhead', async () => {
+    await expect(
+      availabilityService.getFirstMonthAvailable({
+        totalDuration: 60,
+        maxMonthsAhead: -1,
+      })
+    ).rejects.toThrow('maxMonthsAhead debe ser un entero mayor a 0');
+
+    expect(mockPost).not.toHaveBeenCalled();
   });
 });

@@ -19,6 +19,54 @@ import { geocodeAddress, type GeocodingResult } from "@/lib/geocoding";
 // Lazy load del mapa (Performance: reduce bundle inicial)
 const AppMap = lazy(() => import("@/components/ui/AppMap").then(module => ({ default: module.AppMap })));
 
+const isObject = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null;
+};
+
+const isCategory = (value: unknown): boolean => {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.id === 'string' &&
+    typeof value.name === 'string' &&
+    (value.description === null || typeof value.description === 'string') &&
+    typeof value.isActive === 'boolean' &&
+    typeof value.createdAt === 'string' &&
+    typeof value.updatedAt === 'string'
+  );
+};
+
+const isService = (value: unknown): value is Service => {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.id === 'string' &&
+    typeof value.name === 'string' &&
+    (value.description === null || typeof value.description === 'string') &&
+    typeof value.durationMinutes === 'number' &&
+    typeof value.price === 'number' &&
+    typeof value.isActive === 'boolean' &&
+    typeof value.categoryId === 'string' &&
+    typeof value.createdAt === 'string' &&
+    typeof value.updatedAt === 'string' &&
+    isCategory(value.category)
+  );
+};
+
+export const parseActiveServicesPreview = (payload: unknown): Service[] => {
+  if (!Array.isArray(payload)) {
+    return [];
+  }
+
+  return payload
+    .filter((item): item is Service => isService(item) && item.isActive)
+    .slice(0, 5);
+};
+
 export default function HomePage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -34,7 +82,6 @@ export default function HomePage() {
   const [contactInfo, setContactInfo] = useState<ContactInfo | undefined>();
   const [loadingContact, setLoadingContact] = useState(true);
   const [mapCoordinates, setMapCoordinates] = useState<GeocodingResult | null>(null);
-  const [isGeocodingLoading, setIsGeocodingLoading] = useState(false);
   const hasItems = cart.length > 0;
 
   // Fetch servicios para preview
@@ -44,8 +91,8 @@ export default function HomePage() {
         const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
         const response = await fetch(`${baseUrl}/services`);
         if (response.ok) {
-          const data = await response.json();
-          setServices(data.filter((s: Service) => s.isActive).slice(0, 5)); // Solo 5 servicios
+          const data: unknown = await response.json();
+          setServices(parseActiveServicesPreview(data));
         }
       } catch (error) {
         console.error('Error fetching services:', error);
@@ -103,7 +150,6 @@ export default function HomePage() {
 
     // Prioridad 2: Geocoding automático con businessAddress
     if (contactInfo.address && contactInfo.address !== 'Dirección no disponible') {
-      setIsGeocodingLoading(true);
       geocodeAddress(contactInfo.address)
         .then((coords) => {
           if (coords) {
@@ -116,9 +162,6 @@ export default function HomePage() {
         .catch((error) => {
           console.error('[HomePage] Geocoding error:', error);
           setMapCoordinates(null);
-        })
-        .finally(() => {
-          setIsGeocodingLoading(false);
         });
     }
   }, [contactInfo]);

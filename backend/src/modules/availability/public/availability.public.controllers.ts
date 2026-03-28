@@ -80,3 +80,40 @@ export const getMonthAvailabilityController = async (req: Request, res: Response
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
+
+export const getFirstMonthAvailable = async (req: Request, res: Response) => {
+  const { totalDuration, maxMonthsAhead } = req.body as {
+    totalDuration?: unknown;
+    maxMonthsAhead?: unknown;
+  };
+
+  if (!Number.isInteger(totalDuration) || Number(totalDuration) <= 0) {
+    return res.status(400).json({
+      message: 'El parámetro "totalDuration" debe ser un entero mayor a 0.'
+    });
+  }
+
+  if (
+    maxMonthsAhead !== undefined &&
+    (!Number.isInteger(maxMonthsAhead) || Number(maxMonthsAhead) <= 0)
+  ) {
+    return res.status(400).json({
+      message: 'El parámetro "maxMonthsAhead" debe ser un entero mayor a 0.'
+    });
+  }
+
+  const parsedTotalDuration = Number(totalDuration);
+  const parsedMaxMonthsAhead =
+    maxMonthsAhead === undefined ? undefined : Number(maxMonthsAhead);
+
+  try {
+    const month = await availabilityPublicService.getFirstMonthAvailable(
+      parsedTotalDuration,
+      parsedMaxMonthsAhead
+    );
+    return res.status(200).json({ month });
+  } catch (error) {
+    logger.error(error, 'Error al calcular el primer mes disponible');
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};

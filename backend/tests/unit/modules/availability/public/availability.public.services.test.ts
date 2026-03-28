@@ -20,7 +20,8 @@ vi.mock('../../../../../src/config/prisma', () => ({
 
 import {
   getAvailableSlots,
-  getMonthAvailability
+  getMonthAvailability,
+  getFirstMonthAvailable
 } from '../../../../../src/modules/availability/public/availability.public.services';
 
 const fullSchedule = {
@@ -90,5 +91,75 @@ describe('availability.public.services', () => {
         })
       })
     );
+  });
+
+  it('returns current month when it has at least one available day', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2030-01-15T12:00:00.000Z'));
+
+    const month = await getFirstMonthAvailable(30, 3);
+
+    expect(month).toBe('2030-01');
+    expect(mockPrisma.availabilityBlock.findMany).toHaveBeenCalledTimes(1);
+
+    vi.useRealTimers();
+  });
+
+  it('skips a fully blocked current month and returns the next available one', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2030-01-15T12:00:00.000Z'));
+
+    mockPrisma.availabilityBlock.findMany.mockImplementation(async (args: {
+      where: {
+        endTime: { gte: Date };
+      };
+    }) => {
+      const monthStart = args.where.endTime.gte;
+      const isJanuary2030 =
+        monthStart.getUTCFullYear() === 2030 && monthStart.getUTCMonth() === 0;
+
+      if (!isJanuary2030) {
+        return [];
+      }
+
+      return [
+        {
+          startTime: new Date('2030-01-01T00:00:00.000Z'),
+          endTime: new Date('2030-02-01T00:00:00.000Z')
+        }
+      ];
+    });
+
+    const month = await getFirstMonthAvailable(30, 3);
+
+    expect(month).toBe('2030-02');
+    expect(mockPrisma.availabilityBlock.findMany).toHaveBeenCalledTimes(2);
+
+    vi.useRealTimers();
+  });
+
+  it('returns null when all checked months are fully blocked', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2030-01-15T12:00:00.000Z'));
+
+    mockPrisma.availabilityBlock.findMany.mockResolvedValue([
+      {
+        startTime: new Date('2000-01-01T00:00:00.000Z'),
+        endTime: new Date('2100-01-01T00:00:00.000Z')
+      }
+    ]);
+
+    const month = await getFirstMonthAvailable(30, 2);
+
+    expect(month).toBeNull();
+    expect(mockPrisma.availabilityBlock.findMany).toHaveBeenCalledTimes(2);
+
+    vi.useRealTimers();
+  });
+
+  it('returns null for non-positive input params', async () => {
+    expect(await getFirstMonthAvailable(0, 12)).toBeNull();
+    expect(await getFirstMonthAvailable(30, 0)).toBeNull();
+    expect(mockPrisma.adminUser.findFirst).not.toHaveBeenCalled();
   });
 });

@@ -20,6 +20,12 @@ const formatUtcDate = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+const formatUtcMonth = (date: Date): string => {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+};
+
 
 export const getAvailableSlots = async (date: Date, durationMinutes: number) => {
   if (durationMinutes <= 0) {
@@ -255,5 +261,40 @@ export const getMonthAvailability = async (month: Date, totalDuration: number) =
   }
 
   return availableDays;
+};
+
+export const getFirstMonthAvailable = async (
+  totalDuration: number,
+  maxMonthsAhead = 12
+): Promise<string | null> => {
+  if (totalDuration <= 0 || maxMonthsAhead <= 0) {
+    return null;
+  }
+
+  const now = new Date();
+  const currentMonthStart = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0)
+  );
+
+  for (let i = 0; i < maxMonthsAhead; i++) {
+    const monthStart = new Date(
+      Date.UTC(
+        currentMonthStart.getUTCFullYear(),
+        currentMonthStart.getUTCMonth() + i,
+        1,
+        0,
+        0,
+        0,
+        0
+      )
+    );
+
+    const availableDays = await getMonthAvailability(monthStart, totalDuration);
+    if (availableDays.length > 0) {
+      return formatUtcMonth(monthStart);
+    }
+  }
+
+  return null;
 };
 

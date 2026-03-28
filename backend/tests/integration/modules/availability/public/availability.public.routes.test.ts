@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../../../src/modules/availability/public/availability.public.services', () => ({
   getAvailableSlots: vi.fn(),
-  getMonthAvailability: vi.fn()
+  getMonthAvailability: vi.fn(),
+  getFirstMonthAvailable: vi.fn()
 }));
 
 import router from '../../../../../src/modules/availability/public/availability.public.routes';
@@ -75,5 +76,26 @@ describe('availability.public.routes', () => {
 
     expect(calledMonthDate.toISOString()).toBe('2030-01-01T00:00:00.000Z');
     expect(calledDuration).toBe(60);
+  });
+
+  it('returns 400 when firstMonthAvailable totalDuration is invalid', async () => {
+    const response = await request(app)
+      .post('/availability/firstMonthAvailable')
+      .send({ totalDuration: 0 });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toContain('totalDuration');
+  });
+
+  it('returns first available month for valid firstMonthAvailable payload', async () => {
+    mockedService.getFirstMonthAvailable.mockResolvedValue('2030-02');
+
+    const response = await request(app)
+      .post('/availability/firstMonthAvailable')
+      .send({ totalDuration: 60, maxMonthsAhead: 12 });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ month: '2030-02' });
+    expect(mockedService.getFirstMonthAvailable).toHaveBeenCalledWith(60, 12);
   });
 });
