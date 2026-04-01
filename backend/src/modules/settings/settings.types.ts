@@ -5,7 +5,6 @@
  */
 
 import { Request } from 'express';
-import { AdminUser } from '@prisma/client';
 
 // ============================================================================
 // DTOs
@@ -70,12 +69,10 @@ export interface GetBookingRulesRequest extends Request {
 }
 
 export interface UpdateBookingRulesRequest extends Request {
-  user?: AdminUser; // Viene del middleware isAdminAuthenticated
   body: UpdateBookingRulesDTO;
 }
 
 export interface UpdateContactInfoRequest extends Request {
-  user?: AdminUser; // Viene del middleware isAdminAuthenticated
   body: UpdateContactInfoDTO;
 }
 

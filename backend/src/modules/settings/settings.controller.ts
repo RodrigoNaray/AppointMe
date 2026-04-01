@@ -9,7 +9,6 @@ import {
   UpdateBookingRulesResponse,
   SettingsError
 } from './settings.types';
-import { AdminUser } from '@prisma/client';
 
 /**
  * Settings Controller - Manejo de requests HTTP para configuración
@@ -152,9 +151,9 @@ export const updateBookingRules = async (
   res: Response<UpdateBookingRulesResponse>
 ) => {
   try {
-    const admin = req.user as AdminUser | undefined;
-    
-    if (!admin?.id) {
+    const adminId = (req.user as { id?: string } | undefined)?.id;
+
+    if (!adminId) {
       return res.status(401).json({
         success: false,
         data: { minBookingAdvanceMinutes: 60, minCancellationNoticeMinutes: 120 },
@@ -162,7 +161,7 @@ export const updateBookingRules = async (
       });
     }
 
-    const data = await service.updateBookingRules(admin.id, req.body);
+    const data = await service.updateBookingRules(adminId, req.body);
 
     return res.status(200).json({
       success: true,
@@ -274,9 +273,9 @@ export const updateContactInfo = async (
   res: Response
 ) => {
   try {
-    const admin = req.user as AdminUser | undefined;
-    
-    if (!admin?.id) {
+    const adminId = (req.user as { id?: string } | undefined)?.id;
+
+    if (!adminId) {
       return res.status(401).json({
         success: false,
         data: null,
@@ -284,7 +283,7 @@ export const updateContactInfo = async (
       });
     }
 
-    const data = await service.updateContactInfo(admin.id, req.body);
+    const data = await service.updateContactInfo(adminId, req.body);
 
     return res.status(200).json({
       success: true,

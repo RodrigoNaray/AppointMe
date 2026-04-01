@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetDescription } from "@/components/ui/sheet"
 import { AdminNav } from '@/components/shared/AdminNav';
 import { useState } from 'react';
+import ScrollToTopOnNavigate from '@/components/ScrollToTopOnNavigate';
 
 export default function AdminLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -17,6 +18,7 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen w-full">
+      <ScrollToTopOnNavigate />
       {/* Navbar Sticky con transparencia */}
       <header className="sticky top-0 z-50 flex h-14 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:h-[60px] lg:px-6">
         {/* Mobile Menu - A la izquierda */}

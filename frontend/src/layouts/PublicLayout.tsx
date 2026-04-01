@@ -3,12 +3,14 @@ import { Package2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore, selectAuthState } from '@/stores/authStore';
 import UserMenu from '@/components/UserMenu';
+import ScrollToTopOnNavigate from '@/components/ScrollToTopOnNavigate';
 
 export default function PublicLayout() {
   const authState = useAuthStore(selectAuthState);
 
   return (
     <div className="min-h-screen w-full">
+      <ScrollToTopOnNavigate />
       {/* Navbar Sticky */}
       <header className="sticky top-0 z-50 flex h-14 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:h-[60px] lg:px-6">
         {/* Logo */}
