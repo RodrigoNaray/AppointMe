@@ -21,7 +21,7 @@ vi.mock('../../../../src/config/prisma', () => ({
   default: mockPrisma
 }));
 
-vi.mock('bcrypt', () => ({
+vi.mock('bcryptjs', () => ({
   default: mockBcrypt
 }));
 

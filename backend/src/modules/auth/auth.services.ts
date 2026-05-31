@@ -1,6 +1,6 @@
 import { AdminUser } from '@prisma/client';
 import prisma from '../../config/prisma';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { RegisterAdminDto, LoginAdminDto} from "./auth.types";
 import logger from '../../utils/logger';
 import { ConflictError } from "../../utils/error";
