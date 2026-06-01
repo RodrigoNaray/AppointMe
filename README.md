@@ -169,8 +169,8 @@ AppointMePro/
 ### Quick Setup
 
 ```bash
-git clone https://github.com/RodrigoNaray/AppointMePro.git
-cd AppointMePro
+git clone https://github.com/RodrigoNaray/AppointMe.git
+cd AppointMe
 pnpm install
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
