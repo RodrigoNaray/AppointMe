@@ -9,7 +9,6 @@ import PublicLayout from './layouts/PublicLayout';
 import AdminRoute from './components/AdminRoute';
 import NotFoundPage from './pages/NotFoundPage';
 import ContactPage from './pages/ContactPage';
-import PlatformFeaturesPage from './pages/PlatformFeaturesPage';
 import ServicesGridPage from './pages/ServicesGridPage';
 import BookingCalendarPage from './pages/BookingCalendarPage';
 import BookingConfirmPage from './pages/BookingConfirmPage';
@@ -46,7 +45,6 @@ const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: 'features', element: <PlatformFeaturesPage /> },
       { path: 'Adminlogin', element: <AdminLoginPage /> },
       { path: 'book', element: <ServicesGridPage /> },
       { path: 'book/calendar', element: <BookingCalendarPage /> },
