@@ -11,8 +11,13 @@ export interface WeeklySchedule {
 export type UpdateScheduleDto = WeeklySchedule;
 
 export interface CalendarEvent {
+  id?: string;
   title: string;
   start: Date;
   end: Date;
   type: 'booking' | 'block' | 'working_hours';
+  clientName?: string;
+  serviceName?: string;
+  durationMinutes?: number;
+  status?: string;
 }

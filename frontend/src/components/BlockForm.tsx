@@ -6,11 +6,18 @@ import { Button } from "@/components/ui/button";
 interface BlockFormProps {
   onSubmit: (data: { startTime: string; endTime: string; reason: string }) => void;
   onCancel: () => void;
+  defaultStartTime?: string;
+  defaultEndTime?: string;
 }
 
-export default function BlockForm({ onSubmit, onCancel }: BlockFormProps) {
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
+export default function BlockForm({ onSubmit, onCancel, defaultStartTime, defaultEndTime }: BlockFormProps) {
+  const now = new Date();
+  const defaultStart = defaultStartTime || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const later = new Date(now.getTime() + 60 * 60 * 1000);
+  const defaultEnd = defaultEndTime || `${later.getFullYear()}-${String(later.getMonth() + 1).padStart(2, '0')}-${String(later.getDate()).padStart(2, '0')}T${String(later.getHours()).padStart(2, '0')}:${String(later.getMinutes()).padStart(2, '0')}`;
+
+  const [startTime, setStartTime] = useState(defaultStart);
+  const [endTime, setEndTime] = useState(defaultEnd);
   const [reason, setReason] = useState('');
 
   const handleSubmit = (e: FormEvent) => {

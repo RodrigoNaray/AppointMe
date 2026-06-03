@@ -6,6 +6,7 @@ import {
   WeeklySchedule,
   DaySchedule,
   AvailabilityBlock,
+  CalendarEvent,
 } from "@/types/availability";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +32,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import AdminCalendar from "./availability/AdminCalendar";
 
@@ -51,41 +51,29 @@ const defaultDaySchedule: DaySchedule = {
   isActive: false,
 };
 
-/**
- * Convierte hora UTC "HH:mm" a hora local del navegador
- * Backend almacena en UTC, UI muestra en hora local
- * @param timeUTC - Hora en formato "HH:mm" UTC (ej: "12:00" = 12:00 UTC)
- * @returns Hora en formato "HH:mm" local (ej: "09:00" para UTC-3)
- */
 function convertTimeUTCToLocal(timeUTC: string): string {
   const [hours, minutes] = timeUTC.split(':').map(Number);
-  
-  // Crear fecha arbitraria en UTC con la hora especificada
   const utcDate = new Date(Date.UTC(2000, 0, 1, hours, minutes, 0, 0));
-  
-  // Convertir a hora local del navegador
   const localHours = utcDate.getHours();
   const localMinutes = utcDate.getMinutes();
-  
   return `${String(localHours).padStart(2, '0')}:${String(localMinutes).padStart(2, '0')}`;
 }
 
-/**
- * Convierte hora local "HH:mm" a UTC para enviar al backend
- * @param timeLocal - Hora en formato "HH:mm" local (ej: "09:00")
- * @returns Hora en formato "HH:mm" UTC (ej: "12:00" para UTC-3)
- */
 function convertTimeLocalToUTC(timeLocal: string): string {
   const [hours, minutes] = timeLocal.split(':').map(Number);
-  
-  // Crear fecha en timezone local
   const localDate = new Date(2000, 0, 1, hours, minutes, 0, 0);
-  
-  // Extraer componentes UTC
   const utcHours = localDate.getUTCHours();
   const utcMinutes = localDate.getUTCMinutes();
-  
   return `${String(utcHours).padStart(2, '0')}:${String(utcMinutes).padStart(2, '0')}`;
+}
+
+function formatDateForInput(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 export default function AvailabilityPage() {
@@ -93,6 +81,9 @@ export default function AvailabilityPage() {
   const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [blockModalDefaults, setBlockModalDefaults] = useState<{ startTime: string; endTime: string } | null>(null);
+  const [blockToDelete, setBlockToDelete] = useState<string | null>(null);
+  const [bookingInfo, setBookingInfo] = useState<CalendarEvent | null>(null);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -102,7 +93,6 @@ export default function AvailabilityPage() {
         apiClient.get<AvailabilityBlock[]>("/admin/availability/blocks"),
       ]);
       
-      // Convertir horarios UTC → local para display
       const scheduleLocal: WeeklySchedule = {};
       for (const [day, daySchedule] of Object.entries(scheduleResponse.data)) {
         scheduleLocal[day] = {
@@ -138,7 +128,6 @@ export default function AvailabilityPage() {
 
   const handleSaveChanges = async () => {
     try {
-      // Convertir horarios local → UTC antes de enviar al backend
       const scheduleUTC: WeeklySchedule = {};
       for (const [day, daySchedule] of Object.entries(schedule)) {
         scheduleUTC[day] = {
@@ -156,6 +145,11 @@ export default function AvailabilityPage() {
     }
   };
 
+  const openBlockModal = () => {
+    setBlockModalDefaults(null);
+    setIsModalOpen(true);
+  };
+
   const handleCreateBlock = async (data: {
     startTime: string;
     endTime: string;
@@ -169,6 +163,7 @@ export default function AvailabilityPage() {
       };
       await apiClient.post("/admin/availability/blocks", newBlock);
       setIsModalOpen(false);
+      setBlockModalDefaults(null);
       fetchData();
     } catch (error) {
       console.error("Error al crear el bloqueo", error);
@@ -179,6 +174,7 @@ export default function AvailabilityPage() {
   const handleDeleteBlock = async (blockId: string) => {
     try {
       await apiClient.delete(`/admin/availability/blocks/${blockId}`);
+      setBlockToDelete(null);
       fetchData();
     } catch (error) {
       console.error("Error al eliminar el bloqueo", error);
@@ -186,11 +182,22 @@ export default function AvailabilityPage() {
     }
   };
 
+  const handleBlockSlot = (startTime: Date, endTime: Date) => {
+    setBlockModalDefaults({
+      startTime: formatDateForInput(startTime),
+      endTime: formatDateForInput(endTime),
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleCalendarBlockClick = (blockId: string) => {
+    setBlockToDelete(blockId);
+  };
+
   if (isLoading) return <p>Cargando disponibilidad...</p>;
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      {" "}
       <div>
         <Card>
           <CardHeader>
@@ -284,34 +291,14 @@ export default function AvailabilityPage() {
                         })}
                       </p>
                     </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                        >
-                          Eliminar
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta acción no se puede deshacer. Esto eliminará
-                            permanentemente el bloqueo de tiempo.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteBlock(block.id)}
-                          >
-                            Continuar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => handleCalendarBlockClick(block.id)}
+                    >
+                      Eliminar
+                    </Button>
                   </div>
                 ))
               ) : (
@@ -323,7 +310,7 @@ export default function AvailabilityPage() {
             <Button
               variant="outline"
               className="mt-4"
-              onClick={() => setIsModalOpen(true)}
+              onClick={openBlockModal}
             >
               Añadir Bloqueo
             </Button>
@@ -331,13 +318,72 @@ export default function AvailabilityPage() {
         </Card>
         <Modal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+            setBlockModalDefaults(null);
+          }}
           title="Añadir Nuevo Bloqueo"
         >
           <BlockForm
-            onCancel={() => setIsModalOpen(false)}
+            onCancel={() => {
+              setIsModalOpen(false);
+              setBlockModalDefaults(null);
+            }}
             onSubmit={handleCreateBlock}
+            defaultStartTime={blockModalDefaults?.startTime}
+            defaultEndTime={blockModalDefaults?.endTime}
           />
+        </Modal>
+        <AlertDialog open={blockToDelete !== null} onOpenChange={(open) => { if (!open) setBlockToDelete(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta acción no se puede deshacer. Esto eliminará
+                permanentemente el bloqueo de tiempo.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setBlockToDelete(null)}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={() => blockToDelete && handleDeleteBlock(blockToDelete)}>
+                Continuar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <Modal
+          isOpen={bookingInfo !== null}
+          onClose={() => setBookingInfo(null)}
+          title="Detalle de Reserva"
+        >
+          {bookingInfo && (
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Cliente</p>
+                <p className="font-medium">{bookingInfo.clientName || "—"}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Servicio</p>
+                <p className="font-medium">{bookingInfo.serviceName || "—"}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Fecha y hora</p>
+                <p className="font-medium">
+                  {format(new Date(bookingInfo.start), "d 'de' MMMM, HH:mm", { locale: es })}
+                  {" - "}
+                  {format(new Date(bookingInfo.end), "HH:mm'hs'", { locale: es })}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Duración</p>
+                <p className="font-medium">{bookingInfo.durationMinutes || "—"} min</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Estado</p>
+                <p className="font-medium">{bookingInfo.status === "CONFIRMED" ? "Confirmada" : bookingInfo.status || "—"}</p>
+              </div>
+            </div>
+          )}
         </Modal>
       </div>
       <div>
@@ -346,11 +392,15 @@ export default function AvailabilityPage() {
             <CardTitle>Vista de Calendario</CardTitle>
             <CardDescription>
               Un resumen visual de tu disponibilidad, bloqueos y futuras
-              reservas.
+              reservas. Hacé click en un horario vacío para bloquearlo.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <AdminCalendar />
+            <AdminCalendar
+              onBlockSlot={handleBlockSlot}
+              onBlockClick={handleCalendarBlockClick}
+              onBookingClick={(event) => setBookingInfo(event)}
+            />
           </CardContent>
         </Card>
       </div>

@@ -81,10 +81,12 @@ describe('availability.admin.services', () => {
     });
     mockPrisma.booking.findMany.mockResolvedValue([
       {
+        id: 'booking-1',
         bookingTime: new Date('2030-01-01T10:00:00.000Z'),
         durationMinutes: 45,
+        status: 'CONFIRMED',
         service: { name: 'Corte' },
-        client: { name: 'Ana' }
+        client: { id: 'client-1', name: 'Ana' }
       }
     ]);
     mockPrisma.availabilityBlock.findMany.mockResolvedValue([]);
@@ -93,8 +95,14 @@ describe('availability.admin.services', () => {
 
     const bookingEvent = events.find((event) => event.type === 'booking');
 
+    expect(bookingEvent).toBeDefined();
+    expect(bookingEvent?.id).toBe('booking-1');
     expect(bookingEvent?.title).toContain('Corte');
     expect(bookingEvent?.end.toISOString()).toBe('2030-01-01T10:45:00.000Z');
+    expect(bookingEvent?.clientName).toBe('Ana');
+    expect(bookingEvent?.serviceName).toBe('Corte');
+    expect(bookingEvent?.durationMinutes).toBe(45);
+    expect(bookingEvent?.status).toBe('CONFIRMED');
     expect(mockPrisma.booking.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
@@ -103,5 +111,27 @@ describe('availability.admin.services', () => {
         })
       })
     );
+  });
+
+  it('includes id in block events', async () => {
+    mockPrisma.adminUser.findUnique.mockResolvedValue({
+      schedule: {}
+    });
+    mockPrisma.booking.findMany.mockResolvedValue([]);
+    mockPrisma.availabilityBlock.findMany.mockResolvedValue([
+      {
+        id: 'block-1',
+        startTime: new Date('2030-01-01T10:00:00.000Z'),
+        endTime: new Date('2030-01-01T12:00:00.000Z'),
+        reason: 'Vacaciones'
+      }
+    ]);
+
+    const events = await getCalendarEvents('admin-1', new Date('2030-01-01T00:00:00.000Z'));
+    const blockEvent = events.find((e) => e.type === 'block');
+
+    expect(blockEvent).toBeDefined();
+    expect(blockEvent?.id).toBe('block-1');
+    expect(blockEvent?.title).toBe('Vacaciones');
   });
 });

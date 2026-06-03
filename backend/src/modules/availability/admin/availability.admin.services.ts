@@ -175,15 +175,21 @@ export const getCalendarEvents = async (userId: string, month: Date): Promise<Ca
 
   bookings.forEach(booking => {
     events.push({
+      id: booking.id,
       title: `${booking.service.name} - ${booking.client.name}`,
       start: booking.bookingTime,
       end: addMinutes(booking.bookingTime, booking.durationMinutes),
       type: 'booking',
+      clientName: booking.client.name,
+      serviceName: booking.service.name,
+      durationMinutes: booking.durationMinutes,
+      status: booking.status,
     });
   });
 
   blocks.forEach(block => {
     events.push({
+      id: block.id,
       title: block.reason || 'Tiempo Bloqueado',
       start: block.startTime,
       end: block.endTime,

@@ -22,6 +22,7 @@ import {
   isSameDay,
   eachHourOfInterval,
   isWithinInterval,
+  addHours,
 } from "date-fns";
 import { es } from "date-fns/locale";
 import apiClient from "@/api/client";
@@ -29,7 +30,13 @@ import { CalendarEvent } from "@/types/availability";
 
 type ViewType = "day" | "week" | "month";
 
-const EventCard = ({ event }: { event: CalendarEvent }) => {
+interface AdminCalendarProps {
+  onBlockSlot?: (startTime: Date, endTime: Date) => void;
+  onBlockClick?: (blockId: string) => void;
+  onBookingClick?: (event: CalendarEvent) => void;
+}
+
+const EventCard = ({ event, onClick }: { event: CalendarEvent; onClick?: () => void }) => {
   const getEventColor = (type: CalendarEvent["type"]): string => {
     switch (type) {
       case "working_hours":
@@ -44,7 +51,15 @@ const EventCard = ({ event }: { event: CalendarEvent }) => {
   };
 
   return (
-    <div className={`p-0.5 sm:p-1 rounded text-[8px] sm:text-xs border ${getEventColor(event.type)}`}>
+    <div
+      className={`p-0.5 sm:p-1 rounded text-[8px] sm:text-xs border ${getEventColor(event.type)} ${onClick ? "cursor-pointer hover:opacity-80" : ""}`}
+      onClick={(e) => {
+        if (onClick) {
+          e.stopPropagation();
+          onClick();
+        }
+      }}
+    >
       <p className="font-semibold truncate leading-tight">{event.title}</p>
       <p className="text-[7px] sm:text-xs opacity-80 leading-tight">
         {format(new Date(event.start), "HH:mm")} -{" "}
@@ -54,7 +69,7 @@ const EventCard = ({ event }: { event: CalendarEvent }) => {
   );
 };
 
-export function AdminCalendar() {
+export function AdminCalendar({ onBlockSlot, onBlockClick, onBookingClick }: AdminCalendarProps) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [currentView, setCurrentView] = useState<ViewType>("month");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -99,6 +114,34 @@ export function AdminCalendar() {
     return Array.from({ length: 7 }).map((_, i) => addDays(start, i));
   };
 
+  const hasWorkingHours = (day: Date): boolean => {
+    return events.some(
+      (e) => e.type === "working_hours" && isSameDay(new Date(e.start), day)
+    );
+  };
+
+  const handleDayClick = (day: Date) => {
+    if (!onBlockSlot) return;
+    if (!hasWorkingHours(day)) {
+      alert("Día no laborable. No se puede bloquear este horario.");
+      return;
+    }
+    const workStart = events.find(
+      (e) => e.type === "working_hours" && isSameDay(new Date(e.start), day)
+    );
+    const startTime = workStart ? new Date(workStart.start) : new Date(day.setHours(9, 0, 0, 0));
+    const endTime = addHours(startTime, 1);
+    onBlockSlot(startTime, endTime);
+  };
+
+  const handleEventClick = (event: CalendarEvent) => {
+    if (event.type === "block" && event.id && onBlockClick) {
+      onBlockClick(event.id);
+    } else if (event.type === "booking" && onBookingClick) {
+      onBookingClick(event);
+    }
+  };
+
   // --- VISTA DE DÍA ---
   const renderDayView = (): React.JSX.Element => {
     const dayEvents = events.filter((e) =>
@@ -109,23 +152,39 @@ export function AdminCalendar() {
       end: new Date(currentDate).setHours(23, 0, 0, 0),
     });
 
+    const getHourEvents = (hour: Date) =>
+      dayEvents.filter((event) =>
+        isWithinInterval(hour, {
+          start: new Date(event.start),
+          end: new Date(event.end),
+        })
+      );
+
     return (
       <div className="border-t">
         {hours.map((hour, index) => {
-          const hourEvents = dayEvents.filter((event) =>
-            isWithinInterval(hour, {
-              start: new Date(event.start),
-              end: new Date(event.end),
-            })
-          );
+          const hourEvents = getHourEvents(hour);
+          const hasEvents = hourEvents.length > 0;
+
           return (
             <div key={index} className="flex border-b min-h-[50px] sm:min-h-[60px]">
               <div className="w-12 sm:w-20 text-right pr-2 sm:pr-4 pt-2 text-[10px] sm:text-sm text-muted-foreground">
                 {format(hour, "HH:mm")}
               </div>
-              <div className="flex-1 border-l p-1 sm:p-2 space-y-1 sm:space-y-2">
-                {hourEvents.map((event) => (
-                  <EventCard key={event.start.toString()} event={event} />
+              <div
+                className={`flex-1 border-l p-1 sm:p-2 space-y-1 sm:space-y-2 ${!hasEvents && onBlockSlot ? "cursor-pointer hover:bg-muted/30" : ""}`}
+                onClick={() => {
+                  if (!hasEvents && hasWorkingHours(currentDate) && onBlockSlot) {
+                    onBlockSlot(hour, addHours(hour, 1));
+                  }
+                }}
+              >
+                {hourEvents.map((event, idx) => (
+                  <EventCard
+                    key={`${event.start.toString()}-${idx}`}
+                    event={event}
+                    onClick={() => handleEventClick(event)}
+                  />
                 ))}
               </div>
             </div>
@@ -140,7 +199,6 @@ export function AdminCalendar() {
     const weekDays = getWeekDays();
     return (
       <div className="grid grid-cols-7 border-t border-l">
-        {/* Encabezados de días de la semana */}
         {weekDays.map((day) => (
           <div
             key={`header-${day.toString()}`}
@@ -150,19 +208,24 @@ export function AdminCalendar() {
             <p className="text-sm sm:text-lg">{format(day, "d")}</p>
           </div>
         ))}
-        {/* Celdas de contenido de cada día */}
         {weekDays.map((day) => {
           const dayEvents = events.filter((e) =>
             isSameDay(new Date(e.start), day)
           );
+
           return (
             <div
               key={day.toString()}
-              className="p-1 sm:p-3 border-b border-r min-h-[400px] sm:min-h-[582px]"
+              className={`p-1 sm:p-3 border-b border-r min-h-[400px] sm:min-h-[582px] ${onBlockSlot ? "cursor-pointer hover:bg-muted/20" : ""}`}
+              onClick={() => handleDayClick(day)}
             >
               <div className="space-y-0.5 sm:space-y-1">
-                {dayEvents.slice(0, 3).map((event) => (
-                  <EventCard key={event.start.toString()} event={event} />
+                {dayEvents.slice(0, 3).map((event, idx) => (
+                  <EventCard
+                    key={`${event.start.toString()}-${idx}`}
+                    event={event}
+                    onClick={() => handleEventClick(event)}
+                  />
                 ))}
                 {dayEvents.length > 3 && (
                   <div className="text-[8px] sm:text-[10px] text-muted-foreground text-center">
@@ -205,15 +268,21 @@ export function AdminCalendar() {
           const dayEvents = events.filter((e) =>
             isSameDay(new Date(e.start), day)
           );
+
           return (
             <div
               key={day.toString()}
-              className="p-1 sm:p-3 border-b border-r min-h-[80px] sm:min-h-[120px]"
+              className={`p-1 sm:p-3 border-b border-r min-h-[80px] sm:min-h-[120px] ${onBlockSlot ? "cursor-pointer hover:bg-muted/20" : ""}`}
+              onClick={() => handleDayClick(day)}
             >
               <div className="font-bold text-[10px] sm:text-sm">{format(day, "d")}</div>
               <div className="space-y-0.5 sm:space-y-1 mt-0.5 sm:mt-1">
-                {dayEvents.slice(0, 2).map((event) => (
-                  <EventCard key={event.start.toString()} event={event} />
+                {dayEvents.slice(0, 2).map((event, idx) => (
+                  <EventCard
+                    key={`${event.start.toString()}-${idx}`}
+                    event={event}
+                    onClick={() => handleEventClick(event)}
+                  />
                 ))}
                 {dayEvents.length > 2 && (
                   <div className="text-[8px] sm:text-[10px] text-muted-foreground">
@@ -264,7 +333,6 @@ export function AdminCalendar() {
     <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:gap-4 p-4 sm:p-6">
-          {/* Título */}
           <div className="flex flex-col items-center sm:items-start">
             <CardTitle className="text-lg sm:text-xl capitalize text-center sm:text-left">
               {getViewTitle()}
@@ -274,9 +342,7 @@ export function AdminCalendar() {
             )}
           </div>
           
-          {/* Controles - Stack en mobile, row en desktop */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
-            {/* Tabs de vista */}
             <Tabs
               value={currentView}
               onValueChange={(value) => setCurrentView(value as ViewType)}
@@ -298,7 +364,6 @@ export function AdminCalendar() {
               </TabsList>
             </Tabs>
             
-            {/* Navegación */}
             <div className="flex items-center justify-center gap-2 w-full sm:w-auto sm:ml-auto">
               <Button
                 variant="outline"
