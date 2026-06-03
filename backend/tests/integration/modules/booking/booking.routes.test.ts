@@ -22,6 +22,8 @@ const { authState, mockPrisma, mockSendBookingConfirmationEmail, mockSendAdminCa
       findFirst: vi.fn(),
       update: vi.fn()
     },
+    service: { count: vi.fn() },
+    client: { count: vi.fn() },
     adminUser: { findUnique: vi.fn() },
     availabilityBlock: { findMany: vi.fn() }
   },
@@ -597,5 +599,41 @@ describe('booking.routes (semi-real)', () => {
 
     expect(response.status).toBe(409);
     expect(tx.booking.update).not.toHaveBeenCalled();
+  });
+
+  it('getBookingMetrics returns 200 with correct shape for authenticated admin', async () => {
+    mockPrisma.booking.count
+      .mockResolvedValueOnce(3)
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(5)
+      .mockResolvedValueOnce(20)
+      .mockResolvedValueOnce(4);
+
+    mockPrisma.booking.findMany
+      .mockResolvedValueOnce([{ service: { price: 500 } }, { service: { price: 700 } }])
+      .mockResolvedValueOnce([{ service: { price: 500 } }]);
+
+    mockPrisma.service.count.mockResolvedValue(8);
+    mockPrisma.client.count.mockResolvedValue(12);
+
+    const response = await request(adminApp).get('/admin/bookings/metrics');
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.metrics).toBeDefined();
+    expect(response.body.metrics.todayBookings).toBe(3);
+    expect(response.body.metrics.monthRevenue).toBe(1200);
+    expect(response.body.metrics.activeServices).toBe(8);
+    expect(response.body.metrics.newClientsThisMonth).toBe(12);
+    expect(response.body.metrics.cancellationRate).toBeCloseTo(0.2, 2);
+  });
+
+  it('getBookingMetrics returns 401 when admin is not authenticated', async () => {
+    authState.adminUser = null;
+
+    const response = await request(adminApp).get('/admin/bookings/metrics');
+
+    expect(response.status).toBe(401);
+    authState.adminUser = { id: 'admin-1', email: 'admin@example.com' };
   });
 });

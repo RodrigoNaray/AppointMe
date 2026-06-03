@@ -1,5 +1,5 @@
 import { Link, Outlet } from 'react-router-dom';
-import { Menu, Package2, ChevronLeft, ChevronRight, LayoutDashboard, Tags, Calendar, BookOpen } from "lucide-react"
+import { Menu, Package2, ChevronLeft, ChevronRight, LayoutDashboard, Tags, Calendar, BookOpen, Briefcase } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetDescription } from "@/components/ui/sheet"
 import { AdminNav } from '@/components/shared/AdminNav';
@@ -10,7 +10,8 @@ export default function AdminLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const navLinks = [
-    { to: "/admin/services", label: "Servicios", icon: LayoutDashboard },
+    { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/admin/services", label: "Servicios", icon: Briefcase },
     { to: "/admin/categories", label: "Categorías", icon: Tags },
     { to: "/admin/availability", label: "Disponibilidad", icon: Calendar },
     { to: "/admin/bookings", label: "Reservas", icon: BookOpen },

@@ -4,6 +4,7 @@ import {
   CreateBookingDTO, 
   BookingFiltersDTO, 
   BookingWithDetails,
+  BookingMetrics,
   BookingError,
   BookingErrorCodes,
   CancelBookingByAdminResult,
@@ -831,4 +832,57 @@ export const rescheduleBookingByAdmin = async (
       durationMinutes: booking.durationMinutes
     };
   });
+};
+
+const getUtcMonthRange = (year: number, month: number): { start: Date; endExclusive: Date } => {
+  const start = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
+  const endExclusive = new Date(Date.UTC(year, month + 1, 1, 0, 0, 0, 0));
+  return { start, endExclusive };
+};
+
+const sumServicePrices = (bookings: { service: { price: number } }[]): number =>
+  bookings.reduce((sum, b) => sum + b.service.price, 0);
+
+export const getBookingMetrics = async (adminId: string): Promise<BookingMetrics> => {
+  const now = new Date();
+  const today = getUtcDayRange(now);
+  const yesterdayStart = new Date(today.start);
+  yesterdayStart.setUTCDate(yesterdayStart.getUTCDate() - 1);
+  const yesterdayRange = { start: yesterdayStart, endExclusive: today.start };
+  const thisMonth = getUtcMonthRange(now.getUTCFullYear(), now.getUTCMonth());
+  const lastMonth = getUtcMonthRange(now.getUTCFullYear(), now.getUTCMonth() - 1);
+  const next7Start = new Date(today.start);
+  const next7End = new Date(today.endExclusive);
+  next7End.setUTCDate(next7End.getUTCDate() + 7);
+
+  const baseWhere = { adminId };
+  const confirmedWhere = { ...baseWhere, status: 'CONFIRMED' as const };
+
+  const [
+    todayCount, yesterdayCount,
+    monthBookings, lastMonthBookings,
+    activeServices, newClients,
+    upcomingCount, totalCount, cancelledCount
+  ] = await Promise.all([
+    prisma.booking.count({ where: { ...confirmedWhere, bookingTime: { gte: today.start, lt: today.endExclusive } } }),
+    prisma.booking.count({ where: { ...confirmedWhere, bookingTime: { gte: yesterdayRange.start, lt: yesterdayRange.endExclusive } } }),
+    prisma.booking.findMany({ where: { ...confirmedWhere, bookingTime: { gte: thisMonth.start, lt: thisMonth.endExclusive } }, select: { service: { select: { price: true } } } }),
+    prisma.booking.findMany({ where: { ...confirmedWhere, bookingTime: { gte: lastMonth.start, lt: lastMonth.endExclusive } }, select: { service: { select: { price: true } } } }),
+    prisma.service.count({ where: { adminId, isActive: true } }),
+    prisma.client.count({ where: { createdAt: { gte: thisMonth.start, lt: thisMonth.endExclusive } } }),
+    prisma.booking.count({ where: { ...confirmedWhere, bookingTime: { gte: today.start, lt: next7End } } }),
+    prisma.booking.count({ where: baseWhere }),
+    prisma.booking.count({ where: { ...baseWhere, status: 'CANCELLED' as const } })
+  ]);
+
+  return {
+    todayBookings: todayCount,
+    yesterdayBookings: yesterdayCount,
+    monthRevenue: sumServicePrices(monthBookings),
+    lastMonthRevenue: sumServicePrices(lastMonthBookings),
+    activeServices,
+    newClientsThisMonth: newClients,
+    upcomingBookings: upcomingCount,
+    cancellationRate: totalCount > 0 ? Math.round((cancelledCount / totalCount) * 100) / 100 : 0
+  };
 };

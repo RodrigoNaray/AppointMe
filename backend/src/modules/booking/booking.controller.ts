@@ -3,13 +3,15 @@ import { AdminUser, Client } from '@prisma/client';
 import {
   CreateBookingRequest,
   GetBookingsRequest,
+  GetBookingMetricsRequest,
   CancelBookingRequest,
   CancelBookingByAdminRequest,
   RescheduleBookingRequest,
   CreateBookingResponse,
   GetBookingsResponse,
   BookingError,
-  BookingWithDetails
+  BookingWithDetails,
+  BookingMetrics
 } from './booking.types';
 import * as service from './booking.services'
 import logger from '../../utils/logger';
@@ -436,6 +438,26 @@ export const getAllBookings = async (
       bookings: [],
       pagination: { current_page: 1, total_pages: 0, total_count: 0, per_page: 10 }
     });
+  }
+};
+
+export const getBookingMetricsController = async (
+  req: GetBookingMetricsRequest,
+  res: Response<{ success: boolean; metrics: BookingMetrics }>
+) => {
+  try {
+    const adminId = (req.user as AdminUser)?.id;
+    if (!adminId) {
+      return res.status(401).json({ success: false, metrics: {} as BookingMetrics });
+    }
+
+    const metrics = await service.getBookingMetrics(adminId);
+
+    return res.status(200).json({ success: true, metrics });
+  } catch (error) {
+    logger.error({ error }, 'Error in getBookingMetricsController');
+
+    return res.status(500).json({ success: false, metrics: {} as BookingMetrics });
   }
 };
 

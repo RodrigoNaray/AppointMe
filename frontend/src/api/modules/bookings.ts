@@ -61,12 +61,33 @@ export interface CreateBookingResponse {
   message: string;
 }
 
+export interface BookingMetrics {
+  todayBookings: number;
+  yesterdayBookings: number;
+  monthRevenue: number;
+  lastMonthRevenue: number;
+  activeServices: number;
+  newClientsThisMonth: number;
+  upcomingBookings: number;
+  cancellationRate: number;
+}
+
+export interface GetBookingMetricsResponse {
+  success: boolean;
+  metrics: BookingMetrics;
+}
+
 // ============================================================================
 // ADMIN API
 // ============================================================================
 
 export const getAllBookings = async (params?: GetBookingsParams): Promise<GetBookingsResponse> => {
   const response = await apiClient.get<GetBookingsResponse>('/admin/bookings', { params });
+  return response.data;
+};
+
+export const getBookingMetrics = async (): Promise<GetBookingMetricsResponse> => {
+  const response = await apiClient.get<GetBookingMetricsResponse>('/admin/bookings/metrics');
   return response.data;
 };
 
@@ -93,7 +114,8 @@ export const cancelBooking = async (bookingId: string): Promise<{ success: boole
 export default {
   // Admin
   getAllBookings,
-  
+  getBookingMetrics,
+
   // Client
   getMyBookings,
   createBooking,

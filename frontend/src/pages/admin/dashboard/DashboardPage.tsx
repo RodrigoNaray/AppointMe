@@ -1,9 +1,31 @@
+import { useEffect, useState } from 'react';
 import { useAuthStore, selectUser } from "@/stores/authStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Calendar, DollarSign, Clock } from "lucide-react"; // Iconos
+import { Users, Calendar, DollarSign, Clock } from "lucide-react";
+import { getBookingMetrics } from '@/api/modules/bookings';
+import type { BookingMetrics } from '@/api/modules/bookings';
 
 export default function DashboardPage() {
   const user = useAuthStore(selectUser);
+  const [metrics, setMetrics] = useState<BookingMetrics | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getBookingMetrics()
+      .then(res => { if (!cancelled) setMetrics(res.metrics); })
+      .catch(() => { if (!cancelled) setError('Error al cargar métricas'); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
+
+  const todayDiff = metrics ? metrics.todayBookings - metrics.yesterdayBookings : null;
+
+  const revenueDiff = metrics && metrics.lastMonthRevenue > 0
+    ? ((metrics.monthRevenue - metrics.lastMonthRevenue) / metrics.lastMonthRevenue) * 100
+    : null;
 
   return (
     <div className="flex flex-col gap-8">
@@ -19,8 +41,20 @@ export default function DashboardPage() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
-            <p className="text-xs text-muted-foreground">+2 que ayer</p>
+            {error ? (
+              <p className="text-sm text-destructive">{error}</p>
+            ) : metrics ? (
+              <>
+                <div className="text-2xl font-bold">{metrics.todayBookings}</div>
+                <p className="text-xs text-muted-foreground">
+                  {todayDiff !== null
+                    ? (todayDiff >= 0 ? '+' : '') + todayDiff + ' que ayer'
+                    : 'Cargando...'}
+                </p>
+              </>
+            ) : (
+              <div className="h-9 animate-pulse bg-muted rounded" />
+            )}
           </CardContent>
         </Card>
 
@@ -30,8 +64,20 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$25,350</div>
-            <p className="text-xs text-muted-foreground">+18.3% vs mes anterior</p>
+            {error ? (
+              <p className="text-sm text-destructive">{error}</p>
+            ) : metrics ? (
+              <>
+                <div className="text-2xl font-bold">{formatCurrency(metrics.monthRevenue)}</div>
+                <p className="text-xs text-muted-foreground">
+                  {revenueDiff !== null
+                    ? (revenueDiff >= 0 ? '+' : '') + revenueDiff.toFixed(1) + '% vs mes anterior'
+                    : 'Sin datos mes anterior'}
+                </p>
+              </>
+            ) : (
+              <div className="h-9 animate-pulse bg-muted rounded" />
+            )}
           </CardContent>
         </Card>
 
@@ -41,23 +87,38 @@ export default function DashboardPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">Total de servicios ofrecidos</p>
+            {error ? (
+              <p className="text-sm text-destructive">{error}</p>
+            ) : metrics ? (
+              <>
+                <div className="text-2xl font-bold">{metrics.activeServices}</div>
+                <p className="text-xs text-muted-foreground">Total de servicios ofrecidos</p>
+              </>
+            ) : (
+              <div className="h-9 animate-pulse bg-muted rounded" />
+            )}
           </CardContent>
         </Card>
 
-         <Card>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Nuevos Clientes</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+23</div>
-            <p className="text-xs text-muted-foreground">Este mes</p>
+            {error ? (
+              <p className="text-sm text-destructive">{error}</p>
+            ) : metrics ? (
+              <>
+                <div className="text-2xl font-bold">+{metrics.newClientsThisMonth}</div>
+                <p className="text-xs text-muted-foreground">Este mes</p>
+              </>
+            ) : (
+              <div className="h-9 animate-pulse bg-muted rounded" />
+            )}
           </CardContent>
         </Card>
       </div>
-
     </div>
   );
 }

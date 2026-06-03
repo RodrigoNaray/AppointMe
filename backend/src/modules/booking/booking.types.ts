@@ -95,6 +95,21 @@ export interface BookingFiltersDTO {
   limit: number;
 }
 
+export interface BookingMetrics {
+  todayBookings: number;
+  yesterdayBookings: number;
+  monthRevenue: number;
+  lastMonthRevenue: number;
+  activeServices: number;
+  newClientsThisMonth: number;
+  upcomingBookings: number;
+  cancellationRate: number;
+}
+
+export interface GetBookingMetricsRequest extends Request {
+  query: Record<string, never>;
+}
+
 // Error types
 export interface BookingError extends Error {
   statusCode: number;

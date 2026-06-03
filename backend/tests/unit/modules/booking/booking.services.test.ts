@@ -7,8 +7,12 @@ import { BookingErrorCodes } from '../../../../src/modules/booking/booking.types
       $transaction: vi.fn(),
       booking: {
         findUnique: vi.fn(),
+        findMany: vi.fn(),
+        count: vi.fn(),
         update: vi.fn()
-      }
+      },
+      service: { count: vi.fn() },
+      client: { count: vi.fn() }
     }
   }));
 
@@ -16,7 +20,7 @@ vi.mock('../../../../src/config/prisma', () => ({
   default: mockPrisma
 }));
 
-import { createBooking } from '../../../../src/modules/booking/booking.services';
+import { createBooking, getBookingMetrics } from '../../../../src/modules/booking/booking.services';
 import { cancelBooking } from '../../../../src/modules/booking/booking.services';
 import { cancelBookingByAdmin } from '../../../../src/modules/booking/booking.services';
 import { rescheduleBookingByAdmin } from '../../../../src/modules/booking/booking.services';
@@ -801,5 +805,90 @@ describe('booking.services.rescheduleBookingByAdmin', () => {
     expect(result.oldBookingTime.toISOString()).toBe(baseBooking.bookingTime.toISOString());
     expect(result.newBookingTime.toISOString()).toBe(newTime.toISOString());
     expect(result.clientEmail).toBe('ana@example.com');
+  });
+});
+
+describe('booking.services.getBookingMetrics', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2030-06-15T12:00:00.000Z'));
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns correct counts and revenue with mixed data', async () => {
+    mockPrisma.booking.count
+      .mockResolvedValueOnce(3)
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(5)
+      .mockResolvedValueOnce(20)
+      .mockResolvedValueOnce(4);
+
+    mockPrisma.booking.findMany
+      .mockResolvedValueOnce([
+        { service: { price: 500 } },
+        { service: { price: 700 } },
+        { service: { price: 300 } }
+      ])
+      .mockResolvedValueOnce([
+        { service: { price: 500 } },
+        { service: { price: 500 } }
+      ]);
+
+    mockPrisma.service.count.mockResolvedValue(8);
+    mockPrisma.client.count.mockResolvedValue(12);
+
+    const metrics = await getBookingMetrics('admin-1');
+
+    expect(metrics.todayBookings).toBe(3);
+    expect(metrics.yesterdayBookings).toBe(1);
+    expect(metrics.monthRevenue).toBe(1500);
+    expect(metrics.lastMonthRevenue).toBe(1000);
+    expect(metrics.activeServices).toBe(8);
+    expect(metrics.newClientsThisMonth).toBe(12);
+    expect(metrics.upcomingBookings).toBe(5);
+    expect(metrics.cancellationRate).toBeCloseTo(0.2, 2);
+  });
+
+  it('returns zero values when no data exists', async () => {
+    mockPrisma.booking.count.mockResolvedValue(0);
+    mockPrisma.booking.findMany.mockResolvedValue([]);
+    mockPrisma.service.count.mockResolvedValue(0);
+    mockPrisma.client.count.mockResolvedValue(0);
+
+    const metrics = await getBookingMetrics('admin-1');
+
+    expect(metrics.todayBookings).toBe(0);
+    expect(metrics.monthRevenue).toBe(0);
+    expect(metrics.lastMonthRevenue).toBe(0);
+    expect(metrics.activeServices).toBe(0);
+    expect(metrics.newClientsThisMonth).toBe(0);
+    expect(metrics.cancellationRate).toBe(0);
+  });
+
+  it('filters booking queries by adminId', async () => {
+    mockPrisma.booking.count.mockResolvedValue(0);
+    mockPrisma.booking.findMany.mockResolvedValue([]);
+    mockPrisma.service.count.mockResolvedValue(0);
+    mockPrisma.client.count.mockResolvedValue(0);
+
+    await getBookingMetrics('specific-admin');
+
+    const countCalls = mockPrisma.booking.count.mock.calls;
+    for (const call of countCalls) {
+      expect(call[0]?.where?.adminId).toBe('specific-admin');
+    }
+
+    const findManyCalls = mockPrisma.booking.findMany.mock.calls;
+    for (const call of findManyCalls) {
+      expect(call[0]?.where?.adminId).toBe('specific-admin');
+    }
+
+    expect(mockPrisma.service.count).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { adminId: 'specific-admin', isActive: true } })
+    );
   });
 });
