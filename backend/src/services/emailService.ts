@@ -60,6 +60,16 @@ interface AdminCancellationEmailData {
   clientTimezone: string;
 }
 
+interface BookingRescheduledEmailData {
+  to: string;
+  clientName: string;
+  serviceName: string;
+  oldBookingTime: Date;
+  newBookingTime: Date;
+  durationMinutes: number;
+  clientTimezone: string;
+}
+
 /**
  * Envía un email de verificación al cliente recién registrado
  * @param data Datos necesarios para el email de verificación
@@ -676,6 +686,137 @@ ${process.env.CLIENT_URL}/client/bookings
       error: error instanceof Error ? error.message : 'Unknown error',
       to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2')
     }, 'Failed to send admin cancellation email via Resend');
+    return false;
+  }
+};
+
+/**
+ * Envía un email al cliente cuando el admin reagenda su reserva
+ * @param data Datos del email de reagendamiento
+ * @returns Promise<boolean> true si el email se envió exitosamente
+ */
+export const sendBookingRescheduledEmail = async (data: BookingRescheduledEmailData): Promise<boolean> => {
+  try {
+    const formatDateTime = (date: Date, timezone: string): string => {
+      return formatInTimeZone(date, timezone, 'dd/MM/yyyy HH:mm');
+    };
+
+    const oldTime = formatDateTime(data.oldBookingTime, data.clientTimezone);
+    const newTime = formatDateTime(data.newBookingTime, data.clientTimezone);
+
+    const htmlTemplate = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reserva Reagendada - AppointMePro</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">Reserva Reagendada</h1>
+        </div>
+
+        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+            <p style="font-size: 16px; margin-bottom: 20px;">
+                Hola <strong>${data.clientName}</strong>,
+            </p>
+
+            <p style="font-size: 16px; margin-bottom: 20px;">
+                Tu reserva ha sido reagendada. Aquí están los detalles actualizados:
+            </p>
+
+            <table style="width: 100%; background: white; border-radius: 8px; overflow: hidden; border-collapse: collapse; margin-bottom: 20px;">
+              <tbody>
+                <tr>
+                  <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151;">Servicio</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${data.serviceName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151;">Fecha y hora anterior</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-decoration: line-through; color: #9ca3af;">${oldTime}</td>
+                </tr>
+                <tr style="background: #dbeafe;">
+                  <td style="padding: 12px; font-weight: 600; color: #1e40af;">Nueva fecha y hora</td>
+                  <td style="padding: 12px; color: #1e40af; font-weight: 600;">${newTime}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px; font-weight: 600; color: #374151;">Duración</td>
+                  <td style="padding: 12px;">${data.durationMinutes} min</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">
+                Si la nueva fecha y hora no te funcionan, por favor contáctanos para encontrar un horario alternativo.
+            </p>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="${process.env.CLIENT_URL}/client/bookings"
+                   style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    Ver Mis Reservas
+                </a>
+            </div>
+
+            <p style="font-size: 14px; color: #6b7280; margin-top: 30px; text-align: center;">
+                ¿Tienes preguntas? Contáctanos respondiendo este email.
+            </p>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="font-size: 12px; color: #9ca3af;">
+                © 2025 AppointMePro. Todos los derechos reservados.
+            </p>
+        </div>
+    </body>
+    </html>
+    `;
+
+    const textContent = `
+Reserva Reagendada - AppointMePro
+
+Hola ${data.clientName},
+
+Tu reserva ha sido reagendada.
+
+Detalles actualizados:
+- Servicio: ${data.serviceName}
+- Fecha y hora anterior: ${oldTime}
+- Nueva fecha y hora: ${newTime}
+- Duración: ${data.durationMinutes} minutos
+
+Si la nueva fecha y hora no te funcionan, por favor contáctanos para encontrar un horario alternativo.
+
+Ver mis reservas: ${process.env.CLIENT_URL}/client/bookings
+
+¿Tienes preguntas? Contáctanos respondiendo este email.
+
+© 2025 AppointMePro
+    `.trim();
+
+    const result = await resend.emails.send({
+      from: `AppointMePro <${FROM_EMAIL}>`,
+      to: data.to,
+      subject: 'Reserva Reagendada - AppointMePro',
+      html: htmlTemplate,
+      text: textContent,
+    });
+
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+
+    logger.info({
+      messageId: result.data?.id,
+      to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2')
+    }, 'Booking rescheduled email sent successfully via Resend');
+
+    return true;
+  } catch (error) {
+    logger.error({
+      error: error instanceof Error ? error.message : 'Unknown error',
+      to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2')
+    }, 'Failed to send booking rescheduled email via Resend');
     return false;
   }
 };

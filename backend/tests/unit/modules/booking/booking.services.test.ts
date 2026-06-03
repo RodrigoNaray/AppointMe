@@ -19,6 +19,7 @@ vi.mock('../../../../src/config/prisma', () => ({
 import { createBooking } from '../../../../src/modules/booking/booking.services';
 import { cancelBooking } from '../../../../src/modules/booking/booking.services';
 import { cancelBookingByAdmin } from '../../../../src/modules/booking/booking.services';
+import { rescheduleBookingByAdmin } from '../../../../src/modules/booking/booking.services';
 
 type TxCallback<T> = (transactionClient: T) => unknown;
 type TxOptions = {
@@ -556,5 +557,145 @@ describe('booking.services.cancelBookingByAdmin', () => {
         })
       })
     );
+  });
+});
+
+describe('booking.services.rescheduleBookingByAdmin', () => {
+  const baseBooking = {
+    id: 'booking-1',
+    adminId: 'admin-1',
+    clientId: 'client-1',
+    serviceId: 'service-1',
+    bookingTime: new Date('2030-01-05T10:00:00.000Z'),
+    durationMinutes: 45,
+    status: 'CONFIRMED',
+    notes: null,
+    service: { id: 'service-1', name: 'Corte', durationMinutes: 45, price: 500 },
+    client: { id: 'client-1', name: 'Ana', email: 'ana@example.com', phone: '099' }
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 400 when newBookingTime is invalid', async () => {
+    await expect(
+      rescheduleBookingByAdmin({
+        bookingId: 'booking-1',
+        adminId: 'admin-1',
+        newBookingTime: new Date('not-a-date')
+      })
+    ).rejects.toMatchObject({
+      code: BookingErrorCodes.INVALID_INPUT,
+      statusCode: 400
+    });
+  });
+
+  it('returns 404 when booking does not belong to admin', async () => {
+    const tx = {
+      booking: { findFirst: vi.fn().mockResolvedValue(null), update: vi.fn() },
+      adminUser: { findUnique: vi.fn() },
+      availabilityBlock: { findMany: vi.fn() }
+    };
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+
+    await expect(
+      rescheduleBookingByAdmin({
+        bookingId: 'booking-missing',
+        adminId: 'admin-1',
+        newBookingTime: new Date('2030-01-06T10:00:00.000Z')
+      })
+    ).rejects.toMatchObject({
+      code: BookingErrorCodes.BOOKING_NOT_FOUND,
+      statusCode: 404
+    });
+  });
+
+  it('returns 400 when booking is not CONFIRMED', async () => {
+    const tx = {
+      booking: {
+        findFirst: vi.fn().mockResolvedValue({ ...baseBooking, status: 'CANCELLED' }),
+        update: vi.fn()
+      },
+      adminUser: { findUnique: vi.fn() },
+      availabilityBlock: { findMany: vi.fn() }
+    };
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+
+    await expect(
+      rescheduleBookingByAdmin({
+        bookingId: 'booking-1',
+        adminId: 'admin-1',
+        newBookingTime: new Date('2030-01-06T10:00:00.000Z')
+      })
+    ).rejects.toMatchObject({
+      code: BookingErrorCodes.CANNOT_CANCEL,
+      statusCode: 400
+    });
+  });
+
+  it('returns 409 when the new slot conflicts with another confirmed booking', async () => {
+    const newTime = new Date('2030-01-06T10:00:00.000Z');
+    const conflictingBooking = {
+      bookingTime: newTime,
+      durationMinutes: 45
+    };
+    const tx = {
+      booking: {
+        findFirst: vi.fn().mockResolvedValue({ ...baseBooking }),
+        findMany: vi.fn().mockResolvedValue([conflictingBooking]),
+        update: vi.fn()
+      },
+      adminUser: {
+        findUnique: vi.fn().mockResolvedValue({ schedule })
+      },
+      availabilityBlock: { findMany: vi.fn().mockResolvedValue([]) }
+    };
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+
+    await expect(
+      rescheduleBookingByAdmin({
+        bookingId: 'booking-1',
+        adminId: 'admin-1',
+        newBookingTime: newTime
+      })
+    ).rejects.toMatchObject({
+      code: BookingErrorCodes.UNAVAILABLE_TIME,
+      statusCode: 409
+    });
+    expect(tx.booking.update).not.toHaveBeenCalled();
+  });
+
+  it('returns 200 and updates bookingTime when the new slot is free', async () => {
+    const newTime = new Date('2030-01-06T10:00:00.000Z');
+    const updated = { ...baseBooking, bookingTime: newTime };
+    const tx = {
+      booking: {
+        findFirst: vi.fn().mockResolvedValue({ ...baseBooking }),
+        findMany: vi.fn().mockResolvedValue([]),
+        update: vi.fn().mockResolvedValue(updated)
+      },
+      adminUser: {
+        findUnique: vi.fn().mockResolvedValue({ schedule })
+      },
+      availabilityBlock: { findMany: vi.fn().mockResolvedValue([]) }
+    };
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+
+    const result = await rescheduleBookingByAdmin({
+      bookingId: 'booking-1',
+      adminId: 'admin-1',
+      newBookingTime: newTime
+    });
+
+    expect(tx.booking.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'booking-1' },
+        data: { bookingTime: newTime }
+      })
+    );
+    expect(result.oldBookingTime.toISOString()).toBe(baseBooking.bookingTime.toISOString());
+    expect(result.newBookingTime.toISOString()).toBe(newTime.toISOString());
+    expect(result.clientEmail).toBe('ana@example.com');
   });
 });

@@ -110,6 +110,16 @@ export interface CancelBookingByAdminResult {
   durationMinutes: number;
 }
 
+export interface RescheduleBookingByAdminResult {
+  booking: BookingWithDetails;
+  oldBookingTime: Date;
+  newBookingTime: Date;
+  clientEmail: string;
+  clientName: string;
+  serviceName: string;
+  durationMinutes: number;
+}
+
 export enum BookingErrorCodes {
   SERVICE_NOT_FOUND = 'SERVICE_NOT_FOUND',
   UNAVAILABLE_TIME = 'UNAVAILABLE_TIME',

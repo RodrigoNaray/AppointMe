@@ -15,5 +15,6 @@ router.put('/:id/cancel', isClientAuthenticated, bookingController.cancelBooking
 export const adminBookingRoutes = Router();
 adminBookingRoutes.get('/', isAdminAuthenticated, bookingController.getAllBookings);
 adminBookingRoutes.put('/:id/cancel', isAdminAuthenticated, bookingController.cancelBookingByAdminController);
+adminBookingRoutes.put('/:id/reschedule', isAdminAuthenticated, bookingController.rescheduleBookingByAdminController);
 
 export default router;

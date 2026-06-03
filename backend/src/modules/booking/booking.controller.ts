@@ -5,6 +5,7 @@ import {
   GetBookingsRequest,
   CancelBookingRequest,
   CancelBookingByAdminRequest,
+  RescheduleBookingRequest,
   CreateBookingResponse,
   GetBookingsResponse,
   BookingError,
@@ -12,7 +13,7 @@ import {
 } from './booking.types';
 import * as service from './booking.services'
 import logger from '../../utils/logger';
-import { sendBookingConfirmationEmail, sendAdminCancellationEmail } from '../../services/emailService';
+import { sendBookingConfirmationEmail, sendAdminCancellationEmail, sendBookingRescheduledEmail } from '../../services/emailService';
 
 /**
  * Crear una nueva reserva (Cliente)
@@ -275,6 +276,95 @@ export const cancelBookingByAdminController = async (
 
   } catch (error) {
     logger.error({ error, params: req.params, body: req.body }, 'Error in cancelBookingByAdminController');
+
+    if (error instanceof Error && 'statusCode' in error) {
+      const bookingError = error as BookingError;
+      return res.status(bookingError.statusCode).json({
+        success: false,
+        message: bookingError.message
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Reagendar una reserva (Admin) - BKG-A-003
+ * PUT /api/admin/bookings/:id/reschedule
+ */
+export const rescheduleBookingByAdminController = async (
+  req: RescheduleBookingRequest,
+  res: Response<{ success: boolean; message: string; booking?: BookingWithDetails }>
+) => {
+  try {
+    const admin = req.user as AdminUser;
+    if (!admin?.id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    const { id } = req.params;
+    const { newBookingTime } = req.body;
+
+    if (!newBookingTime) {
+      return res.status(400).json({
+        success: false,
+        message: 'newBookingTime is required'
+      });
+    }
+
+    const newBookingTimeDate = new Date(newBookingTime);
+    if (isNaN(newBookingTimeDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid newBookingTime format'
+      });
+    }
+
+    const result = await service.rescheduleBookingByAdmin({
+      bookingId: id,
+      adminId: admin.id,
+      newBookingTime: newBookingTimeDate
+    });
+
+    logger.info({
+      bookingId: id,
+      adminId: admin.id,
+      oldBookingTime: result.oldBookingTime.toISOString(),
+      newBookingTime: result.newBookingTime.toISOString()
+    }, 'Booking rescheduled by admin via API');
+
+    const clientTimezone = 'UTC';
+
+    sendBookingRescheduledEmail({
+      to: result.clientEmail,
+      clientName: result.clientName,
+      clientTimezone,
+      serviceName: result.serviceName,
+      oldBookingTime: result.oldBookingTime,
+      newBookingTime: result.newBookingTime,
+      durationMinutes: result.durationMinutes
+    }).catch((error) => {
+      logger.error(
+        { error, bookingId: id, clientId: result.booking.clientId },
+        'Failed to send booking rescheduled email'
+      );
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Reserva reagendada exitosamente',
+      booking: result.booking
+    });
+
+  } catch (error) {
+    logger.error({ error, params: req.params, body: req.body }, 'Error in rescheduleBookingByAdminController');
 
     if (error instanceof Error && 'statusCode' in error) {
       const bookingError = error as BookingError;

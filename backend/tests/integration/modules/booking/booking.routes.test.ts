@@ -8,7 +8,7 @@ type AdminAuthUser = { id: string; email: string };
 type ClientAuthRequest = Request & { user?: ClientAuthUser };
 type AdminAuthRequest = Request & { user?: AdminAuthUser };
 
-const { authState, mockPrisma, mockSendBookingConfirmationEmail, mockSendAdminCancellationEmail } = vi.hoisted(() => ({
+const { authState, mockPrisma, mockSendBookingConfirmationEmail, mockSendAdminCancellationEmail, mockSendBookingRescheduledEmail } = vi.hoisted(() => ({
   authState: {
     clientUser: { id: 'client-1', email: 'ana@example.com', name: 'Ana' } as ClientAuthUser,
     adminUser: { id: 'admin-1', email: 'admin@example.com' } as AdminAuthUser
@@ -21,10 +21,13 @@ const { authState, mockPrisma, mockSendBookingConfirmationEmail, mockSendAdminCa
       findUnique: vi.fn(),
       findFirst: vi.fn(),
       update: vi.fn()
-    }
+    },
+    adminUser: { findUnique: vi.fn() },
+    availabilityBlock: { findMany: vi.fn() }
   },
   mockSendBookingConfirmationEmail: vi.fn().mockResolvedValue(undefined),
-  mockSendAdminCancellationEmail: vi.fn().mockResolvedValue(undefined)
+  mockSendAdminCancellationEmail: vi.fn().mockResolvedValue(undefined),
+  mockSendBookingRescheduledEmail: vi.fn().mockResolvedValue(undefined)
 }));
 
 vi.mock('../../../../src/config/prisma', () => ({
@@ -33,7 +36,8 @@ vi.mock('../../../../src/config/prisma', () => ({
 
 vi.mock('../../../../src/services/emailService', () => ({
   sendBookingConfirmationEmail: mockSendBookingConfirmationEmail,
-  sendAdminCancellationEmail: mockSendAdminCancellationEmail
+  sendAdminCancellationEmail: mockSendAdminCancellationEmail,
+  sendBookingRescheduledEmail: mockSendBookingRescheduledEmail
 }));
 
 vi.mock('../../../../src/middlewares/isClientAuthenticated', () => ({
@@ -440,5 +444,134 @@ describe('booking.routes (semi-real)', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.message).toContain('500 characters');
+  });
+
+  it('admin reschedules a booking and emails the client with old and new times', async () => {
+    const newTime = new Date('2030-01-06T10:00:00.000Z');
+    const tx = {
+      booking: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'booking-1',
+          adminId: 'admin-1',
+          clientId: 'client-1',
+          serviceId: 'service-1',
+          bookingTime: new Date('2030-01-05T10:00:00.000Z'),
+          durationMinutes: 45,
+          status: 'CONFIRMED',
+          notes: null,
+          service: { id: 'service-1', name: 'Corte', durationMinutes: 45, price: 500 },
+          client: { id: 'client-1', name: 'Ana', email: 'ana@example.com', phone: '099' }
+        }),
+        findMany: vi.fn().mockResolvedValue([]),
+        update: vi.fn().mockResolvedValue({
+          id: 'booking-1',
+          adminId: 'admin-1',
+          clientId: 'client-1',
+          serviceId: 'service-1',
+          bookingTime: newTime,
+          durationMinutes: 45,
+          status: 'CONFIRMED',
+          service: { id: 'service-1', name: 'Corte', durationMinutes: 45, price: 500 },
+          client: { id: 'client-1', name: 'Ana', email: 'ana@example.com', phone: '099' }
+        })
+      },
+      adminUser: { findUnique: vi.fn().mockResolvedValue({ schedule }) },
+      availabilityBlock: { findMany: vi.fn().mockResolvedValue([]) }
+    };
+    mockPrisma.$transaction.mockImplementation(
+      async (callback: (transactionClient: typeof tx) => unknown) => callback(tx)
+    );
+
+    const response = await request(adminApp)
+      .put('/admin/bookings/booking-1/reschedule')
+      .send({ newBookingTime: newTime.toISOString() });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(tx.booking.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'booking-1' },
+        data: { bookingTime: newTime }
+      })
+    );
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(mockSendBookingRescheduledEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'ana@example.com',
+        serviceName: 'Corte',
+        durationMinutes: 45
+      })
+    );
+  });
+
+  it('admin reschedule returns 404 when booking does not belong to admin', async () => {
+    const tx = {
+      booking: { findFirst: vi.fn().mockResolvedValue(null), findMany: vi.fn(), update: vi.fn() },
+      adminUser: { findUnique: vi.fn() },
+      availabilityBlock: { findMany: vi.fn() }
+    };
+    mockPrisma.$transaction.mockImplementation(
+      async (callback: (transactionClient: typeof tx) => unknown) => callback(tx)
+    );
+
+    const response = await request(adminApp)
+      .put('/admin/bookings/booking-missing/reschedule')
+      .send({ newBookingTime: '2030-01-06T10:00:00.000Z' });
+
+    expect(response.status).toBe(404);
+  });
+
+  it('admin reschedule returns 400 when newBookingTime is missing', async () => {
+    const response = await request(adminApp)
+      .put('/admin/bookings/booking-1/reschedule')
+      .send({});
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toContain('newBookingTime');
+  });
+
+  it('admin reschedule returns 400 when newBookingTime is invalid', async () => {
+    const response = await request(adminApp)
+      .put('/admin/bookings/booking-1/reschedule')
+      .send({ newBookingTime: 'not-a-date' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toContain('Invalid');
+  });
+
+  it('admin reschedule returns 409 when new slot is not available', async () => {
+    const tx = {
+      booking: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'booking-1',
+          adminId: 'admin-1',
+          clientId: 'client-1',
+          serviceId: 'service-1',
+          bookingTime: new Date('2030-01-05T10:00:00.000Z'),
+          durationMinutes: 45,
+          status: 'CONFIRMED',
+          notes: null,
+          service: { id: 'service-1', name: 'Corte', durationMinutes: 45, price: 500 },
+          client: { id: 'client-1', name: 'Ana', email: 'ana@example.com', phone: '099' }
+        }),
+        findMany: vi.fn().mockResolvedValue([{
+          bookingTime: new Date('2030-01-06T10:00:00.000Z'),
+          durationMinutes: 45
+        }]),
+        update: vi.fn()
+      },
+      adminUser: { findUnique: vi.fn().mockResolvedValue({ schedule }) },
+      availabilityBlock: { findMany: vi.fn().mockResolvedValue([]) }
+    };
+    mockPrisma.$transaction.mockImplementation(
+      async (callback: (transactionClient: typeof tx) => unknown) => callback(tx)
+    );
+
+    const response = await request(adminApp)
+      .put('/admin/bookings/booking-1/reschedule')
+      .send({ newBookingTime: '2030-01-06T10:00:00.000Z' });
+
+    expect(response.status).toBe(409);
+    expect(tx.booking.update).not.toHaveBeenCalled();
   });
 });

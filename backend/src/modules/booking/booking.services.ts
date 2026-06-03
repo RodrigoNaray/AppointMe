@@ -6,7 +6,8 @@ import {
   BookingWithDetails,
   BookingError,
   BookingErrorCodes,
-  CancelBookingByAdminResult
+  CancelBookingByAdminResult,
+  RescheduleBookingByAdminResult
 } from './booking.types';
 import { addMinutes } from 'date-fns';
 import { hasTimeConflictOptimized, TimePeriod } from '../../utils/timeConflictUtils';
@@ -51,7 +52,8 @@ const validateTimeSlotAvailability = async (
   requestedTime: Date,
   serviceDuration: number,
   adminId: string,
-  serviceId: string
+  serviceId: string,
+  excludeBookingId?: string
 ): Promise<boolean> => {
   try {
     const { start: dayStartUTC, endExclusive: dayEndUTCExclusive } = getUtcDayRange(requestedTime);
@@ -78,17 +80,17 @@ const validateTimeSlotAvailability = async (
 
     // 3. Verificar que la hora esté dentro del rango de trabajo (parsear en UTC explícitamente)
     const requestedDateUTC = new Date(requestedTime);
-    
+
     // Parsear horarios laborales en UTC (evitar parse() que usa timezone local)
     const [startHour, startMinute] = daySchedule.start.split(':').map(Number);
     const [endHour, endMinute] = daySchedule.end.split(':').map(Number);
-    
+
     const workingHoursStart = new Date(requestedDateUTC);
     workingHoursStart.setUTCHours(startHour, startMinute, 0, 0);
-    
+
     const workingHoursEnd = new Date(requestedDateUTC);
     workingHoursEnd.setUTCHours(endHour, endMinute, 0, 0);
-    
+
     const serviceEndTime = addMinutes(requestedTime, serviceDuration);
 
     if (requestedTime < workingHoursStart || serviceEndTime > workingHoursEnd) {
@@ -96,16 +98,21 @@ const validateTimeSlotAvailability = async (
     }
 
     // 4. Obtener todos los conflictos potenciales del día (excluir canceladas)
+    const bookingWhere: Record<string, unknown> = {
+      adminId,
+      bookingTime: {
+        gte: dayStartUTC,
+        lt: dayEndUTCExclusive
+      },
+      status: 'CONFIRMED'
+    };
+    if (excludeBookingId) {
+      bookingWhere.id = { not: excludeBookingId };
+    }
+
     const [bookings, blocks] = await Promise.all([
       db.booking.findMany({
-        where: {
-          adminId,
-          bookingTime: {
-            gte: dayStartUTC,
-            lt: dayEndUTCExclusive
-          },
-          status: 'CONFIRMED' // Solo considerar reservas confirmadas para conflictos
-        },
+        where: bookingWhere,
         select: {
           bookingTime: true,
           durationMinutes: true
@@ -134,10 +141,10 @@ const validateTimeSlotAvailability = async (
 
     // 6. Verificar conflictos usando búsqueda binaria optimizada O(log n)
     const requestedPeriodEnd = addMinutes(requestedTime, serviceDuration);
-    
+
     const hasConflict = hasTimeConflictOptimized(
-      requestedTime, 
-      requestedPeriodEnd, 
+      requestedTime,
+      requestedPeriodEnd,
       busyPeriods
     );
 
@@ -669,6 +676,129 @@ export const cancelBookingByAdmin = async (
       serviceName: booking.service.name,
       bookingTime: booking.bookingTime,
       durationMinutes: booking.service.durationMinutes
+    };
+  });
+};
+
+interface RescheduleBookingByAdminParams {
+  bookingId: string;
+  adminId: string;
+  newBookingTime: Date;
+}
+
+/**
+ * Reagenda una reserva como administrador (BKG-A-003).
+ * El admin puede mover una reserva CONFIRMED a un nuevo slot sin restricción
+ * de tiempo de aviso. La duración se preserva del snapshot. El email al cliente
+ * incluye la hora anterior y la nueva hora para que vea el cambio claramente.
+ */
+export const rescheduleBookingByAdmin = async (
+  params: RescheduleBookingByAdminParams
+): Promise<RescheduleBookingByAdminResult> => {
+  const { bookingId, adminId, newBookingTime } = params;
+
+  if (isNaN(newBookingTime.getTime())) {
+    const error: BookingError = new Error('Invalid new booking time') as BookingError;
+    error.statusCode = 400;
+    error.code = BookingErrorCodes.INVALID_INPUT;
+    throw error;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const booking = await tx.booking.findFirst({
+      where: { id: bookingId, adminId },
+      include: {
+        service: {
+          select: {
+            id: true,
+            name: true,
+            durationMinutes: true,
+            price: true
+          }
+        },
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true
+          }
+        }
+      }
+    });
+
+    if (!booking) {
+      const error: BookingError = new Error('Booking not found or not owned by this admin') as BookingError;
+      error.statusCode = 404;
+      error.code = BookingErrorCodes.BOOKING_NOT_FOUND;
+      throw error;
+    }
+
+    if (booking.status !== 'CONFIRMED') {
+      const error: BookingError = new Error('Only confirmed bookings can be rescheduled') as BookingError;
+      error.statusCode = 400;
+      error.code = BookingErrorCodes.CANNOT_CANCEL;
+      throw error;
+    }
+
+    const isSlotFree = await validateTimeSlotAvailability(
+      tx,
+      newBookingTime,
+      booking.durationMinutes,
+      adminId,
+      booking.serviceId,
+      bookingId
+    );
+
+    if (!isSlotFree) {
+      const error: BookingError = new Error('The new time slot is not available') as BookingError;
+      error.statusCode = 409;
+      error.code = BookingErrorCodes.UNAVAILABLE_TIME;
+      throw error;
+    }
+
+    const oldBookingTime = booking.bookingTime;
+
+    const updatedBooking = await tx.booking.update({
+      where: { id: bookingId },
+      data: {
+        bookingTime: newBookingTime
+      },
+      include: {
+        service: {
+          select: {
+            id: true,
+            name: true,
+            durationMinutes: true,
+            price: true
+          }
+        },
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true
+          }
+        }
+      }
+    });
+
+    logger.info({
+      bookingId,
+      adminId,
+      oldBookingTime: oldBookingTime.toISOString(),
+      newBookingTime: newBookingTime.toISOString()
+    }, 'Booking rescheduled by admin');
+
+    return {
+      booking: updatedBooking as BookingWithDetails,
+      oldBookingTime,
+      newBookingTime,
+      clientEmail: booking.client.email,
+      clientName: booking.client.name,
+      serviceName: booking.service.name,
+      durationMinutes: booking.durationMinutes
     };
   });
 };
