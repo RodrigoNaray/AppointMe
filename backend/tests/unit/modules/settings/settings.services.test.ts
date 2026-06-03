@@ -98,6 +98,20 @@ describe('settings.services', () => {
     ).rejects.toMatchObject({ statusCode: 400 });
   });
 
+  it('rejects updateContactInfo when longitude is invalid', async () => {
+    await expect(
+      updateContactInfo('admin-1', { businessLongitude: 200 })
+    ).rejects.toMatchObject({ statusCode: 400 });
+
+    expect(mockPrisma.adminUser.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects updateContactInfo when latitude is below -90', async () => {
+    await expect(
+      updateContactInfo('admin-1', { businessLatitude: -100 })
+    ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
   it('sanitizes address and persists contact info', async () => {
     mockPrisma.adminUser.update.mockResolvedValue({
       businessPhone: '+59812345678',
