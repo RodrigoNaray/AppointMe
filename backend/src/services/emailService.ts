@@ -50,6 +50,16 @@ interface PasswordResetEmailData {
   resetToken: string;
 }
 
+interface AdminCancellationEmailData {
+  to: string;
+  clientName: string;
+  serviceName: string;
+  bookingTime: Date;
+  durationMinutes: number;
+  reason?: string;
+  clientTimezone: string;
+}
+
 /**
  * Envía un email de verificación al cliente recién registrado
  * @param data Datos necesarios para el email de verificación
@@ -530,6 +540,142 @@ ${resetUrl}
       error: error instanceof Error ? error.message : 'Unknown error',
       to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2')
     }, 'Failed to send password reset email via Resend');
+    return false;
+  }
+};
+
+/**
+ * Envía un email al cliente cuando el admin cancela su reserva
+ * @param data Datos del email de cancelación por admin
+ * @returns Promise<boolean> true si el email se envió exitosamente
+ */
+export const sendAdminCancellationEmail = async (data: AdminCancellationEmailData): Promise<boolean> => {
+  try {
+    const formatDateTime = (date: Date, timezone: string): string => {
+      return formatInTimeZone(date, timezone, 'dd/MM/yyyy HH:mm');
+    };
+
+    const formattedTime = formatDateTime(data.bookingTime, data.clientTimezone);
+    const reasonBlock = data.reason
+      ? `
+        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
+          <p style="margin: 0; font-size: 14px; color: #92400e;">
+            <strong>Motivo:</strong> ${data.reason}
+          </p>
+        </div>`
+      : '';
+
+    const reasonText = data.reason ? `\nMotivo: ${data.reason}\n` : '';
+
+    const htmlTemplate = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reserva Cancelada - AppointMePro</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">Reserva Cancelada</h1>
+        </div>
+
+        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+            <p style="font-size: 16px; margin-bottom: 20px;">
+                Hola <strong>${data.clientName}</strong>,
+            </p>
+
+            <p style="font-size: 16px; margin-bottom: 20px;">
+                Lamentamos informarte que tu reserva ha sido cancelada por el establecimiento. Aquí están los detalles:
+            </p>
+
+            <table style="width: 100%; background: white; border-radius: 8px; overflow: hidden; border-collapse: collapse; margin-bottom: 20px;">
+              <tbody>
+                <tr>
+                  <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151;">Servicio</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${data.serviceName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151;">Fecha y Hora</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${formattedTime}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px; font-weight: 600; color: #374151;">Duración</td>
+                  <td style="padding: 12px;">${data.durationMinutes} min</td>
+                </tr>
+              </tbody>
+            </table>
+
+            ${reasonBlock}
+
+            <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">
+                Si deseas reservar nuevamente, puedes hacerlo desde nuestra plataforma cuando lo desees.
+            </p>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="${process.env.CLIENT_URL}/client/bookings"
+                   style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    Ver Mis Reservas
+                </a>
+            </div>
+
+            <p style="font-size: 14px; color: #6b7280; margin-top: 30px; text-align: center;">
+                ¿Tienes preguntas? Contáctanos respondiendo este email.
+            </p>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="font-size: 12px; color: #9ca3af;">
+                © 2025 AppointMePro. Todos los derechos reservados.
+            </p>
+        </div>
+    </body>
+    </html>
+    `;
+
+    const textContent = `
+Reserva Cancelada - AppointMePro
+
+Hola ${data.clientName},
+
+Lamentamos informarte que tu reserva ha sido cancelada por el establecimiento.
+
+Detalles de la reserva cancelada:
+- Servicio: ${data.serviceName}
+- Fecha y Hora: ${formattedTime}
+- Duración: ${data.durationMinutes} minutos
+${reasonText}
+Si deseas reservar nuevamente, puedes hacerlo desde nuestra plataforma:
+${process.env.CLIENT_URL}/client/bookings
+
+¿Tienes preguntas? Contáctanos respondiendo este email.
+
+© 2025 AppointMePro
+    `.trim();
+
+    const result = await resend.emails.send({
+      from: `AppointMePro <${FROM_EMAIL}>`,
+      to: data.to,
+      subject: 'Reserva Cancelada - AppointMePro',
+      html: htmlTemplate,
+      text: textContent,
+    });
+
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+
+    logger.info({
+      messageId: result.data?.id,
+      to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2')
+    }, 'Admin cancellation email sent successfully via Resend');
+
+    return true;
+  } catch (error) {
+    logger.error({
+      error: error instanceof Error ? error.message : 'Unknown error',
+      to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2')
+    }, 'Failed to send admin cancellation email via Resend');
     return false;
   }
 };

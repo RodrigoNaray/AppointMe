@@ -18,6 +18,7 @@ vi.mock('../../../../src/config/prisma', () => ({
 
 import { createBooking } from '../../../../src/modules/booking/booking.services';
 import { cancelBooking } from '../../../../src/modules/booking/booking.services';
+import { cancelBookingByAdmin } from '../../../../src/modules/booking/booking.services';
 
 type TxCallback<T> = (transactionClient: T) => unknown;
 type TxOptions = {
@@ -97,7 +98,9 @@ const buildTransactionContext = (
     },
     booking: {
       findMany: vi.fn().mockResolvedValue(overrides.bookings ?? []),
-      create: vi.fn().mockResolvedValue(createdBooking)
+      create: vi.fn().mockResolvedValue(createdBooking),
+      findFirst: vi.fn(),
+      update: vi.fn()
     },
     availabilityBlock: {
       findMany: vi.fn().mockResolvedValue(overrides.blocks ?? [])
@@ -433,6 +436,123 @@ describe('booking.services.cancelBooking', () => {
         data: expect.objectContaining({
           status: 'CANCELLED',
           cancellationReason: 'CANCELLED_BY_CLIENT'
+        })
+      })
+    );
+  });
+});
+
+describe('booking.services.cancelBookingByAdmin', () => {
+  const adminBookingRecord = {
+    id: 'booking-1',
+    adminId: 'admin-1',
+    clientId: 'client-1',
+    serviceId: 'service-1',
+    bookingTime: new Date('2030-01-02T10:00:00.000Z'),
+    durationMinutes: 45,
+    status: 'CONFIRMED',
+    notes: null,
+    service: { id: 'service-1', name: 'Corte', durationMinutes: 45, price: 500 },
+    client: { id: 'client-1', name: 'Ana', email: 'ana@example.com', phone: '099' }
+  };
+
+  const updatedAdminBooking = {
+    ...adminBookingRecord,
+    status: 'CANCELLED',
+    cancelledAt: new Date('2030-01-01T00:00:00.000Z'),
+    cancellationReason: 'CANCELLED_BY_ADMIN'
+  };
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2030-01-01T00:00:00.000Z'));
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns 404 when booking does not exist for admin', async () => {
+    const tx = {
+      booking: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn()
+      }
+    };
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+
+    await expect(
+      cancelBookingByAdmin({ bookingId: 'booking-missing', adminId: 'admin-1' })
+    ).rejects.toMatchObject({
+      code: BookingErrorCodes.BOOKING_NOT_FOUND,
+      statusCode: 404
+    });
+    expect(tx.booking.update).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when booking is already cancelled', async () => {
+    const tx = {
+      booking: {
+        findFirst: vi.fn().mockResolvedValue({ ...adminBookingRecord, status: 'CANCELLED' }),
+        update: vi.fn()
+      }
+    };
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+
+    await expect(
+      cancelBookingByAdmin({ bookingId: 'booking-1', adminId: 'admin-1' })
+    ).rejects.toMatchObject({
+      code: BookingErrorCodes.CANNOT_CANCEL,
+      statusCode: 400
+    });
+    expect(tx.booking.update).not.toHaveBeenCalled();
+  });
+
+  it('cancels the booking with CANCELLED_BY_ADMIN reason and no time-of-day check', async () => {
+    const tx = {
+      booking: {
+        findFirst: vi.fn().mockResolvedValue({ ...adminBookingRecord }),
+        update: vi.fn().mockResolvedValue(updatedAdminBooking)
+      }
+    };
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+
+    const result = await cancelBookingByAdmin({ bookingId: 'booking-1', adminId: 'admin-1' });
+
+    expect(tx.booking.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'booking-1' },
+        data: expect.objectContaining({
+          status: 'CANCELLED',
+          cancellationReason: 'CANCELLED_BY_ADMIN'
+        })
+      })
+    );
+    expect(result.clientEmail).toBe('ana@example.com');
+    expect(result.serviceName).toBe('Corte');
+    expect(result.durationMinutes).toBe(45);
+  });
+
+  it('appends the admin reason to existing notes when provided', async () => {
+    const tx = {
+      booking: {
+        findFirst: vi.fn().mockResolvedValue({ ...adminBookingRecord, notes: 'Cliente prefiere tarde' }),
+        update: vi.fn().mockResolvedValue(updatedAdminBooking)
+      }
+    };
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+
+    await cancelBookingByAdmin({
+      bookingId: 'booking-1',
+      adminId: 'admin-1',
+      reason: 'Emergencia del staff'
+    });
+
+    expect(tx.booking.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          notes: 'Cliente prefiere tarde\n\n[Admin cancel reason]: Emergencia del staff'
         })
       })
     );

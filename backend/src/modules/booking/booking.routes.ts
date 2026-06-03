@@ -14,5 +14,6 @@ router.put('/:id/cancel', isClientAuthenticated, bookingController.cancelBooking
 // Rutas para administradores (prefijo /admin se maneja en server.ts)
 export const adminBookingRoutes = Router();
 adminBookingRoutes.get('/', isAdminAuthenticated, bookingController.getAllBookings);
+adminBookingRoutes.put('/:id/cancel', isAdminAuthenticated, bookingController.cancelBookingByAdminController);
 
 export default router;

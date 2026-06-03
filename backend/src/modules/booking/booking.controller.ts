@@ -1,9 +1,10 @@
 import { Response } from 'express';
-import { Client } from '@prisma/client';
+import { AdminUser, Client } from '@prisma/client';
 import {
   CreateBookingRequest,
   GetBookingsRequest,
   CancelBookingRequest,
+  CancelBookingByAdminRequest,
   CreateBookingResponse,
   GetBookingsResponse,
   BookingError,
@@ -11,7 +12,7 @@ import {
 } from './booking.types';
 import * as service from './booking.services'
 import logger from '../../utils/logger';
-import { sendBookingConfirmationEmail } from '../../services/emailService';
+import { sendBookingConfirmationEmail, sendAdminCancellationEmail } from '../../services/emailService';
 
 /**
  * Crear una nueva reserva (Cliente)
@@ -194,6 +195,86 @@ export const cancelBooking = async (
 
   } catch (error) {
     logger.error({ error, params: req.params }, 'Error in cancelBookingController');
+
+    if (error instanceof Error && 'statusCode' in error) {
+      const bookingError = error as BookingError;
+      return res.status(bookingError.statusCode).json({
+        success: false,
+        message: bookingError.message
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Cancelar una reserva (Admin) - BKG-A-002
+ * PUT /api/admin/bookings/:id/cancel
+ */
+export const cancelBookingByAdminController = async (
+  req: CancelBookingByAdminRequest,
+  res: Response<{ success: boolean; message: string; booking?: BookingWithDetails }>
+) => {
+  try {
+    const admin = req.user as AdminUser;
+    if (!admin?.id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (reason !== undefined && (typeof reason !== 'string' || reason.length > 500)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reason must be a string of at most 500 characters'
+      });
+    }
+
+    const result = await service.cancelBookingByAdmin({
+      bookingId: id,
+      adminId: admin.id,
+      reason
+    });
+
+    logger.info({
+      bookingId: id,
+      adminId: admin.id,
+      hasReason: Boolean(reason)
+    }, 'Booking cancelled by admin via API');
+
+    const clientTimezone = 'UTC';
+
+    sendAdminCancellationEmail({
+      to: result.clientEmail,
+      clientName: result.clientName,
+      clientTimezone,
+      serviceName: result.serviceName,
+      bookingTime: result.bookingTime,
+      durationMinutes: result.durationMinutes,
+      reason
+    }).catch((error) => {
+      logger.error(
+        { error, bookingId: id, clientId: result.booking.clientId },
+        'Failed to send admin cancellation email'
+      );
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Reserva cancelada exitosamente',
+      booking: result.booking
+    });
+
+  } catch (error) {
+    logger.error({ error, params: req.params, body: req.body }, 'Error in cancelBookingByAdminController');
 
     if (error instanceof Error && 'statusCode' in error) {
       const bookingError = error as BookingError;

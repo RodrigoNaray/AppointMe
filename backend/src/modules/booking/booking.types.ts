@@ -101,6 +101,15 @@ export interface BookingError extends Error {
   code: string;
 }
 
+export interface CancelBookingByAdminResult {
+  booking: BookingWithDetails;
+  clientEmail: string;
+  clientName: string;
+  serviceName: string;
+  bookingTime: Date;
+  durationMinutes: number;
+}
+
 export enum BookingErrorCodes {
   SERVICE_NOT_FOUND = 'SERVICE_NOT_FOUND',
   UNAVAILABLE_TIME = 'UNAVAILABLE_TIME',

@@ -5,7 +5,8 @@ import {
   BookingFiltersDTO, 
   BookingWithDetails,
   BookingError,
-  BookingErrorCodes 
+  BookingErrorCodes,
+  CancelBookingByAdminResult
 } from './booking.types';
 import { addMinutes } from 'date-fns';
 import { hasTimeConflictOptimized, TimePeriod } from '../../utils/timeConflictUtils';
@@ -567,4 +568,107 @@ export const getBookingById = async (
     logger.error({ error, bookingId, clientId }, 'Error getting booking by id');
     throw error;
   }
+};
+
+interface CancelBookingByAdminParams {
+  bookingId: string;
+  adminId: string;
+  reason?: string;
+}
+
+/**
+ * Cancela una reserva como administrador (BKG-A-002).
+ * El admin puede cancelar cualquier reserva sin restricción de tiempo de aviso.
+ * El email de notificación al cliente se incluye en el resultado para que
+ * el controller lo envíe asincrónicamente sin bloquear la respuesta.
+ */
+export const cancelBookingByAdmin = async (
+  params: CancelBookingByAdminParams
+): Promise<CancelBookingByAdminResult> => {
+  const { bookingId, adminId, reason } = params;
+
+  return prisma.$transaction(async (tx) => {
+    const booking = await tx.booking.findFirst({
+      where: { id: bookingId, adminId },
+      include: {
+        service: {
+          select: {
+            id: true,
+            name: true,
+            durationMinutes: true,
+            price: true
+          }
+        },
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true
+          }
+        }
+      }
+    });
+
+    if (!booking) {
+      const error: BookingError = new Error('Booking not found or not owned by this admin') as BookingError;
+      error.statusCode = 404;
+      error.code = BookingErrorCodes.BOOKING_NOT_FOUND;
+      throw error;
+    }
+
+    if (booking.status === 'CANCELLED') {
+      const error: BookingError = new Error('Booking is already cancelled') as BookingError;
+      error.statusCode = 400;
+      error.code = BookingErrorCodes.CANNOT_CANCEL;
+      throw error;
+    }
+
+    const updatedBooking = await tx.booking.update({
+      where: { id: bookingId },
+      data: {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        cancellationReason: 'CANCELLED_BY_ADMIN',
+        notes: reason
+          ? booking.notes
+            ? `${booking.notes}\n\n[Admin cancel reason]: ${reason}`
+            : `[Admin cancel reason]: ${reason}`
+          : booking.notes
+      },
+      include: {
+        service: {
+          select: {
+            id: true,
+            name: true,
+            durationMinutes: true,
+            price: true
+          }
+        },
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true
+          }
+        }
+      }
+    });
+
+    logger.info({
+      bookingId,
+      adminId,
+      hasReason: Boolean(reason)
+    }, 'Booking cancelled by admin');
+
+    return {
+      booking: updatedBooking as BookingWithDetails,
+      clientEmail: booking.client.email,
+      clientName: booking.client.name,
+      serviceName: booking.service.name,
+      bookingTime: booking.bookingTime,
+      durationMinutes: booking.service.durationMinutes
+    };
+  });
 };

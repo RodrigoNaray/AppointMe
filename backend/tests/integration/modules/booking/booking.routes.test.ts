@@ -8,7 +8,7 @@ type AdminAuthUser = { id: string; email: string };
 type ClientAuthRequest = Request & { user?: ClientAuthUser };
 type AdminAuthRequest = Request & { user?: AdminAuthUser };
 
-const { authState, mockPrisma, mockSendBookingConfirmationEmail } = vi.hoisted(() => ({
+const { authState, mockPrisma, mockSendBookingConfirmationEmail, mockSendAdminCancellationEmail } = vi.hoisted(() => ({
   authState: {
     clientUser: { id: 'client-1', email: 'ana@example.com', name: 'Ana' } as ClientAuthUser,
     adminUser: { id: 'admin-1', email: 'admin@example.com' } as AdminAuthUser
@@ -19,10 +19,12 @@ const { authState, mockPrisma, mockSendBookingConfirmationEmail } = vi.hoisted((
       findMany: vi.fn(),
       count: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       update: vi.fn()
     }
   },
-  mockSendBookingConfirmationEmail: vi.fn().mockResolvedValue(undefined)
+  mockSendBookingConfirmationEmail: vi.fn().mockResolvedValue(undefined),
+  mockSendAdminCancellationEmail: vi.fn().mockResolvedValue(undefined)
 }));
 
 vi.mock('../../../../src/config/prisma', () => ({
@@ -30,7 +32,8 @@ vi.mock('../../../../src/config/prisma', () => ({
 }));
 
 vi.mock('../../../../src/services/emailService', () => ({
-  sendBookingConfirmationEmail: mockSendBookingConfirmationEmail
+  sendBookingConfirmationEmail: mockSendBookingConfirmationEmail,
+  sendAdminCancellationEmail: mockSendAdminCancellationEmail
 }));
 
 vi.mock('../../../../src/middlewares/isClientAuthenticated', () => ({
@@ -131,6 +134,7 @@ describe('booking.routes (semi-real)', () => {
     mockPrisma.booking.findMany.mockResolvedValue([]);
     mockPrisma.booking.count.mockResolvedValue(0);
     mockPrisma.booking.findUnique.mockResolvedValue(null);
+    mockPrisma.booking.findFirst.mockResolvedValue(null);
     mockPrisma.booking.update.mockResolvedValue(null);
   });
 
@@ -305,5 +309,136 @@ describe('booking.routes (semi-real)', () => {
         })
       })
     );
+  });
+
+  it('admin cancels a booking successfully and emails the client', async () => {
+    const tx = {
+      booking: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'booking-1',
+          adminId: 'admin-1',
+          clientId: 'client-1',
+          serviceId: 'service-1',
+          bookingTime: new Date('2030-01-05T10:00:00.000Z'),
+          durationMinutes: 45,
+          status: 'CONFIRMED',
+          notes: null,
+          service: { id: 'service-1', name: 'Corte', durationMinutes: 45, price: 500 },
+          client: { id: 'client-1', name: 'Ana', email: 'ana@example.com', phone: '099' }
+        }),
+        update: vi.fn().mockResolvedValue({
+          id: 'booking-1',
+          adminId: 'admin-1',
+          clientId: 'client-1',
+          serviceId: 'service-1',
+          bookingTime: new Date('2030-01-05T10:00:00.000Z'),
+          durationMinutes: 45,
+          status: 'CANCELLED',
+          cancellationReason: 'CANCELLED_BY_ADMIN',
+          service: { id: 'service-1', name: 'Corte', durationMinutes: 45, price: 500 },
+          client: { id: 'client-1', name: 'Ana', email: 'ana@example.com', phone: '099' }
+        })
+      }
+    };
+    mockPrisma.$transaction.mockImplementation(
+      async (callback: (transactionClient: typeof tx) => unknown) => callback(tx)
+    );
+
+    const response = await request(adminApp)
+      .put('/admin/bookings/booking-1/cancel')
+      .send({ reason: 'Emergencia del staff' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.booking.status).toBe('CANCELLED');
+    expect(tx.booking.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 'booking-1', adminId: 'admin-1' })
+      })
+    );
+    expect(tx.booking.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'CANCELLED',
+          cancellationReason: 'CANCELLED_BY_ADMIN'
+        })
+      })
+    );
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(mockSendAdminCancellationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'ana@example.com',
+        serviceName: 'Corte',
+        reason: 'Emergencia del staff'
+      })
+    );
+  });
+
+  it('admin cancel returns 404 when booking does not belong to this admin', async () => {
+    const tx = {
+      booking: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn()
+      }
+    };
+    mockPrisma.$transaction.mockImplementation(
+      async (callback: (transactionClient: typeof tx) => unknown) => callback(tx)
+    );
+
+    const response = await request(adminApp).put('/admin/bookings/booking-missing/cancel');
+
+    expect(response.status).toBe(404);
+    expect(response.body.success).toBe(false);
+    expect(tx.booking.update).not.toHaveBeenCalled();
+  });
+
+  it('admin cancel returns 400 when booking is already cancelled', async () => {
+    const tx = {
+      booking: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: 'booking-1',
+          adminId: 'admin-1',
+          clientId: 'client-1',
+          serviceId: 'service-1',
+          bookingTime: new Date('2030-01-05T10:00:00.000Z'),
+          durationMinutes: 45,
+          status: 'CANCELLED',
+          notes: null,
+          service: { id: 'service-1', name: 'Corte', durationMinutes: 45, price: 500 },
+          client: { id: 'client-1', name: 'Ana', email: 'ana@example.com', phone: '099' }
+        }),
+        update: vi.fn()
+      }
+    };
+    mockPrisma.$transaction.mockImplementation(
+      async (callback: (transactionClient: typeof tx) => unknown) => callback(tx)
+    );
+
+    const response = await request(adminApp).put('/admin/bookings/booking-1/cancel');
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toContain('already cancelled');
+    expect(tx.booking.update).not.toHaveBeenCalled();
+  });
+
+  it('admin cancel returns 401 when admin is not authenticated', async () => {
+    authState.adminUser = null;
+
+    const response = await request(adminApp).put('/admin/bookings/booking-1/cancel');
+
+    expect(response.status).toBe(401);
+    expect(response.body.message).toContain('Authentication');
+    authState.adminUser = { id: 'admin-1', email: 'admin@example.com' };
+  });
+
+  it('admin cancel returns 400 when reason exceeds 500 chars', async () => {
+    const longReason = 'a'.repeat(501);
+
+    const response = await request(adminApp)
+      .put('/admin/bookings/booking-1/cancel')
+      .send({ reason: longReason });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toContain('500 characters');
   });
 });
