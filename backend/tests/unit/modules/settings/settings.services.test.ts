@@ -29,7 +29,7 @@ describe('settings.services', () => {
 
   it('returns booking defaults when admin values are null', async () => {
     mockPrisma.adminUser.findFirst.mockResolvedValue({
-      minBookingNoticeMinutes: null,
+      minBookingAdvanceMinutes: null,
       minCancellationNoticeMinutes: null
     });
 

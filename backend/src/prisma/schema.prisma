@@ -36,7 +36,7 @@ model AdminUser {
   // Configuraciones específicas del administrador
   schedule      Json?     // Horario base semanal, almacenado como JSON. Ejemplo:
                           // { "monday": { "start": "09:00", "end": "18:00", "isActive": true }, ... }
-  minBookingNoticeMinutes Int? @default(60)   // Antelación mínima para reservas, en minutos. Por defecto 1 hora.
+  minBookingAdvanceMinutes Int? @default(60)   // Antelación mínima para reservas, en minutos. Por defecto 1 hora.
   minCancellationNoticeMinutes Int? @default(120) // Tiempo mínimo antes de cita para permitir cancelación (2 horas)
 
   // Información de contacto pública del negocio
@@ -60,6 +60,7 @@ model Client {
   email        String    @unique
   name         String
   phone        String?
+  emailLanguage String @default("es")
   passwordHash String?   // Opcional para el login con Google
   googleId     String?   @unique
 
@@ -122,6 +123,7 @@ model Service {
 
   @@index([categoryId])
   @@index([adminId])
+  @@index([adminId, isActive])
 }
 
 // Modelo para las Reservas hechas por los clientes
@@ -148,6 +150,7 @@ model Booking {
   @@index([bookingTime])
   @@index([status])
   @@index([adminId, status])
+  @@index([clientId, bookingTime])
   @@unique([bookingTime, serviceId, clientId, adminId]) 
 }
 
@@ -165,6 +168,7 @@ model AvailabilityBlock {
   updatedAt DateTime @updatedAt
 
   @@index([startTime, endTime])
+  @@index([adminId, startTime])
   @@unique([startTime, endTime, adminId]) 
 }
 

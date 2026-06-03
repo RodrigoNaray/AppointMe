@@ -61,7 +61,7 @@ const buildTransactionContext = (
     adminId: 'admin-1',
     admin: {
       id: 'admin-1',
-      minBookingNoticeMinutes: 60,
+      minBookingAdvanceMinutes: 60,
       schedule
     },
     ...overrides.service
@@ -130,7 +130,7 @@ describe('booking.services.createBooking', () => {
           adminId: 'admin-1',
           admin: {
             id: 'admin-1',
-            minBookingNoticeMinutes: 60,
+            minBookingAdvanceMinutes: 60,
             schedule
           }
         })
@@ -164,7 +164,7 @@ describe('booking.services.createBooking', () => {
           adminId: 'admin-1',
           admin: {
             id: 'admin-1',
-            minBookingNoticeMinutes: 60,
+            minBookingAdvanceMinutes: 60,
             schedule
           }
         })

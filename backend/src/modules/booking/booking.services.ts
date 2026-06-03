@@ -176,7 +176,7 @@ export const createBooking = async (
             admin: {
               select: {
                 id: true,
-                minBookingNoticeMinutes: true,
+                minBookingAdvanceMinutes: true,
                 schedule: true
               }
             }
@@ -201,7 +201,7 @@ export const createBooking = async (
 
         // 2. Validar tiempo mínimo de antelación (valida futuro + notice en una sola lógica)
         const now = new Date();
-        const minNoticeMinutes = service.admin.minBookingNoticeMinutes || 60; // Default 1 hora
+        const minNoticeMinutes = service.admin.minBookingAdvanceMinutes || 60; // Default 1 hora
         const minBookingTime = addMinutes(now, minNoticeMinutes);
 
         if (data.bookingTime < minBookingTime) {

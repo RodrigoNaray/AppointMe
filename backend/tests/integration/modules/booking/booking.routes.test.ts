@@ -90,7 +90,7 @@ const buildCreateBookingTx = () => ({
       adminId: 'admin-1',
       admin: {
         id: 'admin-1',
-        minBookingNoticeMinutes: 60,
+        minBookingAdvanceMinutes: 60,
         schedule
       }
     })

@@ -34,7 +34,7 @@ export const getBookingRules = async (): Promise<BookingRulesDTO> => {
     // Single-tenant: obtener primer admin
     const admin = await prisma.adminUser.findFirst({
       select: {
-        minBookingNoticeMinutes: true,
+        minBookingAdvanceMinutes: true,
         minCancellationNoticeMinutes: true
       }
     });
@@ -46,7 +46,7 @@ export const getBookingRules = async (): Promise<BookingRulesDTO> => {
     }
 
     return {
-      minBookingAdvanceMinutes: admin.minBookingNoticeMinutes || 60,
+      minBookingAdvanceMinutes: admin.minBookingAdvanceMinutes || 60,
       minCancellationNoticeMinutes: admin.minCancellationNoticeMinutes || 120
     };
 
@@ -205,11 +205,11 @@ export const updateBookingRules = async (
     const admin = await prisma.adminUser.update({
       where: { id: adminId },
       data: {
-        minBookingNoticeMinutes: data.minBookingAdvanceMinutes,
+        minBookingAdvanceMinutes: data.minBookingAdvanceMinutes,
         minCancellationNoticeMinutes: data.minCancellationNoticeMinutes
       },
       select: {
-        minBookingNoticeMinutes: true,
+        minBookingAdvanceMinutes: true,
         minCancellationNoticeMinutes: true
       }
     });
@@ -221,7 +221,7 @@ export const updateBookingRules = async (
     }, 'Booking rules updated');
 
     return {
-      minBookingAdvanceMinutes: admin.minBookingNoticeMinutes || 60,
+      minBookingAdvanceMinutes: admin.minBookingAdvanceMinutes || 60,
       minCancellationNoticeMinutes: admin.minCancellationNoticeMinutes || 120
     };
 

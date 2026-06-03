@@ -579,7 +579,7 @@ export const changePassword = async (
  */
 export const updateClientProfile = async (
   clientId: string,
-  data: { phone?: string; name?: string }
+  data: { phone?: string; name?: string; emailLanguage?: string }
 ): Promise<PublicClient> => {
   try {
     // Validar que el cliente existe
@@ -597,6 +597,7 @@ export const updateClientProfile = async (
       data: {
         ...(data.phone !== undefined && { phone: data.phone }),
         ...(data.name !== undefined && { name: data.name }),
+        ...(data.emailLanguage !== undefined && { emailLanguage: data.emailLanguage }),
       },
     });
 
@@ -606,6 +607,7 @@ export const updateClientProfile = async (
       email: updatedClient.email,
       name: updatedClient.name,
       phone: updatedClient.phone,
+      emailLanguage: updatedClient.emailLanguage,
       emailVerified: updatedClient.emailVerified,
       googleId: updatedClient.googleId,
       emailVerificationExpires: updatedClient.emailVerificationExpires,
