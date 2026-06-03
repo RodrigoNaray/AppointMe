@@ -8,8 +8,9 @@ import { useAuthStore, selectAuthState } from "@/stores/authStore";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Clock, DollarSign, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Calendar, Clock, DollarSign, CheckCircle, AlertCircle, Loader2, Mail, ShieldAlert } from "lucide-react";
 import { API_BASE_URL } from "@/api/config";
+import { clientAuthService } from "@/api/modules/clientAuth";
 
 interface BookingResult {
   serviceId: string;
@@ -32,6 +33,9 @@ export default function BookingConfirmPage() {
   const [bookingResults, setBookingResults] = useState<BookingResult[]>([]);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [hasValidated, setHasValidated] = useState(false);
+  const [showEmailBanner, setShowEmailBanner] = useState(false);
+  const [emailBannerSent, setEmailBannerSent] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
 
   const dateParam = searchParams.get('date'); // YYYY-MM-DD
   const timeParam = searchParams.get('time'); // HH:mm
@@ -91,6 +95,30 @@ export default function BookingConfirmPage() {
   const displayTime = selectedDateTime 
     ? format(selectedDateTime, 'HH:mm') // format() convierte automáticamente a local timezone
     : timeParam;
+
+  const handleResendVerification = async () => {
+    setResendingEmail(true);
+    try {
+      const result = await clientAuthService.resendVerification();
+      if (result.success) {
+        setEmailBannerSent(true);
+        toast.success('Email de verificación reenviado. Revisá tu bandeja.');
+      } else {
+        toast.error(result.message);
+      }
+    } catch {
+      toast.error('Error al reenviar la verificación. Intentá de nuevo.');
+    } finally {
+      setResendingEmail(false);
+    }
+  };
+
+  const handleRetryAfterVerify = () => {
+    setShowEmailBanner(false);
+    setEmailBannerSent(false);
+    setHasSubmitted(false);
+    setBookingResults([]);
+  };
 
   const handleConfirmBooking = async () => {
     if (!selectedDateTime || !dateParam || !timeParam) {
@@ -161,8 +189,12 @@ export default function BookingConfirmPage() {
             });
             successCount++;
             
-            // Acumular duración para escalonar siguiente reserva
             accumulatedMinutes += item.service.durationMinutes * item.quantity;
+          } else if (response.status === 403 && data.code === 'EMAIL_NOT_VERIFIED') {
+            setShowEmailBanner(true);
+            setHasSubmitted(false);
+            setIsSubmitting(false);
+            break;
           } else {
             // Error del backend (409 conflicto, 400 validación, etc.)
             results.push({
@@ -296,6 +328,54 @@ export default function BookingConfirmPage() {
               ))}
             </div>
           </div>
+
+          {/* Banner de email no verificado */}
+          {showEmailBanner && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <ShieldAlert className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="font-semibold text-amber-900">Verificá tu email antes de reservar</p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    Necesitamos confirmar tu dirección de email para procesar la reserva.
+                    Revisá tu bandeja de entrada o solicitá un nuevo email.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResendVerification}
+                  disabled={resendingEmail}
+                  className="flex-1"
+                >
+                  {resendingEmail ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Mail className="w-4 h-4 mr-2" />
+                  )}
+                  {emailBannerSent ? 'Reenviar de nuevo' : 'Reenviar verificación'}
+                </Button>
+                {!emailBannerSent && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={handleRetryAfterVerify}
+                    className="text-amber-700"
+                  >
+                    Intentar de nuevo
+                  </Button>
+                )}
+              </div>
+              {emailBannerSent && (
+                <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 rounded p-2">
+                  <CheckCircle className="w-4 h-4" />
+                  Email enviado. Revisá tu bandeja y luego presioná "Intentar de nuevo" para reintentar la reserva.
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Total */}
           <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">

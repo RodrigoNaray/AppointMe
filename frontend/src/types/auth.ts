@@ -22,6 +22,7 @@ export interface ClientUser {
   name: string;
   email: string;
   phone: string;
+  emailVerified?: boolean;
   googleId?: string | null;
   emailLanguage?: string;
   type: 'client';

@@ -169,6 +169,27 @@ export const createBooking = async (
   try {
     const booking = await prisma.$transaction(
       async (tx) => {
+        const client = await tx.client.findUnique({
+          where: { id: clientId },
+          select: { emailVerified: true, googleId: true }
+        });
+
+        if (!client) {
+          throw buildBookingError(
+            'Client not found',
+            404,
+            BookingErrorCodes.BOOKING_NOT_FOUND
+          );
+        }
+
+        if (!client.emailVerified && !client.googleId) {
+          throw buildBookingError(
+            'Email not verified. Please verify your email before booking.',
+            403,
+            BookingErrorCodes.EMAIL_NOT_VERIFIED
+          );
+        }
+
         // 1. Verificar que el servicio existe y está activo
         const service = await tx.service.findUnique({
           where: { id: data.serviceId },

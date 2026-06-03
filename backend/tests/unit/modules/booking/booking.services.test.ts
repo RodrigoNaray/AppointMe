@@ -91,6 +91,9 @@ const buildTransactionContext = (
   };
 
   return {
+    client: {
+      findUnique: vi.fn().mockResolvedValue({ emailVerified: true, googleId: null })
+    },
     service: {
       findUnique: vi.fn().mockResolvedValue(serviceRecord)
     },
@@ -120,8 +123,106 @@ describe('booking.services.createBooking', () => {
     vi.useRealTimers();
   });
 
+  it('rejects with EMAIL_NOT_FOUND when client does not exist in DB', async () => {
+    const tx = {
+      client: {
+        findUnique: vi.fn().mockResolvedValue(null)
+      }
+    };
+
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => {
+      return callback(tx);
+    });
+
+    await expect(
+      createBooking('nonexistent-client', {
+        serviceId: 'service-1',
+        bookingTime: new Date('2030-01-02T10:00:00.000Z')
+      })
+    ).rejects.toMatchObject({
+      code: BookingErrorCodes.BOOKING_NOT_FOUND,
+      statusCode: 404
+    });
+  });
+
+  it('rejects with EMAIL_NOT_VERIFIED when client email is not verified', async () => {
+    const tx = {
+      client: {
+        findUnique: vi.fn().mockResolvedValue({ emailVerified: false, googleId: null })
+      }
+    };
+
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => {
+      return callback(tx);
+    });
+
+    await expect(
+      createBooking('client-1', {
+        serviceId: 'service-1',
+        bookingTime: new Date('2030-01-02T10:00:00.000Z')
+      })
+    ).rejects.toMatchObject({
+      code: BookingErrorCodes.EMAIL_NOT_VERIFIED,
+      statusCode: 403
+    });
+  });
+
+  it('allows booking for Google OAuth client even when email is not verified', async () => {
+    const tx = {
+      client: {
+        findUnique: vi.fn().mockResolvedValue({ emailVerified: false, googleId: 'google-123' })
+      },
+      service: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'service-1',
+          isActive: true,
+          durationMinutes: 30,
+          adminId: 'admin-1',
+          admin: {
+            id: 'admin-1',
+            minBookingAdvanceMinutes: 60,
+            schedule
+          }
+        })
+      },
+      adminUser: {
+        findUnique: vi.fn().mockResolvedValue({ schedule })
+      },
+      booking: {
+        findMany: vi.fn().mockResolvedValue([]),
+        create: vi.fn().mockResolvedValue({
+          id: 'booking-1',
+          clientId: 'client-1',
+          adminId: 'admin-1',
+          serviceId: 'service-1',
+          bookingTime: new Date('2030-01-02T10:00:00.000Z'),
+          durationMinutes: 30,
+          status: 'CONFIRMED'
+        })
+      },
+      availabilityBlock: {
+        findMany: vi.fn().mockResolvedValue([])
+      }
+    };
+
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => {
+      return callback(tx);
+    });
+
+    const booking = await createBooking('client-1', {
+      serviceId: 'service-1',
+      bookingTime: new Date('2030-01-02T10:00:00.000Z')
+    });
+
+    expect(booking.id).toBe('booking-1');
+    expect(tx.booking.create).toHaveBeenCalled();
+  });
+
   it('rejects booking that does not meet minimum notice', async () => {
     const tx = {
+      client: {
+        findUnique: vi.fn().mockResolvedValue({ emailVerified: true, googleId: null })
+      },
       service: {
         findUnique: vi.fn().mockResolvedValue({
           id: 'service-1',
@@ -156,6 +257,9 @@ describe('booking.services.createBooking', () => {
     const createSpy = vi.fn();
 
     const tx = {
+      client: {
+        findUnique: vi.fn().mockResolvedValue({ emailVerified: true, googleId: null })
+      },
       service: {
         findUnique: vi.fn().mockResolvedValue({
           id: 'service-1',

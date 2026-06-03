@@ -81,7 +81,10 @@ const createPrismaKnownError = (code: 'P2002' | 'P2034') => {
   return error;
 };
 
-const buildCreateBookingTx = () => ({
+const buildCreateBookingTx = (overrides?: { emailVerified?: boolean; googleId?: string | null }) => ({
+  client: {
+    findUnique: vi.fn().mockResolvedValue({ emailVerified: overrides?.emailVerified ?? true, googleId: overrides?.googleId ?? null })
+  },
   service: {
     findUnique: vi.fn().mockResolvedValue({
       id: 'service-1',
@@ -195,6 +198,27 @@ describe('booking.routes (semi-real)', () => {
     expect(response.status).toBe(409);
     expect(response.body.success).toBe(false);
     expect(response.body.message).toContain('not available');
+  });
+
+  it('returns 403 when client email is not verified', async () => {
+    const tx = buildCreateBookingTx({ emailVerified: false, googleId: null });
+    mockPrisma.$transaction.mockImplementation(
+      async (callback: (transactionClient: ReturnType<typeof buildCreateBookingTx>) => unknown) => callback(tx)
+    );
+
+    const response = await request(clientApp)
+      .post('/bookings/create')
+      .send({
+        serviceId: 'service-1',
+        bookingTime: '2030-01-02T10:00:00.000Z',
+        clientTimezone: 'America/Argentina/Buenos_Aires'
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toContain('email');
+    expect(response.body.message).toContain('verified');
+    expect(tx.booking.create).not.toHaveBeenCalled();
   });
 
   it('returns paginated bookings for authenticated client', async () => {
