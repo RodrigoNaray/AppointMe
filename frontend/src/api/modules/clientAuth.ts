@@ -84,6 +84,11 @@ export const clientAuthService = {
     return { ...response.data.user, type: 'client' as const };
   },
 
+  updateProfile: async (data: Partial<{ name: string; phone: string; emailLanguage: string }>): Promise<ClientUser> => {
+    const response = await clientAuthApi.patch<{ message: string; client: ClientUser }>('/auth/client/profile', data);
+    return { ...response.data.client, type: 'client' as const };
+  },
+
   logout: async (): Promise<void> => {
     await clientAuthApi.post('/auth/client/logout');
   },

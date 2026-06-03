@@ -13,6 +13,7 @@ import {
 import { ConflictError } from '../../utils/error';
 import { JWT_SECRET, JWT_EXPIRATION } from '../../config/auth.config';
 import { sendVerificationEmail, sendEmailChangeVerification } from '../../services/emailService';
+import { getLanguageFromHeader } from '../../services/emailTranslations';
 import { generateTokenWithExpiration } from '../../utils/tokenUtils';
 import logger from '../../utils/logger';
 
@@ -21,7 +22,7 @@ import logger from '../../utils/logger';
  * @param data - Datos del cliente para el registro.
  * @returns El objeto del cliente público (sin contraseña).
  */
-export const registerClient = async (data: RegisterClientDto): Promise<PublicClient> => {
+export const registerClient = async (data: RegisterClientDto, acceptLanguage?: string): Promise<PublicClient> => {
   // 1. Verificar si el email ya está en uso
   const existingClient = await prisma.client.findUnique({
     where: { email: data.email },
@@ -41,12 +42,15 @@ export const registerClient = async (data: RegisterClientDto): Promise<PublicCli
   const { token: verificationToken, expiration: verificationExpires } = generateTokenWithExpiration(24);
 
   // 4. Crear el nuevo cliente en la base de datos con datos de verificación
+  const emailLanguage = getLanguageFromHeader(acceptLanguage);
+
   const newClient = await prisma.client.create({
     data: {
       email: data.email,
       name: data.name,
       phone: data.phone,
       passwordHash,
+      emailLanguage,
       emailVerified: false,
       emailVerificationToken: verificationToken,
       emailVerificationExpires: verificationExpires,
@@ -59,6 +63,7 @@ export const registerClient = async (data: RegisterClientDto): Promise<PublicCli
       to: newClient.email,
       name: newClient.name,
       verificationToken: verificationToken,
+      clientLanguage: newClient.emailLanguage,
     });
 
     if (emailSent) {
@@ -263,6 +268,7 @@ export const resendVerificationEmail = async (clientId: string): Promise<boolean
       to: client.email,
       name: client.name,
       verificationToken: verificationToken,
+      clientLanguage: client.emailLanguage,
     });
 
     if (emailSent) {
@@ -373,10 +379,11 @@ export const requestEmailChange = async (
   // Enviar email de verificación al NUEVO email
   try {
     const emailSent = await sendEmailChangeVerification({
-      to: client.email, // Notificar al email actual
+      to: client.email,
       name: client.name,
       newEmail: data.newEmail,
       emailChangeToken: emailChangeToken,
+      clientLanguage: client.emailLanguage,
     });
 
     if (emailSent) {
@@ -643,7 +650,7 @@ export const updateClientProfile = async (
  * - Token generado con crypto.randomBytes (cryptographically secure)
  * - Expiración de 24 horas previene abuso de tokens antiguos
  */
-export const requestPasswordReset = async (email: string): Promise<boolean> => {
+export const requestPasswordReset = async (email: string, acceptLanguage?: string): Promise<boolean> => {
   try {
     // Buscar cliente por email
     const client = await prisma.client.findUnique({
@@ -670,10 +677,12 @@ export const requestPasswordReset = async (email: string): Promise<boolean> => {
 
     // Importar y enviar email (lazy import para evitar circular dependency)
     const { sendPasswordResetEmail } = await import('../../services/emailService');
+    const emailLang = client.emailLanguage ?? acceptLanguage ?? 'es';
     const emailSent = await sendPasswordResetEmail({
       to: client.email,
       name: client.name,
       resetToken,
+      clientLanguage: emailLang,
     });
 
     if (!emailSent) {

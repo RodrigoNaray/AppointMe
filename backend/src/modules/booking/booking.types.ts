@@ -105,6 +105,7 @@ export interface CancelBookingByAdminResult {
   booking: BookingWithDetails;
   clientEmail: string;
   clientName: string;
+  clientLanguage?: string;
   serviceName: string;
   bookingTime: Date;
   durationMinutes: number;
@@ -116,6 +117,7 @@ export interface RescheduleBookingByAdminResult {
   newBookingTime: Date;
   clientEmail: string;
   clientName: string;
+  clientLanguage?: string;
   serviceName: string;
   durationMinutes: number;
 }

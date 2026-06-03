@@ -440,7 +440,8 @@ export const cancelBooking = async (
             id: true,
             name: true,
             email: true,
-            phone: true
+            phone: true,
+            emailLanguage: true
           }
         }
       }
@@ -506,7 +507,8 @@ export const cancelBooking = async (
             id: true,
             name: true,
             email: true,
-            phone: true
+            phone: true,
+            emailLanguage: true
           }
         }
       }
@@ -556,7 +558,8 @@ export const getBookingById = async (
             id: true,
             name: true,
             email: true,
-            phone: true
+            phone: true,
+            emailLanguage: true
           }
         }
       }
@@ -611,7 +614,8 @@ export const cancelBookingByAdmin = async (
             id: true,
             name: true,
             email: true,
-            phone: true
+            phone: true,
+            emailLanguage: true
           }
         }
       }
@@ -657,7 +661,8 @@ export const cancelBookingByAdmin = async (
             id: true,
             name: true,
             email: true,
-            phone: true
+            phone: true,
+            emailLanguage: true
           }
         }
       }
@@ -673,6 +678,7 @@ export const cancelBookingByAdmin = async (
       booking: updatedBooking as BookingWithDetails,
       clientEmail: booking.client.email,
       clientName: booking.client.name,
+      clientLanguage: booking.client.emailLanguage,
       serviceName: booking.service.name,
       bookingTime: booking.bookingTime,
       durationMinutes: booking.service.durationMinutes
@@ -721,7 +727,8 @@ export const rescheduleBookingByAdmin = async (
             id: true,
             name: true,
             email: true,
-            phone: true
+            phone: true,
+            emailLanguage: true
           }
         }
       }
@@ -778,7 +785,8 @@ export const rescheduleBookingByAdmin = async (
             id: true,
             name: true,
             email: true,
-            phone: true
+            phone: true,
+            emailLanguage: true
           }
         }
       }
@@ -797,6 +805,7 @@ export const rescheduleBookingByAdmin = async (
       newBookingTime,
       clientEmail: booking.client.email,
       clientName: booking.client.name,
+      clientLanguage: booking.client.emailLanguage,
       serviceName: booking.service.name,
       durationMinutes: booking.durationMinutes
     };

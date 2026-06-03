@@ -70,7 +70,8 @@ export const createBooking = async (
     sendBookingConfirmationEmail({
       to: client.email,
       clientName: client.name,
-      clientTimezone, // Timezone REQUERIDO detectado en frontend (IANA format)
+      clientTimezone,
+      clientLanguage: client.emailLanguage,
       bookings: [{
         serviceName: booking.service.name,
         bookingTime: booking.bookingTime,
@@ -257,6 +258,7 @@ export const cancelBookingByAdminController = async (
       to: result.clientEmail,
       clientName: result.clientName,
       clientTimezone,
+      clientLanguage: result.clientLanguage,
       serviceName: result.serviceName,
       bookingTime: result.bookingTime,
       durationMinutes: result.durationMinutes,
@@ -346,6 +348,7 @@ export const rescheduleBookingByAdminController = async (
       to: result.clientEmail,
       clientName: result.clientName,
       clientTimezone,
+      clientLanguage: result.clientLanguage,
       serviceName: result.serviceName,
       oldBookingTime: result.oldBookingTime,
       newBookingTime: result.newBookingTime,

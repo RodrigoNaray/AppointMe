@@ -11,8 +11,9 @@ const getErrorMessage = (error: unknown): string => {
 export const registerClientController = async (req: Request, res: Response) => {
   try {
     const clientData: RegisterClientDto = req.body;
-    const newClient = await service.registerClient(clientData);
-    logger.info({ clientId: newClient.id }, "Nuevo cliente registrado");
+    const acceptLanguage = req.headers['accept-language'] as string | undefined;
+    const newClient = await service.registerClient(clientData, acceptLanguage);
+    logger.info({ clientId: newClient.id, emailLanguage: newClient.emailLanguage }, "Nuevo cliente registrado");
     res.status(201).json({ message: 'Cliente registrado exitosamente', client: newClient });
   } catch (error: unknown) {
     logger.error(error, "Error en el registro de cliente");
@@ -100,27 +101,17 @@ export const getClientProfileController = async (req: Request, res: Response) =>
 export const updateClientProfileController = async (req: Request, res: Response) => {
   try {
     const user = req.user as { id: string };
-    const { phone } = req.body;
+    const { phone, emailLanguage } = req.body;
 
     if (!user) {
       return res.status(401).json({ message: 'Usuario no autenticado' });
     }
 
-    // Validar que el teléfono sea proporcionado
-    if (!phone || typeof phone !== 'string') {
-      return res.status(400).json({ message: 'Teléfono es requerido' });
-    }
-
-    // Validación básica de formato (10-15 dígitos)
-    const cleanPhone = phone.replace(/[\s-]/g, '');
-    if (!/^[0-9]{10,15}$/.test(cleanPhone)) {
-      return res.status(400).json({ 
-        message: 'Formato de teléfono inválido. Debe contener entre 10 y 15 dígitos' 
-      });
-    }
-
     // Actualizar en la base de datos
-    const updatedClient = await service.updateClientProfile(user.id, { phone: cleanPhone });
+    const updatedClient = await service.updateClientProfile(user.id, {
+      ...(phone !== undefined ? { phone } : {}),
+      ...(emailLanguage !== undefined ? { emailLanguage } : {}),
+    });
 
     logger.info({ clientId: user.id }, 'Perfil de cliente actualizado');
     res.status(200).json({ 
@@ -365,7 +356,8 @@ export const forgotPasswordController = async (req: Request, res: Response) => {
     }
 
     // Procesar solicitud (siempre retorna true por seguridad)
-    await service.requestPasswordReset(email);
+    const acceptLanguage = req.headers['accept-language'] as string | undefined;
+    await service.requestPasswordReset(email, acceptLanguage);
 
     // Mensaje genérico (no revelar si email existe)
     logger.info({ email: email.replace(/(.{2}).*(@.*)/, '$1***$2') }, 'Password reset requested');

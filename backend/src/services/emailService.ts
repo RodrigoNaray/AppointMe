@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import { formatInTimeZone } from 'date-fns-tz';
 import logger from "../utils/logger";
+import { t } from './emailTranslations';
 
 
 if (!process.env.RESEND_API_KEY) {
@@ -23,6 +24,7 @@ interface VerificationEmailData {
   to: string;
   name: string;
   verificationToken: string;
+  clientLanguage?: string;
 }
 
 interface EmailChangeData {
@@ -30,24 +32,27 @@ interface EmailChangeData {
   name: string;
   newEmail: string;
   emailChangeToken: string;
+  clientLanguage?: string;
 }
 
 
 interface BookingConfirmationData {
   to: string;
   clientName: string;
-  clientTimezone: string; // IANA timezone (ej: 'America/Argentina/Buenos_Aires')
+  clientTimezone: string;
   bookings: Array<{
     serviceName: string;
     bookingTime: Date;
     durationMinutes: number;
   }>;
+  clientLanguage?: string;
 }
 
 interface PasswordResetEmailData {
   to: string;
   name: string;
   resetToken: string;
+  clientLanguage?: string;
 }
 
 interface AdminCancellationEmailData {
@@ -58,6 +63,7 @@ interface AdminCancellationEmailData {
   durationMinutes: number;
   reason?: string;
   clientTimezone: string;
+  clientLanguage?: string;
 }
 
 interface BookingRescheduledEmailData {
@@ -68,6 +74,7 @@ interface BookingRescheduledEmailData {
   newBookingTime: Date;
   durationMinutes: number;
   clientTimezone: string;
+  clientLanguage?: string;
 }
 
 /**
@@ -141,11 +148,11 @@ Si no te registraste en AppointMePro, ignora este email.
 © 2025 AppointMePro
     `.trim();
 
-    // Enviar email con Resend
+    const lang = data.clientLanguage;
     const result = await resend.emails.send({
       from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.to,
-      subject: 'Verifica tu email - AppointMePro',
+      subject: t('verification.subject', lang),
       html: htmlTemplate,
       text: textContent,
     });
@@ -248,11 +255,11 @@ Si no solicitaste este cambio, ignora este email.
 © 2025 AppointMePro
     `.trim();
 
-    // Enviar email con Resend al NUEVO email para verificarlo
+    const lang = data.clientLanguage;
     const result = await resend.emails.send({
       from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.newEmail,
-      subject: 'Confirma tu nuevo email - AppointMePro',
+      subject: t('email-change.subject', lang),
       html: htmlTemplate,
       text: textContent,
     });
@@ -405,11 +412,11 @@ ${process.env.CLIENT_URL}/client/bookings
 © 2025 AppointMePro. Todos los derechos reservados.
     `.trim();
 
-    // Enviar email con Resend
+    const lang = data.clientLanguage;
     const result = await resend.emails.send({
       from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.to,
-      subject: `✓ Confirmación de Reserva${data.bookings.length > 1 ? 's' : ''} - AppointMePro`,
+      subject: `✓ ${t('booking-confirmed.subject', lang)}`,
       html: htmlTemplate,
       text: textContent,
     });
@@ -526,11 +533,11 @@ ${resetUrl}
 © 2025 AppointMePro
     `.trim();
 
-    // Enviar email con Resend
+    const lang = data.clientLanguage;
     const result = await resend.emails.send({
       from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.to,
-      subject: 'Recuperación de Contraseña - AppointMePro',
+      subject: t('password-reset.subject', lang),
       html: htmlTemplate,
       text: textContent,
     });
@@ -663,10 +670,11 @@ ${process.env.CLIENT_URL}/client/bookings
 © 2025 AppointMePro
     `.trim();
 
+    const lang = data.clientLanguage;
     const result = await resend.emails.send({
       from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.to,
-      subject: 'Reserva Cancelada - AppointMePro',
+      subject: t('admin-cancellation.subject', lang),
       html: htmlTemplate,
       text: textContent,
     });
@@ -794,10 +802,11 @@ Ver mis reservas: ${process.env.CLIENT_URL}/client/bookings
 © 2025 AppointMePro
     `.trim();
 
+    const lang = data.clientLanguage;
     const result = await resend.emails.send({
       from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.to,
-      subject: 'Reserva Reagendada - AppointMePro',
+      subject: t('booking-rescheduled.subject', lang),
       html: htmlTemplate,
       text: textContent,
     });

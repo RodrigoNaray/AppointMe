@@ -22,7 +22,8 @@ export interface ClientUser {
   name: string;
   email: string;
   phone: string;
-  googleId?: string | null; // Para usuarios registrados con Google OAuth
+  googleId?: string | null;
+  emailLanguage?: string;
   type: 'client';
 }
 
