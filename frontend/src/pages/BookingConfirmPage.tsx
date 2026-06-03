@@ -158,6 +158,8 @@ export default function BookingConfirmPage() {
     } else {
       toast.error('Algunas reservas no pudieron cancelarse. Revisá el panel de administración.');
     }
+    setHasSubmitted(false);
+    setIsSubmitting(false);
   };
 
   const handleKeepPartial = () => {
