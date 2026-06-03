@@ -1,41 +1,35 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Calendar, Home, User } from "lucide-react";
+import { CheckCircle, Calendar, Home, User, Clock } from "lucide-react";
 
-/**
- * BookingSuccessPage - Página de confirmación exitosa de reservas
- * 
- * Flujo:
- * 1. Se accede después de crear reservas exitosamente
- * 2. Lee `count` de query params (cantidad de reservas creadas)
- * 3. Muestra mensaje de éxito y opciones de navegación
- * 4. Redirige automáticamente al home después de 10 segundos
- * 
- * Seguridad OWASP (2025):
- * - Validación de query params (solo números positivos)
- * - No expone información sensible (solo cantidad de reservas)
- * - Timeout automático previene stale pages
- * 
- * React Best Practices:
- * - useSearchParams para query params type-safe
- * - Cleanup de timeout en useEffect
- * - shadcn-ui componentes accesibles
- * 
- * Referencias:
- * - React Router 7: https://reactrouter.com/en/main/hooks/use-search-params
- * - OWASP Input Validation: https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html
- */
+export interface BookingResultData {
+  serviceId: string;
+  serviceName: string;
+  bookingTime: string;
+  success: boolean;
+  bookingId?: string;
+  rolledBack?: boolean;
+  error?: string;
+}
 
 export default function BookingSuccessPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [secondsLeft, setSecondsLeft] = useState(10);
+
+  const stateResults = (location.state as { results?: BookingResultData[] } | null)?.results;
   
-  // Validar query param count (cantidad de reservas creadas)
   const countParam = searchParams.get('count');
-  const bookingCount = countParam && /^\d+$/.test(countParam) ? parseInt(countParam, 10) : 1;
+  const bookingCount = stateResults
+    ? stateResults.length
+    : countParam && /^\d+$/.test(countParam)
+      ? parseInt(countParam, 10)
+      : 1;
 
   // Countdown timer visual (actualiza cada segundo)
   useEffect(() => {
@@ -83,6 +77,30 @@ export default function BookingSuccessPage() {
         </CardHeader>
 
         <CardContent className="space-y-6">
+          {/* Detalle de servicios reservados */}
+          {stateResults && stateResults.length > 0 && (
+            <div className="space-y-2">
+              {stateResults.map((r) => {
+                const dt = parseISO(r.bookingTime);
+                return (
+                  <div
+                    key={r.bookingId || r.serviceId}
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border"
+                  >
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{r.serviceName}</p>
+                      <p className="text-sm text-gray-500 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        {format(dt, "HH:mm", { locale: es })}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* Mensaje informativo */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-900 text-center">

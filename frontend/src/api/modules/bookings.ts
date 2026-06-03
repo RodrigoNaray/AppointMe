@@ -51,8 +51,9 @@ export interface GetBookingsParams {
 
 export interface CreateBookingPayload {
   serviceId: string;
-  bookingTime: string; // ISO 8601
+  bookingTime: string;
   notes?: string;
+  clientTimezone: string;
 }
 
 export interface CreateBookingResponse {
