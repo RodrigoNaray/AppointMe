@@ -20,6 +20,12 @@ enum BookingStatus {
   CANCELLED  // Reserva cancelada por el usuario (soft delete)
 }
 
+enum CancellationReason {
+  CANCELLED_BY_CLIENT
+  CANCELLED_BY_ADMIN
+  CANCELLED_BY_ADMIN_RESCHEDULE
+}
+
 // Modelo para el Administrador (el profesional que usa la app)
 model AdminUser {
   id            String    @id @default(cuid()) // Clave primaria, generada automáticamente
@@ -120,11 +126,13 @@ model Service {
 
 // Modelo para las Reservas hechas por los clientes
 model Booking {
-  id              String        @id @default(cuid())
-  bookingTime     DateTime
-  durationMinutes Int           // Duración snapshot del servicio al momento de reservar
-  status          BookingStatus @default(CONFIRMED) // Estado de la reserva (CONFIRMED | CANCELLED)
-  reminderSent    Boolean       @default(false)     // Flag para prevenir duplicados en emails de recordatorio
+  id                String              @id @default(cuid())
+  bookingTime       DateTime
+  durationMinutes   Int                 // Duración snapshot del servicio al momento de reservar
+  status            BookingStatus       @default(CONFIRMED) // Estado de la reserva (CONFIRMED | CANCELLED)
+  notes             String?             // Notas opcionales del cliente al reservar
+  cancelledAt       DateTime?           // Timestamp del soft delete
+  cancellationReason CancellationReason? // Origen de la cancelación (analytics/audit)
 
   adminId     String
   admin       AdminUser @relation(fields: [adminId], references: [id])
@@ -138,7 +146,8 @@ model Booking {
   updatedAt   DateTime @updatedAt
 
   @@index([bookingTime])
-  @@index([status])  // Índice para queries filtradas por status
+  @@index([status])
+  @@index([adminId, status])
   @@unique([bookingTime, serviceId, clientId, adminId]) 
 }
 

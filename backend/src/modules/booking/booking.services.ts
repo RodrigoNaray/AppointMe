@@ -228,7 +228,8 @@ export const createBooking = async (
             serviceId: data.serviceId,
             adminId: service.adminId,
             bookingTime: data.bookingTime,
-            durationMinutes: service.durationMinutes, // Snapshot de duración al momento de reservar
+            durationMinutes: service.durationMinutes,
+            notes: data.notes ?? null,
           },
           include: {
             service: {
@@ -479,7 +480,9 @@ export const cancelBooking = async (
     const updatedBooking = await prisma.booking.update({
       where: { id: bookingId },
       data: {
-        status: 'CANCELLED'
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        cancellationReason: 'CANCELLED_BY_CLIENT'
       },
       include: {
         service: {

@@ -8,16 +8,16 @@ export { BookingStatus };
 export interface CreateBookingRequest extends Request {
   body: {
     serviceId: string;
-    bookingTime: string; // ISO datetime string
+    bookingTime: string;
     notes?: string;
-    clientTimezone: string; // IANA timezone REQUERIDO (ej: 'America/Argentina/Buenos_Aires')
+    clientTimezone: string;
   };
 }
 
 export interface GetBookingsRequest extends Request {
   query: {
-    from?: string;    // ISO date string
-    to?: string;      // ISO date string
+    from?: string;
+    to?: string;
     page?: string;
     limit?: string;
   };
@@ -26,6 +26,24 @@ export interface GetBookingsRequest extends Request {
 export interface CancelBookingRequest extends Request {
   params: {
     id: string;
+  };
+}
+
+export interface CancelBookingByAdminRequest extends Request {
+  params: {
+    id: string;
+  };
+  body: {
+    reason?: string;
+  };
+}
+
+export interface RescheduleBookingRequest extends Request {
+  params: {
+    id: string;
+  };
+  body: {
+    newBookingTime: string;
   };
 }
 
@@ -92,5 +110,6 @@ export enum BookingErrorCodes {
   UNAUTHORIZED = 'UNAUTHORIZED',
   INSUFFICIENT_NOTICE = 'INSUFFICIENT_NOTICE',
   OUTSIDE_WORKING_HOURS = 'OUTSIDE_WORKING_HOURS',
-  ADMIN_NOT_FOUND = 'ADMIN_NOT_FOUND'
+  ADMIN_NOT_FOUND = 'ADMIN_NOT_FOUND',
+  INVALID_INPUT = 'INVALID_INPUT'
 }
