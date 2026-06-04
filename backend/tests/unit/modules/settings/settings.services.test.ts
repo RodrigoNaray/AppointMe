@@ -84,6 +84,29 @@ describe('settings.services', () => {
     expect(data.address).toBe('Dirección no disponible');
   });
 
+  it('does not modify existing bookings when rules are updated', async () => {
+    mockPrisma.adminUser.update.mockResolvedValue({
+      minBookingAdvanceMinutes: 30,
+      minCancellationNoticeMinutes: 60
+    });
+
+    await updateBookingRules('admin-1', {
+      minBookingAdvanceMinutes: 30,
+      minCancellationNoticeMinutes: 60
+    });
+
+    expect(mockPrisma.adminUser.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'admin-1' },
+        data: {
+          minBookingAdvanceMinutes: 30,
+          minCancellationNoticeMinutes: 60
+        }
+      })
+    );
+    expect(mockPrisma.booking?.updateMany).toBeUndefined();
+  });
+
   it('rejects updateBookingRules when values are negative', async () => {
     await expect(
       updateBookingRules('admin-1', { minBookingAdvanceMinutes: -1 })

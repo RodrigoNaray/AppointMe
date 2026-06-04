@@ -234,7 +234,7 @@ export default function SettingsPage() {
       });
       setInitialValue(minutes);
       setInitialCancelValue(cancelMinutes);
-      setSuccessMessage('Configuración actualizada correctamente');
+      setSuccessMessage('Reglas actualizadas. A partir de ahora, las nuevas reservas y cancelaciones usarán estos valores. Las reservas ya confirmadas no se modifican.');
     } catch (error: unknown) {
       console.error('Error al actualizar configuración:', error);
       const responseStatus = axios.isAxiosError(error) ? error.response?.status : undefined;
@@ -341,6 +341,11 @@ export default function SettingsPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="bg-blue-50 border border-blue-200 px-4 py-3 rounded-md mb-6">
+            <p className="text-sm text-blue-900">
+              <strong>ℹ️ Aplica a futuro:</strong> Los cambios en estas reglas solo afectan nuevas reservas y cancelaciones. Las reservas ya confirmadas no se verán afectadas.
+            </p>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="flex items-start gap-3 bg-destructive/15 text-destructive px-4 py-3 rounded-md text-sm">
