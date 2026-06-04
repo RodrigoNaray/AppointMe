@@ -1,1 +1,60 @@
-{}
+{
+  "onboarding": {
+    "banner": {
+      "title": "Your account isn't ready to receive bookings yet",
+      "subtitle": "Complete these steps to start receiving clients.",
+      "dismissedHint": "You can resume the setup at any time from the system settings."
+    },
+    "check": {
+      "schedule": "Weekly schedule configured",
+      "category": "At least one category created",
+      "service": "At least one active service"
+    },
+    "cta": {
+      "start": "Start guided setup",
+      "dismiss": "Skip for now",
+      "backToWizard": "Back to wizard"
+    },
+    "wizard": {
+      "title": "Initial setup",
+      "welcome": {
+        "title": "Welcome to AppointMePro",
+        "body": "Let's set up your account in 5 steps. You can close this wizard and resume at any time."
+      },
+      "step": {
+        "availability": {
+          "title": "Step 1: Weekly schedule",
+          "description": "Define which days and hours you work. Unchecked days will be considered non-working.",
+          "cta": "Configure schedule"
+        },
+        "category": {
+          "title": "Step 2: First category",
+          "description": "Categories group your services (e.g. \"Cuts\", \"Coloring\").",
+          "cta": "Create category"
+        },
+        "service": {
+          "title": "Step 3: First service",
+          "description": "Services are what your clients book (with duration and price).",
+          "cta": "Create service"
+        },
+        "rules": {
+          "title": "Step 4: Booking rules",
+          "description": "Set the minimum notice for booking and cancelling.",
+          "cta": "Configure rules"
+        },
+        "contact": {
+          "title": "Step 5: Contact information",
+          "description": "Phone, email, address and map location so clients can find you.",
+          "cta": "Configure contact"
+        }
+      },
+      "skip": "Skip this step",
+      "continue": "Continue",
+      "back": "Back",
+      "done": {
+        "title": "All set!",
+        "body": "Your account is now operational. You can keep configuring from the side menu."
+      }
+    }
+  }
+}

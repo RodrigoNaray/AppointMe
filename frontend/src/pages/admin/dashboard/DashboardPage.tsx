@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Calendar, DollarSign, Clock } from "lucide-react";
 import { getBookingMetrics } from '@/api/modules/bookings';
 import type { BookingMetrics } from '@/api/modules/bookings';
+import OnboardingBanner from '@/components/admin/OnboardingBanner';
 
 export default function DashboardPage() {
   const user = useAuthStore(selectUser);
@@ -33,6 +34,8 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold">¡Bienvenido de vuelta!</h1>
         {user && <p className="text-muted-foreground">{user.email}</p>}
       </div>
+
+      <OnboardingBanner />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>

@@ -1,1 +1,60 @@
-{}
+{
+  "onboarding": {
+    "banner": {
+      "title": "Tu cuenta aún no está lista para recibir reservas",
+      "subtitle": "Completá estos pasos para empezar a recibir clientes.",
+      "dismissedHint": "Podés retomar la configuración en cualquier momento desde la configuración del sistema."
+    },
+    "check": {
+      "schedule": "Horario semanal configurado",
+      "category": "Al menos una categoría creada",
+      "service": "Al menos un servicio activo"
+    },
+    "cta": {
+      "start": "Iniciar configuración guiada",
+      "dismiss": "Omitir por ahora",
+      "backToWizard": "Volver al wizard"
+    },
+    "wizard": {
+      "title": "Configuración inicial",
+      "welcome": {
+        "title": "Bienvenido a AppointMePro",
+        "body": "Vamos a configurar tu cuenta en 5 pasos. Podés cerrar este wizard y retomar cuando quieras."
+      },
+      "step": {
+        "availability": {
+          "title": "Paso 1: Horario semanal",
+          "description": "Definí qué días y horarios atendés. Los días no marcados se considerarán no laborables.",
+          "cta": "Configurar horario"
+        },
+        "category": {
+          "title": "Paso 2: Primera categoría",
+          "description": "Las categorías agrupan tus servicios (por ejemplo: \"Cortes\", \"Coloración\").",
+          "cta": "Crear categoría"
+        },
+        "service": {
+          "title": "Paso 3: Primer servicio",
+          "description": "Los servicios son lo que reservan tus clientes (con duración y precio).",
+          "cta": "Crear servicio"
+        },
+        "rules": {
+          "title": "Paso 4: Reglas de reserva",
+          "description": "Configurá la anticipación mínima para reservar y para cancelar.",
+          "cta": "Configurar reglas"
+        },
+        "contact": {
+          "title": "Paso 5: Información de contacto",
+          "description": "Teléfono, email, dirección y ubicación en el mapa para que los clientes te encuentren.",
+          "cta": "Configurar contacto"
+        }
+      },
+      "skip": "Saltar este paso",
+      "continue": "Continuar",
+      "back": "Atrás",
+      "done": {
+        "title": "¡Listo!",
+        "body": "Tu cuenta ya está operativa. Podés seguir configurando desde el menú lateral."
+      }
+    }
+  }
+}
