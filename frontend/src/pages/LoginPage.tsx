@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useTranslation } from 'react-i18next';
 
 function GoogleIcon({ className }: { className?: string }) {
     return (
@@ -22,6 +23,7 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export default function LoginPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [email, setEmail] = useState('');
@@ -30,39 +32,35 @@ export default function LoginPage() {
     const loginClient = useAuthStore(selectLoginClient);
     const saveReturnUrl = useOAuthStore(selectSaveReturnUrl);
 
-    // Leer returnUrl de query params
     const returnUrl = searchParams.get('returnUrl');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        
+
         try {
             const loginData: LoginDto = { email, password };
             await loginClient(loginData);
-            
-            toast.success('¡Inicio de sesión exitoso!');
-            
-            // Redirigir inmediatamente a returnUrl si existe, sino a home
+
+            toast.success(t('auth.loginSuccess'));
+
             if (returnUrl) {
                 navigate(returnUrl);
             } else {
                 navigate('/');
             }
         } catch (_error: unknown) {
-            toast.error('Usuario o contraseña incorrecta');
+            toast.error(t('auth.loginError'));
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleGoogleLogin = () => {
-        // Guardar returnUrl en sessionStorage (Zustand) antes de redirect
-        // OWASP: sessionStorage expira al cerrar tab, no vulnerable a XSS persistente
         if (returnUrl) {
             saveReturnUrl(returnUrl);
         }
-        
+
         window.location.href = `${API_BASE_URL}/auth/client/google`;
     };
 
@@ -70,12 +68,12 @@ export default function LoginPage() {
         <div className="flex items-center justify-center min-h-screen bg-gray-50">
             <Card className="w-full max-w-md shadow-lg">
                 <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-bold">Iniciar Sesión</CardTitle>
+                    <CardTitle className="text-2xl font-bold">{t('auth.loginTitle')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium">Correo Electrónico</label>
+                            <label htmlFor="email" className="block text-sm font-medium">{t('auth.email')}</label>
                             <Input
                                 type="email"
                                 id="email"
@@ -85,7 +83,7 @@ export default function LoginPage() {
                             />
                         </div>
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium">Contraseña</label>
+                            <label htmlFor="password" className="block text-sm font-medium">{t('auth.password')}</label>
                             <Input
                                 type="password"
                                 id="password"
@@ -95,29 +93,29 @@ export default function LoginPage() {
                             />
                         </div>
                         <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                            {isLoading ? t('auth.loggingIn') : t('auth.loginButton')}
                         </Button>
                         <div className="text-center mt-2">
-                            <Link 
-                                to="/forgot-password" 
+                            <Link
+                                to="/forgot-password"
                                 className="text-sm text-muted-foreground hover:text-foreground hover:underline"
                             >
-                                ¿Olvidaste tu contraseña?
+                                {t('auth.forgotPassword')}
                             </Link>
                         </div>
                     </form>
                     <Separator className="my-4" />
                     <Button variant="outline" className="w-full flex items-center justify-center gap-2" onClick={handleGoogleLogin}>
                         <GoogleIcon />
-                        <span>Iniciar Sesión con Google</span>
+                        <span>{t('auth.googleLogin')}</span>
                     </Button>
                     <p className="mt-4 text-center text-sm">
-                        ¿No tienes una cuenta?{" "}
-                        <Link 
-                            to={returnUrl ? `/register?returnUrl=${encodeURIComponent(returnUrl)}` : "/register"} 
+                        {t('auth.noAccount')}{" "}
+                        <Link
+                            to={returnUrl ? `/register?returnUrl=${encodeURIComponent(returnUrl)}` : "/register"}
                             className="text-blue-500 hover:underline"
                         >
-                            Regístrate aquí
+                            {t('auth.registerHere')}
                         </Link>
                     </p>
                 </CardContent>
@@ -125,4 +123,3 @@ export default function LoginPage() {
         </div>
     );
 }
-

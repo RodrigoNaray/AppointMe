@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore, selectAuthState } from '@/stores/authStore';
 import UserMenu from '@/components/UserMenu';
 import ScrollToTopOnNavigate from '@/components/ScrollToTopOnNavigate';
+import LanguageSelector from '@/components/LanguageSelector';
+import { useTranslation } from 'react-i18next';
 
 export default function PublicLayout() {
   const authState = useAuthStore(selectAuthState);
+  const { t } = useTranslation();
 
   return (
     <div className="min-h-screen w-full">
@@ -16,8 +19,10 @@ export default function PublicLayout() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 font-semibold">
           <Package2 className="h-6 w-6" />
-          <span>AppointMePro</span>
+          <span>{t('appName')}</span>
         </Link>
+        
+        <LanguageSelector />
         
         {/* Spacer */}
         <div className="flex-1"></div>
@@ -27,7 +32,7 @@ export default function PublicLayout() {
           <UserMenu />
         ) : (
           <Link to="/login">
-            <Button>Login</Button>
+            <Button>{t('nav.login')}</Button>
           </Link>
         )}
       </header>

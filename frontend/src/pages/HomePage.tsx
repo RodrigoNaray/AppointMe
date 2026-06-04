@@ -10,13 +10,13 @@ import ServicesTable from "@/components/shared/ServicesTable";
 import CartSidebar from "@/components/CartSidebar";
 import BusinessHoursCard from "@/components/BusinessHoursCard";
 import ContactInfoCard from "@/components/ContactInfoCard";
+import { Trans, useTranslation } from "react-i18next";
 import type { Service } from "@/types/service";
 import type { BusinessHours, ContactInfo } from "@/api/modules/settings";
 import { getBusinessHours, getContactInfo } from "@/api/modules/settings";
 import { API_BASE_URL } from "@/api/config";
 import { geocodeAddress, type GeocodingResult } from "@/lib/geocoding";
 
-// Lazy load del mapa (Performance: reduce bundle inicial)
 const AppMap = lazy(() => import("@/components/ui/AppMap").then(module => ({ default: module.AppMap })));
 
 const isObject = (value: unknown): value is Record<string, unknown> => {
@@ -68,6 +68,7 @@ export const parseActiveServicesPreview = (payload: unknown): Service[] => {
 };
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const checkSession = useAuthStore(selectCheckSession);
@@ -84,7 +85,6 @@ export default function HomePage() {
   const [mapCoordinates, setMapCoordinates] = useState<GeocodingResult | null>(null);
   const hasItems = cart.length > 0;
 
-  // Fetch servicios para preview
   useEffect(() => {
     const fetchServices = async () => {
       try {
@@ -103,7 +103,6 @@ export default function HomePage() {
     fetchServices();
   }, []);
 
-  // Fetch business hours
   useEffect(() => {
     const fetchBusinessHours = async () => {
       try {
@@ -111,7 +110,6 @@ export default function HomePage() {
         setBusinessHours(hours);
       } catch (error) {
         console.error('Error fetching business hours:', error);
-        // Mantener undefined para mostrar fallback
       } finally {
         setLoadingHours(false);
       }
@@ -119,7 +117,6 @@ export default function HomePage() {
     fetchBusinessHours();
   }, []);
 
-  // Fetch contact info
   useEffect(() => {
     const fetchContactInfo = async () => {
       try {
@@ -127,7 +124,6 @@ export default function HomePage() {
         setContactInfo(contact);
       } catch (error) {
         console.error('Error fetching contact info:', error);
-        // Mantener undefined para mostrar fallback
       } finally {
         setLoadingContact(false);
       }
@@ -135,11 +131,9 @@ export default function HomePage() {
     fetchContactInfo();
   }, []);
 
-  // Geocoding: Convertir address a coordenadas (cuando contactInfo carga)
   useEffect(() => {
     if (!contactInfo) return;
 
-    // Prioridad 1: Usar coordenadas manuales si existen
     if (contactInfo.latitude !== null && contactInfo.longitude !== null) {
       setMapCoordinates({
         lat: contactInfo.latitude,
@@ -148,14 +142,12 @@ export default function HomePage() {
       return;
     }
 
-    // Prioridad 2: Geocoding automático con businessAddress
     if (contactInfo.address && contactInfo.address !== 'Dirección no disponible') {
       geocodeAddress(contactInfo.address)
         .then((coords) => {
           if (coords) {
             setMapCoordinates(coords);
           } else {
-            // Geocoding falló, no mostrar mapa
             setMapCoordinates(null);
           }
         })
@@ -167,83 +159,72 @@ export default function HomePage() {
   }, [contactInfo]);
 
   useEffect(() => {
-    // Evitar procesamiento múltiple del callback
     if (hasProcessedCallback.current) return;
 
-    // Verificar si venimos del callback de Google OAuth
     const loginStatus = searchParams.get('login');
     const errorParam = searchParams.get('error');
 
     if (loginStatus === 'success') {
       hasProcessedCallback.current = true;
-      
-      // Verificar la sesión después del login con Google
+
       checkSession();
-      
-      // Leer returnUrl desde oauthStore (sessionStorage)
+
       const savedReturnUrl = getReturnUrl();
-      
+
       if (savedReturnUrl) {
-        // Limpiar returnUrl del store
         clearReturnUrl();
-        // Limpiar query params
         setSearchParams({});
-        // Redirigir a la página guardada
-        toast.success('¡Bienvenido! Has iniciado sesión con Google');
+        toast.success(t('auth.googleLoginSuccess'));
         navigate(savedReturnUrl);
       } else {
-        // No hay returnUrl, mostrar toast y quedarnos en home
-        toast.success('¡Bienvenido! Has iniciado sesión con Google');
+        toast.success(t('auth.googleLoginSuccess'));
         setSearchParams({});
       }
     } else if (errorParam) {
       hasProcessedCallback.current = true;
-      
-      // Manejar errores de autenticación
-      let errorMessage = 'Error al iniciar sesión con Google';
-      
+
+      let errorMessage = t('auth.googleLoginError');
+
       if (errorParam === 'google_auth_failed') {
-        errorMessage = 'No se pudo autenticar con Google. Intenta nuevamente.';
+        errorMessage = t('auth.googleAuthFailed');
       } else if (errorParam === 'authentication_failed') {
-        errorMessage = 'Error en la autenticación. Por favor intenta de nuevo.';
+        errorMessage = t('auth.authenticationFailed');
       } else if (errorParam === 'server_error') {
-        errorMessage = 'Error del servidor. Por favor intenta más tarde.';
+        errorMessage = t('auth.authServerError');
       }
-      
+
       toast.error(errorMessage);
-      
-      // Limpiar los parámetros de la URL
+
       setSearchParams({});
     }
   }, [searchParams, setSearchParams, checkSession]);
 
   return (
     <div className={`min-h-screen bg-background ${hasItems ? 'pb-64' : 'pb-32'} lg:pb-0`}>
-      {/* Hero Section - AppointMePro Branding */}
+      {/* Hero Section */}
       <section className="relative w-full px-4 py-8 sm:px-6 md:py-12 lg:py-16 lg:px-8">
         <div className="mx-auto max-w-6xl">
           {/* Badge */}
           <div className="mb-6 flex justify-center sm:justify-start">
             <span className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-1.5 text-xs font-medium text-background sm:text-sm">
               <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Plataforma Profesional
+              {t('home.badge')}
             </span>
           </div>
 
-          {/* Título Principal - AppointMePro */}
+          {/* Título Principal */}
           <h1 className="mb-4 text-5xl font-bold leading-tight tracking-tight text-foreground sm:text-6xl md:text-7xl lg:text-8xl">
-            AppointMePro
+            {t('appName')}
           </h1>
 
           {/* Subtítulo */}
           <h2 className="mb-4 text-2xl font-semibold text-foreground/90 sm:text-3xl md:text-4xl">
-            La plataforma para profesionales independientes
+            {t('home.tagline')}
           </h2>
 
-          {/* Descripción del Servicio */}
+          {/* Descripción */}
           <p className="mb-8 max-w-3xl text-base text-foreground/70 sm:text-lg md:text-xl">
-            AppointMePro conecta a profesionales independientes con sus clientes de forma simple y eficiente. 
-            Gestiona tu agenda, muestra tus servicios y permite que tus clientes reserven en segundos, sin llamadas ni complicaciones.
+            {t('home.description')}
           </p>
         </div>
       </section>
@@ -254,20 +235,24 @@ export default function HomePage() {
           {/* Badge de Ejemplo */}
           <div className="mb-4 flex justify-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-medium text-foreground/70 sm:text-sm">
-              ✨ Demo Interactiva - Prueba cómo funciona
+              {t('home.demoBadge')}
             </span>
           </div>
 
           {/* Texto Explicativo */}
           <p className="mb-8 text-center text-sm text-foreground/70 sm:text-base md:mx-auto md:max-w-3xl">
-            Este es un ejemplo real de cómo se vería <span className="font-semibold text-foreground">tu negocio</span> en AppointMePro.
-            Puedes <span className="font-semibold text-foreground">reservar un servicio</span> y experimentar exactamente lo que tus clientes vivirán.
-            La plataforma se personaliza completamente: nombre, servicios, horarios y diseño.
+            <Trans
+              i18nKey="home.demoDescription"
+              components={{ bold: <span className="font-semibold text-foreground" /> }}
+            >
+              Este es un ejemplo real de cómo se vería <span className="font-semibold text-foreground">tu negocio</span> en AppointMePro.
+              Puedes <span className="font-semibold text-foreground">reservar un servicio</span> y experimentar exactamente lo que tus clientes vivirán.
+            </Trans>
           </p>
 
           {/* Card del Profesional */}
           <div className="rounded-3xl border border-border bg-background p-6 shadow-sm sm:p-8 md:p-10">
-            {/* Header: Avatar + Info Principal */}
+            {/* Header: Avatar + Info */}
             <div className="mb-8 flex flex-col items-center gap-6 sm:flex-row sm:items-start">
               {/* Avatar */}
               <div className="relative shrink-0">
@@ -278,21 +263,20 @@ export default function HomePage() {
                 </div>
                 {/* Badge de Disponibilidad */}
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-green-500 px-3 py-1 text-xs font-semibold text-white">
-                  Disponible Hoy
+                  {t('home.availableToday')}
                 </div>
               </div>
 
               {/* Info del Negocio */}
               <div className="flex-1 text-center sm:text-left">
                 <h3 className="mb-2 text-2xl font-bold text-foreground sm:text-3xl md:text-4xl">
-                  Studio Carlos Méndez
+                  {t('home.professionalName')}
                 </h3>
                 <p className="mb-3 text-base text-foreground/80 sm:text-lg md:text-xl">
-                  Barbería Profesional
+                  {t('home.professionalTitle')}
                 </p>
                 <p className="mb-4 max-w-2xl text-sm text-foreground/70 sm:text-base">
-                  Más de 10 años de experiencia brindando servicios de barbería premium. 
-                  Especializado en cortes modernos, afeitado clásico y cuidado de barba.
+                  {t('home.professionalBio')}
                 </p>
                 {/* Rating */}
                 <div className="flex items-center justify-center gap-2 sm:justify-start">
@@ -302,21 +286,21 @@ export default function HomePage() {
                     ))}
                   </div>
                   <span className="text-sm font-medium text-foreground/70 sm:text-base">
-                    5.0 (248 reseñas)
+                    {t('home.rating')}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Sección de Servicios y Carrito - Layout 2 columnas */}
+            {/* Sección de Servicios y Carrito */}
             <div className="mb-8">
               <div className="mb-4 flex items-center gap-3">
                 <div className="rounded-xl bg-foreground/5 p-2">
                   <Scissors className="h-5 w-5 text-foreground sm:h-6 sm:w-6" />
                 </div>
-                <h4 className="text-lg font-semibold text-foreground sm:text-xl">Nuestros Servicios</h4>
+                <h4 className="text-lg font-semibold text-foreground sm:text-xl">{t('home.ourServices')}</h4>
               </div>
-              
+
               {loadingServices ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="h-8 w-8 animate-spin rounded-full border-4 border-foreground/20 border-t-foreground" />
@@ -327,20 +311,20 @@ export default function HomePage() {
                     {/* Columna 1: Lista de servicios */}
                     <div className="rounded-2xl border border-border bg-background p-4 sm:p-6 lg:h-[450px] lg:flex lg:flex-col">
                       <div className="lg:flex-1 lg:overflow-y-auto">
-                        <ServicesTable 
-                          services={services} 
+                        <ServicesTable
+                          services={services}
                           showCategory={true}
                           compact={true}
                         />
                       </div>
                       <div className="mt-4 text-center lg:flex-shrink-0">
                         <Link to="/book" className="text-sm font-medium text-foreground hover:underline">
-                          Ver todos los servicios →
+                          {t('home.viewAllServices')}
                         </Link>
                       </div>
                     </div>
 
-                    {/* Columna 2: Carrito de reservas - Solo visible en desktop */}
+                    {/* Columna 2: Carrito - Solo desktop */}
                     <div className="hidden lg:block rounded-2xl border border-border bg-background lg:h-[450px]">
                       <CartSidebar />
                     </div>
@@ -356,18 +340,16 @@ export default function HomePage() {
 
             {/* Grid de Información */}
             <div className="grid gap-6 md:grid-cols-2">
-              {/* Card: Horarios - Dinámico desde settings */}
               <BusinessHoursCard businessHours={businessHours} isLoading={loadingHours} />
 
-              {/* Card: Contacto - Dinámico desde settings */}
               <ContactInfoCard contactInfo={contactInfo} isLoading={loadingContact} />
             </div>
 
-            {/* Mapa Interactivo - Lazy loaded, responsive */}
+            {/* Mapa */}
             {mapCoordinates && (
               <div className="mt-6">
-                <h3 className="mb-4 text-xl font-semibold">Ubicación</h3>
-                <Suspense 
+                <h3 className="mb-4 text-xl font-semibold">{t('home.location')}</h3>
+                <Suspense
                   fallback={
                     <div className="h-[300px] w-full animate-pulse rounded-lg bg-muted border" />
                   }
@@ -377,20 +359,20 @@ export default function HomePage() {
                     lng={mapCoordinates.lng}
                     zoom={15}
                     height="400px"
-                    label={contactInfo?.address || "Ubicación del negocio"}
+                    label={contactInfo?.address || t('home.defaultMapLabel')}
                   />
                 </Suspense>
               </div>
             )}
 
-            {/* CTA del Ejemplo */}
+            {/* CTA */}
             <div className="mt-8 flex justify-center">
               <Link to="/book" className="w-full sm:w-auto">
-                <Button 
+                <Button
                   size="lg"
                   className="group h-12 w-full rounded-full bg-foreground px-8 text-base font-semibold text-background transition-all hover:bg-foreground/90 sm:h-14 sm:w-auto sm:text-lg"
                 >
-                  Reservar Ahora
+                  {t('home.bookNow')}
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 sm:h-5 sm:w-5" />
                 </Button>
               </Link>
@@ -403,7 +385,7 @@ export default function HomePage() {
       <section className="w-full border-t border-border bg-background px-4 py-12 sm:px-6 md:py-16 lg:py-20 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <h2 className="mb-12 text-center text-3xl font-bold text-foreground sm:text-4xl md:text-5xl">
-            ¿Por qué AppointMePro?
+            {t('home.whyTitle')}
           </h2>
           <div className="grid gap-8 sm:gap-10 md:grid-cols-3 md:gap-12">
             {/* Feature 1 */}
@@ -412,10 +394,10 @@ export default function HomePage() {
                 <Calendar className="h-6 w-6 text-foreground sm:h-7 sm:w-7" />
               </div>
               <h3 className="text-xl font-semibold text-foreground sm:text-2xl">
-                Disponibilidad real
+                {t('home.feature1Title')}
               </h3>
               <p className="text-sm text-foreground/70 sm:text-base">
-                Consulta horarios actualizados en tiempo real. Olvídate de las llamadas para confirmar disponibilidad.
+                {t('home.feature1Desc')}
               </p>
             </div>
 
@@ -425,10 +407,10 @@ export default function HomePage() {
                 <Clock className="h-6 w-6 text-foreground sm:h-7 sm:w-7" />
               </div>
               <h3 className="text-xl font-semibold text-foreground sm:text-2xl">
-                Reserva en minutos
+                {t('home.feature2Title')}
               </h3>
               <p className="text-sm text-foreground/70 sm:text-base">
-                Elige tu servicio, selecciona el horario que más te convenga y confirma. Así de simple.
+                {t('home.feature2Desc')}
               </p>
             </div>
 
@@ -438,10 +420,10 @@ export default function HomePage() {
                 <Sparkles className="h-6 w-6 text-foreground sm:h-7 sm:w-7" />
               </div>
               <h3 className="text-xl font-semibold text-foreground sm:text-2xl">
-                Experiencia premium
+                {t('home.feature3Title')}
               </h3>
               <p className="text-sm text-foreground/70 sm:text-base">
-                Interfaz intuitiva y moderna diseñada para que reserves con confianza desde cualquier dispositivo.
+                {t('home.feature3Desc')}
               </p>
             </div>
           </div>
@@ -452,18 +434,18 @@ export default function HomePage() {
       <section className="relative w-full border-t border-border bg-foreground py-16 text-center md:py-20 lg:py-24">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <h2 className="mb-4 text-3xl font-bold text-background sm:text-4xl md:text-5xl">
-            ¿Listo para comenzar?
+            {t('home.ctaTitle')}
           </h2>
           <p className="mb-8 text-base text-background/80 sm:text-lg md:text-xl">
-            Descubre todo lo que AppointMePro puede hacer por tu negocio.
+            {t('home.ctaDesc')}
           </p>
           <Link to="/features">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               variant="secondary"
               className="group h-12 rounded-full bg-background px-8 text-base font-semibold text-foreground transition-all hover:bg-background/90 sm:h-14 sm:text-lg"
             >
-              Ver Características
+              {t('home.ctaButton')}
               <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 sm:h-5 sm:w-5" />
             </Button>
           </Link>

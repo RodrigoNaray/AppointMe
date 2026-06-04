@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CheckCircle, XCircle } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 interface PasswordFeedback {
     label: string;
@@ -27,6 +28,7 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export default function RegisterPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const saveReturnUrl = useOAuthStore(selectSaveReturnUrl);
@@ -40,15 +42,14 @@ export default function RegisterPage() {
     const [passwordFeedback, setPasswordFeedback] = useState<PasswordFeedback[]>([]);
     const [showBalloon, setShowBalloon] = useState(false);
 
-    // Leer returnUrl de query params
     const returnUrl = searchParams.get('returnUrl');
 
     const passwordCriteria = [
-        { label: "Al menos 8 caracteres", test: (pw: string) => pw.length >= 8 },
-        { label: "Al menos un número", test: (pw: string) => /\d/.test(pw) },
-        { label: "Al menos una letra mayúscula", test: (pw: string) => /[A-Z]/.test(pw) },
-        { label: "Al menos una letra minúscula", test: (pw: string) => /[a-z]/.test(pw) },
-        { label: "Al menos un carácter especial", test: (pw: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pw) },
+        { label: t('auth.passwordCriteria.minLength'), test: (pw: string) => pw.length >= 8 },
+        { label: t('auth.passwordCriteria.hasNumber'), test: (pw: string) => /\d/.test(pw) },
+        { label: t('auth.passwordCriteria.hasUppercase'), test: (pw: string) => /[A-Z]/.test(pw) },
+        { label: t('auth.passwordCriteria.hasLowercase'), test: (pw: string) => /[a-z]/.test(pw) },
+        { label: t('auth.passwordCriteria.hasSpecial'), test: (pw: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pw) },
     ];
 
     useEffect(() => {
@@ -59,11 +60,8 @@ export default function RegisterPage() {
         setPasswordFeedback(feedback);
     }, [password]);
 
-
-    // whether the password meets all criteria
     const passwordValid = passwordCriteria.every((criterion) => criterion.test(password));
 
-    // build aria-describedby: include balloon and/or error message ids as needed
     const describedByIds = [
         showBalloon ? 'password-balloon' : undefined,
         !passwordValid && password.length > 0 ? 'password-error' : undefined,
@@ -72,72 +70,66 @@ export default function RegisterPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email.includes('@')) {
-            setErrorMessage("El correo electrónico debe contener un '@'");
+            setErrorMessage(t('auth.emailMustContainAt'));
             return;
         }
         if (password !== confirmPassword) {
-            setErrorMessage("Las contraseñas no coinciden");
+            setErrorMessage(t('auth.passwordsDoNotMatch'));
             return;
         }
         if (!passwordCriteria.every((criterion) => criterion.test(password))) {
-            setErrorMessage("La contraseña no cumple con todos los requisitos");
+            setErrorMessage(t('auth.passwordRequirementsNotMet'));
             return;
         }
-        
+
         setErrorMessage('');
         setIsLoading(true);
 
         try {
             const registerData: RegisterDto = { name, email, phone, password };
             const result = await clientAuthService.register(registerData);
-            
+
             if (result.success) {
-                toast.success('¡Registro exitoso! Revisa tu email para verificar tu cuenta.', {
+                toast.success(t('auth.registerSuccess'), {
                     duration: 5000,
                 });
-                
-                // Redirigir inmediatamente
+
                 if (returnUrl) {
                     navigate(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
                 } else {
                     navigate('/login');
                 }
             } else {
-                toast.error(result.message || 'Error en el registro');
-                setErrorMessage(result.message || 'Error en el registro');
+                toast.error(result.message || t('auth.registerError'));
+                setErrorMessage(result.message || t('auth.registerError'));
             }
         } catch (error) {
-            toast.error('Error interno del servidor');
-            setErrorMessage('Error interno del servidor');
+            toast.error(t('auth.internalError'));
+            setErrorMessage(t('auth.internalError'));
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleGoogleLogin = () => {
-        // Guardar returnUrl en sessionStorage (Zustand) antes de redirect
-        // OWASP: sessionStorage expira al cerrar tab, no vulnerable a XSS persistente
         if (returnUrl) {
             saveReturnUrl(returnUrl);
         }
-        
-        // Redireccionar al backend para iniciar el flujo de OAuth
+
         const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '');
-        
+
         window.location.href = `${apiUrl}/auth/client/google`;
     };
 
-    // whether confirm password matches
     const passwordsMatch = password === confirmPassword;
 
-    // build describedBy for confirm field
     const confirmDescribedBy = !passwordsMatch && confirmPassword.length > 0 ? 'confirm-error' : undefined;
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
             <Card className="w-full max-w-md shadow-lg">
                 <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-bold">Registrarse</CardTitle>
+                    <CardTitle className="text-2xl font-bold">{t('auth.registerTitle')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -145,7 +137,7 @@ export default function RegisterPage() {
                             <div className="text-red-600 text-sm">{errorMessage}</div>
                         )}
                         <div>
-                            <label htmlFor="name" className="block text-sm font-medium">Nombre</label>
+                            <label htmlFor="name" className="block text-sm font-medium">{t('auth.name')}</label>
                             <Input
                                 type="text"
                                 id="name"
@@ -156,7 +148,7 @@ export default function RegisterPage() {
                             />
                         </div>
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium">Correo Electrónico</label>
+                            <label htmlFor="email" className="block text-sm font-medium">{t('auth.email')}</label>
                             <Input
                                 type="email"
                                 id="email"
@@ -167,7 +159,7 @@ export default function RegisterPage() {
                             />
                         </div>
                         <div>
-                            <label htmlFor="phone" className="block text-sm font-medium">Teléfono</label>
+                            <label htmlFor="phone" className="block text-sm font-medium">{t('auth.phone')}</label>
                             <Input
                                 type="tel"
                                 id="phone"
@@ -177,8 +169,7 @@ export default function RegisterPage() {
                             />
                         </div>
                         <div className="relative">
-                            {/* explicit association: label (full-width) + sibling input to match other fields */}
-                            <label htmlFor="password" className={`block text-sm font-medium cursor-pointer w-full ${!passwordValid && password.length > 0 ? 'text-red-600' : ''}`}>Contraseña</label>
+                            <label htmlFor="password" className={`block text-sm font-medium cursor-pointer w-full ${!passwordValid && password.length > 0 ? 'text-red-600' : ''}`}>{t('auth.password')}</label>
                             <Input
                                 type="password"
                                 id="password"
@@ -193,20 +184,18 @@ export default function RegisterPage() {
                                 aria-describedby={describedByIds}
                             />
 
-                            {/* Small red inline message when password doesn't meet requirements */}
                             {!passwordValid && password.length > 0 && (
-                                <p id="password-error" className="text-red-600 text-sm mt-1">La contraseña debe cumplir con los requerimientos</p>
+                                <p id="password-error" className="text-red-600 text-sm mt-1">{t('auth.passwordCriteria.invalid')}</p>
                             )}
 
-                            {/* Floating balloon - absolute positioned; hidden by default, appears above to avoid layout shift */}
                             <div
                                 role="status"
                                 aria-live="polite"
                                 id="password-balloon"
                                 className={`${showBalloon ? 'pointer-events-auto' : 'pointer-events-none'} absolute z-20 bottom-full mb-2 right-0 w-72 sm:w-80 transform transition duration-150 ease-out ${showBalloon ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}
                             >
-                                <div className={`bg-white border rounded-lg shadow-md p-3 text-sm`}> 
-                                    <p className="font-semibold mb-2">Requisitos de la contraseña</p>
+                                <div className={`bg-white border rounded-lg shadow-md p-3 text-sm`}>
+                                    <p className="font-semibold mb-2">{t('auth.passwordCriteria.title')}</p>
                                     <ul className="space-y-2">
                                         {passwordFeedback.map((fb, idx) => (
                                             <li key={idx} className="flex items-center gap-3">
@@ -221,7 +210,7 @@ export default function RegisterPage() {
                             </div>
                         </div>
                         <div>
-                            <label htmlFor="confirmPassword" className={`block text-sm font-medium ${!passwordsMatch && confirmPassword.length > 0 ? 'text-red-600' : ''}`}>Confirmar Contraseña</label>
+                            <label htmlFor="confirmPassword" className={`block text-sm font-medium ${!passwordsMatch && confirmPassword.length > 0 ? 'text-red-600' : ''}`}>{t('auth.confirmPassword')}</label>
                             <Input
                                 type="password"
                                 id="confirmPassword"
@@ -234,33 +223,33 @@ export default function RegisterPage() {
                             />
 
                             {!passwordsMatch && confirmPassword.length > 0 && (
-                                <p id="confirm-error" className="text-red-600 text-sm mt-1">Las contraseñas deben coincidir</p>
+                                <p id="confirm-error" className="text-red-600 text-sm mt-1">{t('auth.passwordsDoNotMatch')}</p>
                             )}
                         </div>
                         <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? 'Registrando...' : 'Registrarse'}
+                            {isLoading ? t('auth.registering') : t('auth.registerButton')}
                         </Button>
                     </form>
-                    
+
                     <Separator className="my-4" />
-                    
-                    <Button 
-                        variant="outline" 
-                        className="w-full flex items-center justify-center gap-2" 
+
+                    <Button
+                        variant="outline"
+                        className="w-full flex items-center justify-center gap-2"
                         onClick={handleGoogleLogin}
                         type="button"
                     >
                         <GoogleIcon />
-                        <span>Continuar con Google</span>
+                        <span>{t('auth.continueWithGoogle')}</span>
                     </Button>
-                    
+
                     <p className="mt-4 text-center text-sm">
-                        ¿Ya tienes una cuenta?{" "}
-                        <Link 
-                            to={returnUrl ? `/login?returnUrl=${encodeURIComponent(returnUrl)}` : "/login"} 
+                        {t('auth.hasAccount')}{" "}
+                        <Link
+                            to={returnUrl ? `/login?returnUrl=${encodeURIComponent(returnUrl)}` : "/login"}
                             className="text-blue-500 hover:underline"
                         >
-                            Inicia sesión aquí
+                            {t('auth.loginHere')}
                         </Link>
                     </p>
                 </CardContent>
