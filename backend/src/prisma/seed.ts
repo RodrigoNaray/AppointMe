@@ -45,24 +45,26 @@ async function main() {
   const clientPassword1 = await bcrypt.hash('clientpass1', 10);
   const client1 = await prisma.client.upsert({
     where: { email: 'ana.garcia@example.com' },
-    update: {},
+    update: { emailVerified: true },
     create: {
       email: 'ana.garcia@example.com',
       name: 'Ana García',
       phone: '099123456',
       passwordHash: clientPassword1,
+      emailVerified: true,
     },
   });
 
   const clientPassword2 = await bcrypt.hash('clientpass2', 10);
   const client2 = await prisma.client.upsert({
     where: { email: 'carlos.rodriguez@example.com' },
-    update: {},
+    update: { emailVerified: true },
     create: {
       email: 'carlos.rodriguez@example.com',
       name: 'Carlos Rodríguez',
       phone: '098765432',
       passwordHash: clientPassword2,
+      emailVerified: true,
     },
   });
   console.log(`👥 Clientes creados/actualizados: ${client1.email}, ${client2.email}`);
