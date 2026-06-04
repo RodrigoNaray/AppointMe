@@ -444,6 +444,7 @@ export default function BookingConfirmPage() {
               onClick={handleConfirmBooking}
               disabled={isSubmitting || hasSubmitted}
               className="flex-1"
+              data-testid="confirm-booking"
             >
               {isSubmitting ? (
                 <>

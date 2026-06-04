@@ -204,7 +204,7 @@ export default function MyBookingsPage() {
                   const showCancel = showCancelButton && booking.status === 'CONFIRMED' && cancelCheck.canCancel;
 
                   return (
-                    <TableRow key={booking.id}>
+                    <TableRow key={booking.id} data-testid="booking-row" data-booking-id={booking.id}>
                       {/* Columna Servicio - Siempre visible con info apilada en mobile */}
                       <TableCell className="font-medium">
                         <div className="flex flex-col gap-1">
@@ -260,6 +260,8 @@ export default function MyBookingsPage() {
                               size="sm"
                               onClick={() => handleCancelClick(booking)}
                               className="whitespace-nowrap"
+                              data-testid="cancel-booking"
+                              data-booking-id={booking.id}
                             >
                               <X className="h-4 w-4 sm:mr-1" />
                               <span className="hidden sm:inline">Cancelar</span>
@@ -472,6 +474,7 @@ export default function MyBookingsPage() {
               onClick={handleCancelConfirm}
               disabled={isCancelling}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="confirm-cancel"
             >
               {isCancelling ? (
                 <>

@@ -70,6 +70,8 @@ export default function ServiceCard({ service }: ServiceCardProps) {
             onClick={() => addService(service)}
             className="w-full flex items-center justify-center gap-2 h-10 sm:h-11 text-sm sm:text-base"
             variant="default"
+            data-testid={`add-to-cart-${service.id}`}
+            data-service-id={service.id}
           >
             <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Agregar
@@ -80,7 +82,7 @@ export default function ServiceCard({ service }: ServiceCardProps) {
               onClick={() => removeService(service.id)}
               variant="outline"
               size="icon"
-              className="flex-shrink-0 h-10 w-10 sm:h-11 sm:w-11"
+              className="flex-shrink-0 h-10 w-10 sm:h-11 sm:h-11"
             >
               <Minus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>

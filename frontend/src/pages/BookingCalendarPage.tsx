@@ -427,6 +427,8 @@ export default function BookingCalendarPage() {
                           variant={selectedTime === time ? 'default' : 'outline'}
                           onClick={() => handleSelectSlot(time)}
                           className="h-10 sm:h-12 text-sm sm:text-base font-medium"
+                          data-testid="available-slot"
+                          data-time-slot={time}
                         >
                           {time}
                         </Button>
@@ -524,6 +526,7 @@ export default function BookingCalendarPage() {
                   onClick={handleContinue}
                   disabled={!selectedTime}
                   className="w-full h-10 sm:h-11 text-sm sm:text-base"
+                  data-testid="continue-to-confirm"
                 >
                   {authState.isAuthenticated && authState.type === 'client' 
                     ? 'Confirmar Reserva'

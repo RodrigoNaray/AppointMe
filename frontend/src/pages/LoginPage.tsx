@@ -77,6 +77,7 @@ export default function LoginPage() {
                             <Input
                                 type="email"
                                 id="email"
+                                data-testid="email-input"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -87,12 +88,13 @@ export default function LoginPage() {
                             <Input
                                 type="password"
                                 id="password"
+                                data-testid="password-input"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                             />
                         </div>
-                        <Button type="submit" className="w-full" disabled={isLoading}>
+                        <Button type="submit" className="w-full" disabled={isLoading} data-testid="login-button">
                             {isLoading ? t('auth.loggingIn') : t('auth.loginButton')}
                         </Button>
                         <div className="text-center mt-2">

@@ -66,7 +66,7 @@ export default function BookingSuccessPage() {
             </div>
           </div>
           
-          <CardTitle className="text-3xl font-bold text-green-700 mb-2">
+          <CardTitle className="text-3xl font-bold text-green-700 mb-2" data-testid="success-title">
             ¡Reserva Confirmada!
           </CardTitle>
           <p className="text-lg text-gray-600">
@@ -132,6 +132,7 @@ export default function BookingSuccessPage() {
             <Button
               onClick={() => navigate('/client/bookings')}
               className="flex-1"
+              data-testid="go-to-bookings"
             >
               <User className="w-4 h-4 mr-2" />
               Ver Mis Reservas

@@ -241,6 +241,7 @@ export default function CartSidebar({}: CartSidebarProps) {
             size="lg"
             variant={isEmpty ? "outline" : "default"}
             disabled={isEmpty}
+            data-testid="continue-to-checkout"
           >
             Confirmar Reserva
           </Button>
