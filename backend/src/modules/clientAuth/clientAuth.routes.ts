@@ -20,7 +20,7 @@ clientAuthRoutes.patch('/profile', isClientAuthenticated, controller.updateClien
 // Rutas para verificación de email
 clientAuthRoutes.post('/verify-email', rateLimit('normal'), controller.verifyEmailController);
 // OWASP: Ruta protegida - requiere autenticación para prevenir enumeración de usuarios
-clientAuthRoutes.post('/resend-verification', isClientAuthenticated, controller.resendVerificationController);
+clientAuthRoutes.post('/resend-verification', rateLimit('strict'), isClientAuthenticated, controller.resendVerificationController);
 
 // Rutas para cambio de email (requieren autenticación)
 clientAuthRoutes.post('/request-email-change', isClientAuthenticated, controller.requestEmailChangeController);
@@ -40,6 +40,7 @@ clientAuthRoutes.post('/reset-password', rateLimit('strict'), controller.resetPa
 // Nota: returnUrl se maneja en frontend con sessionStorage (Zustand oauthStore)
 clientAuthRoutes.get(
   '/google',
+  rateLimit('normal'),
   passport.authenticate('google', { 
     scope: ['profile', 'email'],
     session: false,
