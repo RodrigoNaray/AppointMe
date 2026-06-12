@@ -43,11 +43,11 @@ export default function ChangePasswordPage() {
       <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader className="text-center">
-            <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-2" />
+            <AlertCircle className="w-12 h-12 text-accent mx-auto mb-2" />
             <CardTitle className="text-2xl font-bold">Acceso Denegado</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               Debes iniciar sesión para cambiar tu contraseña.
             </p>
             <Link to="/login">
@@ -115,11 +115,11 @@ export default function ChangePasswordPage() {
     <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
-          <Lock className="w-12 h-12 text-blue-500 mx-auto mb-2" />
+          <Lock className="w-12 h-12 text-primary mx-auto mb-2" />
           <CardTitle className="text-2xl font-bold">
             {isGoogleUser ? 'Establecer Contraseña' : 'Cambiar Contraseña'}
           </CardTitle>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             {isGoogleUser 
               ? 'Crea una contraseña para tu cuenta de Google'
               : 'Actualiza tu contraseña de forma segura'
@@ -129,8 +129,8 @@ export default function ChangePasswordPage() {
         <CardContent>
           {/* Aviso para usuarios de Google */}
           {isGoogleUser && (
-            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800">
+            <div className="mb-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
+              <p className="text-sm text-foreground">
                 <strong>ℹ️ Cuenta vinculada con Google</strong>
                 <br />
                 Actualmente inicias sesión con Google. Al establecer una contraseña, 
@@ -160,7 +160,7 @@ export default function ChangePasswordPage() {
                   <button
                     type="button"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -187,7 +187,7 @@ export default function ChangePasswordPage() {
                 <button
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -213,7 +213,7 @@ export default function ChangePasswordPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -239,10 +239,10 @@ export default function ChangePasswordPage() {
           </form>
 
           {/* Información de seguridad */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <div className="mt-6 p-4 bg-primary/10 rounded-lg">
             <div className="flex items-start">
-              <CheckCircle className="w-5 h-5 text-blue-500 mt-0.5 mr-2 flex-shrink-0" />
-              <div className="text-sm text-gray-700">
+              <CheckCircle className="w-5 h-5 text-primary mt-0.5 mr-2 flex-shrink-0" />
+              <div className="text-sm text-foreground/80">
                 <p className="font-medium mb-1">Por seguridad:</p>
                 <ul className="list-disc list-inside space-y-1 text-xs">
                   {!isGoogleUser && (

@@ -57,19 +57,19 @@ export default function BookingSuccessPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <Card className="border-2 border-green-200 shadow-lg">
+      <Card className="border-2 border-success/30 shadow-lg">
         <CardHeader className="text-center pb-4">
           {/* Icono de éxito */}
           <div className="flex justify-center mb-4">
-            <div className="rounded-full bg-green-100 p-4">
-              <CheckCircle className="w-16 h-16 text-green-600" />
+            <div className="rounded-full bg-success/10 p-4">
+              <CheckCircle className="w-16 h-16 text-success" />
             </div>
           </div>
           
-          <CardTitle className="text-3xl font-bold text-green-700 mb-2" data-testid="success-title">
+          <CardTitle className="text-3xl font-bold text-success mb-2" data-testid="success-title">
             ¡Reserva Confirmada!
           </CardTitle>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-muted-foreground">
             {bookingCount === 1
               ? 'Tu reserva ha sido creada exitosamente'
               : `Tus ${bookingCount} reservas han sido creadas exitosamente`}
@@ -85,12 +85,12 @@ export default function BookingSuccessPage() {
                 return (
                   <div
                     key={r.bookingId || r.serviceId}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border"
+                    className="flex items-center gap-3 p-3 bg-muted rounded-lg border"
                   >
-                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{r.serviceName}</p>
-                      <p className="text-sm text-gray-500 flex items-center gap-1">
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
                         {format(dt, "HH:mm", { locale: es })}
                       </p>
@@ -102,8 +102,8 @@ export default function BookingSuccessPage() {
           )}
 
           {/* Mensaje informativo */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-900 text-center">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+            <p className="text-sm text-foreground text-center">
               Recibirás un correo de confirmación con los detalles de tu{bookingCount === 1 ? '' : 's'} reserva{bookingCount === 1 ? '' : 's'}.
               Puedes revisar y gestionar tu{bookingCount === 1 ? '' : 's'} reserva{bookingCount === 1 ? '' : 's'} desde tu perfil.
             </p>
@@ -141,11 +141,11 @@ export default function BookingSuccessPage() {
 
           {/* Nota de auto-redirect con contador */}
           <div className="text-center">
-            <p className="text-xs text-gray-400 mb-2">
+            <p className="text-xs text-muted-foreground/60 mb-2">
               Redirigiendo al inicio en:
             </p>
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 border-2 border-gray-300">
-              <span className="text-lg font-bold text-gray-700">{secondsLeft}</span>
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted border-2 border-border">
+              <span className="text-lg font-bold text-foreground">{secondsLeft}</span>
             </div>
           </div>
         </CardContent>

@@ -32,11 +32,11 @@ export default function ChangeEmailPage() {
       <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader className="text-center">
-            <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-2" />
+            <AlertCircle className="w-12 h-12 text-accent mx-auto mb-2" />
             <CardTitle className="text-2xl font-bold">Acceso Denegado</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               Debes iniciar sesión para cambiar tu email.
             </p>
             <Link to="/login">
@@ -88,11 +88,11 @@ export default function ChangeEmailPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+    <div className="flex items-center justify-center min-h-screen bg-muted/30 px-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Cambiar Email</CardTitle>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             Email actual: <strong>{authState.user.email}</strong>
           </p>
         </CardHeader>
@@ -157,18 +157,18 @@ export default function ChangeEmailPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Requerida para confirmar tu identidad
                 </p>
               </div>
 
               {message && (
-                <div className={`text-sm p-3 rounded ${isSuccess ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                <div className={`text-sm p-3 rounded ${isSuccess ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                   {message}
                 </div>
               )}
@@ -194,16 +194,16 @@ export default function ChangeEmailPage() {
           ) : (
             <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <CheckCircle className="w-16 h-16 text-green-500" />
+                <CheckCircle className="w-16 h-16 text-success" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-green-600">
+                <h3 className="text-lg font-semibold text-success">
                   ¡Solicitud Enviada!
                 </h3>
-                <p className="text-gray-600 mt-2">
+                <p className="text-muted-foreground mt-2">
                   {message}
                 </p>
-                <p className="text-sm text-gray-500 mt-3">
+                <p className="text-sm text-muted-foreground mt-3">
                   Revisa tu bandeja de entrada del nuevo email y haz clic en el enlace de verificación.
                 </p>
               </div>

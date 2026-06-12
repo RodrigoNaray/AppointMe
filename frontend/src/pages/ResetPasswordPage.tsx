@@ -161,7 +161,7 @@ export default function ResetPasswordPage() {
   // No renderizar hasta tener token
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10 dark:from-card dark:to-background">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
           <span>Validando token...</span>
@@ -171,7 +171,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+    <div className="flex items-center justify-center min-h-screen bg-muted/30 px-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Restablecer contraseña</CardTitle>
@@ -228,10 +228,10 @@ export default function ResetPasswordPage() {
                   <ul className="space-y-2">
                     {passwordFeedback.map((fb, idx) => (
                       <li key={idx} className="flex items-center gap-3">
-                        <span className={`flex items-center justify-center rounded-full w-6 h-6 ${fb.valid ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                        <span className={`flex items-center justify-center rounded-full w-6 h-6 ${fb.valid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                           {fb.valid ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                         </span>
-                        <span className={fb.valid ? 'text-gray-500 line-through' : 'text-gray-800'}>{fb.label}</span>
+                        <span className={fb.valid ? 'text-muted-foreground line-through' : 'text-foreground'}>{fb.label}</span>
                       </li>
                     ))}
                   </ul>

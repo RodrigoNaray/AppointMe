@@ -84,11 +84,11 @@ export default function ForgotPasswordPage() {
 
   if (isSuccess) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+      <div className="flex items-center justify-center min-h-screen bg-muted/30 px-4">
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
-              <Mail className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <div className="mx-auto w-12 h-12 bg-success/10 dark:bg-success/20 rounded-full flex items-center justify-center mb-4">
+              <Mail className="h-6 w-6 text-success dark:text-success" />
             </div>
             <CardTitle className="text-2xl font-bold">Revisa tu email</CardTitle>
             <CardDescription className="text-base">
@@ -96,8 +96,8 @@ export default function ForgotPasswordPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
+            <div className="bg-primary/10 dark:bg-primary/15 border border-primary/20 dark:border-primary/30 rounded-lg p-4">
+              <p className="text-sm text-foreground dark:text-foreground/80">
                 <strong>Nota:</strong> El enlace de recuperación es válido por 24 horas. Si no recibes el email en unos minutos, verifica tu carpeta de spam.
               </p>
             </div>

@@ -19,14 +19,14 @@ export default function ResendVerificationPage() {
   // Verificar si el usuario está autenticado
   if (!authState.isAuthenticated || authState.type !== 'client') {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+    <div className="flex items-center justify-center min-h-screen bg-muted/30 px-4">
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader className="text-center">
-            <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-2" />
+            <AlertCircle className="w-12 h-12 text-accent mx-auto mb-2" />
             <CardTitle className="text-2xl font-bold">Acceso Denegado</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               Debes iniciar sesión para reenviar el email de verificación.
             </p>
             <Link to="/login">
@@ -65,20 +65,20 @@ export default function ResendVerificationPage() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Reenviar Verificación</CardTitle>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             Email registrado: <strong>{authState.user.email}</strong>
           </p>
         </CardHeader>
         <CardContent>
           {!isSuccess ? (
             <div className="space-y-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Si no recibiste el email de verificación, puedes solicitar uno nuevo.
                 Se enviará a tu correo registrado.
               </p>
 
               {message && (
-                <div className={`text-sm p-3 rounded ${isSuccess ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                <div className={`text-sm p-3 rounded ${isSuccess ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                   {message}
                 </div>
               )}
@@ -104,16 +104,16 @@ export default function ResendVerificationPage() {
           ) : (
             <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <CheckCircle className="w-16 h-16 text-green-500" />
+                <CheckCircle className="w-16 h-16 text-success" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-green-600">
+                <h3 className="text-lg font-semibold text-success">
                   ¡Email Enviado!
                 </h3>
-                <p className="text-gray-600 mt-2">
+                <p className="text-muted-foreground mt-2">
                   {message}
                 </p>
-                <p className="text-sm text-gray-500 mt-3">
+                <p className="text-sm text-muted-foreground mt-3">
                   Revisa tu bandeja de entrada y spam.
                 </p>
               </div>

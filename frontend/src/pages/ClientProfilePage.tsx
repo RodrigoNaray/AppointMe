@@ -142,7 +142,7 @@ export default function ClientProfilePage() {
           <Card className="cursor-pointer hover:bg-accent transition-colors border-2 hover:border-primary" onClick={() => navigate('/change-password')}>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Lock className="h-5 w-5 text-green-600" />
+                <Lock className="h-5 w-5 text-success" />
                 Cambiar Contraseña
               </CardTitle>
               <CardDescription>

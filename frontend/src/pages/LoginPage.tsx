@@ -65,7 +65,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="flex items-center justify-center min-h-screen bg-muted/30">
             <Card className="w-full max-w-md shadow-lg">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-bold">{t('auth.loginTitle')}</CardTitle>
@@ -115,7 +115,7 @@ export default function LoginPage() {
                         {t('auth.noAccount')}{" "}
                         <Link
                             to={returnUrl ? `/register?returnUrl=${encodeURIComponent(returnUrl)}` : "/register"}
-                            className="text-blue-500 hover:underline"
+                            className="text-primary hover:underline"
                         >
                             {t('auth.registerHere')}
                         </Link>

@@ -145,7 +145,7 @@ export default function BookingsPage() {
   if (isLoading && bookings.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground/60" />
       </div>
     );
   }
@@ -156,7 +156,7 @@ export default function BookingsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Reservas</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             {pagination.total_count} {pagination.total_count === 1 ? 'reserva' : 'reservas'} en total
           </p>
         </div>
@@ -169,7 +169,7 @@ export default function BookingsPage() {
             {/* Búsqueda por cliente o servicio */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                 <Input
                   placeholder="Buscar por cliente o servicio..."
                   value={searchTerm}
@@ -200,15 +200,15 @@ export default function BookingsPage() {
 
             {/* Mostrar filtros activos */}
             {(searchTerm || statusFilter !== "all") && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span className="font-medium">Filtros activos:</span>
                 {searchTerm && (
-                  <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                  <span className="bg-primary/10 text-primary px-2 py-1 rounded">
                     Búsqueda: "{searchTerm}"
                   </span>
                 )}
                 {statusFilter !== "all" && (
-                  <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                  <span className="bg-primary/10 text-primary px-2 py-1 rounded">
                     Estado: {statusFilter}
                   </span>
                 )}
@@ -232,11 +232,11 @@ export default function BookingsPage() {
       {/* Tabla */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground/60" />
         </div>
       ) : filteredBookings.length === 0 ? (
         <Card>
-          <CardContent className="py-12 text-center text-gray-500">
+          <CardContent className="py-12 text-center text-muted-foreground">
             {searchTerm || statusFilter !== "all" 
               ? "No se encontraron reservas con los filtros aplicados"
               : "No hay reservas registradas"}
@@ -253,7 +253,7 @@ export default function BookingsPage() {
             <Card>
               <CardContent className="py-4">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     Página {pagination.current_page} de {pagination.total_pages}
                   </p>
                   

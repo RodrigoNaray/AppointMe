@@ -194,15 +194,15 @@ export default function RegisterPage() {
                                 id="password-balloon"
                                 className={`${showBalloon ? 'pointer-events-auto' : 'pointer-events-none'} absolute z-20 bottom-full mb-2 right-0 w-72 sm:w-80 transform transition duration-150 ease-out ${showBalloon ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}
                             >
-                                <div className={`bg-white border rounded-lg shadow-md p-3 text-sm`}>
+                                <div className={`bg-card border rounded-lg shadow-md p-3 text-sm`}>
                                     <p className="font-semibold mb-2">{t('auth.passwordCriteria.title')}</p>
                                     <ul className="space-y-2">
                                         {passwordFeedback.map((fb, idx) => (
                                             <li key={idx} className="flex items-center gap-3">
-                                                <span className={`flex items-center justify-center rounded-full w-6 h-6 ${fb.valid ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                                                <span className={`flex items-center justify-center rounded-full w-6 h-6 ${fb.valid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                                                     {fb.valid ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                                                 </span>
-                                                <span className={fb.valid ? 'text-gray-500 line-through' : 'text-gray-800'}>{fb.label}</span>
+                                                <span className={fb.valid ? 'text-muted-foreground line-through' : 'text-foreground'}>{fb.label}</span>
                                             </li>
                                         ))}
                                     </ul>

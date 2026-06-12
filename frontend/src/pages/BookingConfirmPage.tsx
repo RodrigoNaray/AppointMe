@@ -284,7 +284,7 @@ export default function BookingConfirmPage() {
   if (!dateParam || !timeParam || cart.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground/60" />
       </div>
     );
   }
@@ -297,23 +297,23 @@ export default function BookingConfirmPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Resumen de fecha y hora */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
-            <div className="flex items-center gap-3 text-blue-900">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-3 text-foreground">
               <Calendar className="w-5 h-5" />
               <div>
-                <p className="text-sm font-medium text-blue-700">Fecha</p>
+                <p className="text-sm font-medium text-muted-foreground">Fecha</p>
                 <p className="text-lg font-semibold">
                   {selectedDate ? format(selectedDate, "EEEE, d 'de' MMMM yyyy", { locale: es }) : dateParam}
                 </p>
               </div>
             </div>
-            <Separator className="bg-blue-200" />
-            <div className="flex items-center gap-3 text-blue-900">
+            <Separator className="bg-primary/20" />
+            <div className="flex items-center gap-3 text-foreground">
               <Clock className="w-5 h-5" />
               <div>
-                <p className="text-sm font-medium text-blue-700">Hora de inicio</p>
+                <p className="text-sm font-medium text-muted-foreground">Hora de inicio</p>
                 <p className="text-lg font-semibold">{displayTime}</p>
-                <p className="text-sm text-blue-600">
+                <p className="text-sm text-muted-foreground">
                   Duración total: {totalDuration} minutos
                 </p>
               </div>
@@ -327,11 +327,11 @@ export default function BookingConfirmPage() {
               {cart.map((item) => (
                 <div
                   key={item.service.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+                  className="flex items-center justify-between p-3 bg-muted rounded-lg border"
                 >
                   <div className="flex-1">
                     <p className="font-medium">{item.service.name}</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       {item.service.durationMinutes} min
                       {item.quantity > 1 && ` × ${item.quantity}`}
                     </p>
@@ -346,12 +346,12 @@ export default function BookingConfirmPage() {
 
           {/* Banner de email no verificado */}
           {showEmailBanner && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+            <div className="bg-accent/10 border border-accent/20 rounded-lg p-4 space-y-3">
               <div className="flex items-start gap-3">
-                <ShieldAlert className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <ShieldAlert className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="font-semibold text-amber-900">Verificá tu email antes de reservar</p>
-                  <p className="text-sm text-amber-700 mt-1">
+                  <p className="font-semibold text-foreground">Verificá tu email antes de reservar</p>
+                  <p className="text-sm text-muted-foreground mt-1">
                     Necesitamos confirmar tu dirección de email para procesar la reserva.
                     Revisá tu bandeja de entrada o solicitá un nuevo email.
                   </p>
@@ -377,14 +377,14 @@ export default function BookingConfirmPage() {
                     variant="link"
                     size="sm"
                     onClick={handleRetryAfterVerify}
-                    className="text-amber-700"
+                    className="text-accent"
                   >
                     Intentar de nuevo
                   </Button>
                 )}
               </div>
               {emailBannerSent && (
-                <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 rounded p-2">
+                <div className="flex items-center gap-2 text-sm text-success bg-success/10 rounded p-2">
                   <CheckCircle className="w-4 h-4" />
                   Email enviado. Revisá tu bandeja y luego presioná "Intentar de nuevo" para reintentar la reserva.
                 </div>
@@ -393,12 +393,12 @@ export default function BookingConfirmPage() {
           )}
 
           {/* Total */}
-          <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-success/10 border border-success/30 rounded-lg">
             <div className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-green-700" />
-              <span className="font-semibold text-lg text-green-900">Total</span>
+              <DollarSign className="w-5 h-5 text-success" />
+              <span className="font-semibold text-lg text-foreground">Total</span>
             </div>
-            <span className="font-bold text-2xl text-green-700">${totalPrice.toFixed(2)}</span>
+            <span className="font-bold text-2xl text-success">${totalPrice.toFixed(2)}</span>
           </div>
 
           {/* Resultados de las reservas (después de submit) */}
@@ -410,19 +410,19 @@ export default function BookingConfirmPage() {
                   key={result.serviceId}
                   className={`flex items-center gap-3 p-3 rounded-lg border ${
                     result.success
-                      ? 'bg-green-50 border-green-200'
-                      : 'bg-red-50 border-red-200'
+                      ? 'bg-success/10 border-success/30'
+                      : 'bg-destructive/10 border-destructive/30'
                   }`}
                 >
                   {result.success ? (
-                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
                   ) : (
-                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                    <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0" /> 
                   )}
                   <div className="flex-1">
                     <p className="font-medium">{result.serviceName}</p>
                     {!result.success && result.error && (
-                      <p className="text-sm text-red-600">{result.error}</p>
+                      <p className="text-sm text-destructive">{result.error}</p>
                     )}
                   </div>
                 </div>
@@ -460,7 +460,7 @@ export default function BookingConfirmPage() {
           </div>
 
           {/* Nota informativa */}
-          <p className="text-sm text-gray-500 text-center">
+          <p className="text-sm text-muted-foreground text-center">
             Al confirmar, se crearán {cart.length} {cart.length === 1 ? 'reserva' : 'reservas'} consecutivas
             comenzando a las {displayTime}. Los servicios se reservarán uno después del otro automáticamente.
           </p>

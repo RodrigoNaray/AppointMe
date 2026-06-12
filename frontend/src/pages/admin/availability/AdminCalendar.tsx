@@ -40,13 +40,13 @@ const EventCard = ({ event, onClick }: { event: CalendarEvent; onClick?: () => v
   const getEventColor = (type: CalendarEvent["type"]): string => {
     switch (type) {
       case "working_hours":
-        return "bg-blue-100 border-blue-200 text-blue-800";
+        return "bg-primary/10 border-primary/20 text-foreground";
       case "block":
-        return "bg-red-100 border-red-200 text-red-800";
+        return "bg-destructive/10 border-destructive/20 text-destructive";
       case "booking":
-        return "bg-green-100 border-green-200 text-green-800";
+        return "bg-success/10 border-success/20 text-success";
       default:
-        return "bg-gray-100 border-gray-200 text-gray-800";
+        return "bg-muted border-border text-foreground";
     }
   };
 

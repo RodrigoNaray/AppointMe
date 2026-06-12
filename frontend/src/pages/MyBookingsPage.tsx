@@ -371,7 +371,7 @@ export default function MyBookingsPage() {
   if (isCheckingAuth) {
     return (
       <div className="flex justify-center items-center h-[50vh]">
-        <Loader2 className="h-10 w-10 animate-spin text-purple-600" />
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }

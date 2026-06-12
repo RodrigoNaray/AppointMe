@@ -111,7 +111,7 @@ export function AppMap({
       {/* Botón "Ver en mapas" - Visible en todas las pantallas */}
       <button
         onClick={handleOpenMaps}
-        className="absolute top-4 right-4 z-20 bg-white hover:bg-gray-50 text-gray-900 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium transition-colors border border-gray-200"
+        className="absolute top-4 right-4 z-20 bg-card hover:bg-muted text-foreground px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium transition-colors border border-border"
         aria-label="Abrir ubicación en Google Maps"
       >
         <Navigation className="h-4 w-4" />
@@ -148,7 +148,7 @@ export function AppMap({
       </MapContainer>
 
       {/* Attribution footer (OWASP compliance - mantener créditos OSM) */}
-      <div className="absolute bottom-0 right-0 z-10 bg-white/80 backdrop-blur-sm px-2 py-1 text-xs text-gray-600">
+      <div className="absolute bottom-0 right-0 z-10 bg-background/80 backdrop-blur-sm px-2 py-1 text-xs text-muted-foreground">
         © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="hover:underline">OpenStreetMap</a> · <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer" className="hover:underline">CartoDB</a>
       </div>
     </div>

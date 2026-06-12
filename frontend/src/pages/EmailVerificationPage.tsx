@@ -66,11 +66,11 @@ export default function EmailVerificationPage() {
   const getIcon = () => {
     switch (verificationState.status) {
       case 'loading':
-        return <Loader className="w-16 h-16 text-blue-500 animate-spin" />;
+        return <Loader className="w-16 h-16 text-primary animate-spin" />;
       case 'success':
-        return <CheckCircle className="w-16 h-16 text-green-500" />;
+        return <CheckCircle className="w-16 h-16 text-success" />;
       case 'error':
-        return <XCircle className="w-16 h-16 text-red-500" />;
+        return <XCircle className="w-16 h-16 text-destructive" />;
       default:
         return null;
     }
@@ -79,18 +79,18 @@ export default function EmailVerificationPage() {
   const getStatusColor = () => {
     switch (verificationState.status) {
       case 'loading':
-        return 'text-blue-600';
+        return 'text-primary';
       case 'success':
-        return 'text-green-600';
+        return 'text-success';
       case 'error':
-        return 'text-red-600';
+        return 'text-destructive';
       default:
-        return 'text-gray-600';
+        return 'text-muted-foreground';
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+    <div className="flex items-center justify-center min-h-screen bg-muted/30 px-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Verificación de Email</CardTitle>
@@ -106,14 +106,14 @@ export default function EmailVerificationPage() {
               {verificationState.status === 'success' && '¡Verificación Exitosa!'}
               {verificationState.status === 'error' && 'Error en la Verificación'}
             </h3>
-            <p className="text-gray-600 mt-2">
+            <p className="text-muted-foreground mt-2">
               {verificationState.message}
             </p>
           </div>
 
           {verificationState.status === 'success' && (
             <div className="space-y-3">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Serás redirigido al login en unos segundos...
               </p>
               <Button 
@@ -142,7 +142,7 @@ export default function EmailVerificationPage() {
               </Button>
               <Link 
                 to="/register" 
-                className="block text-sm text-gray-500 hover:underline text-center"
+                className="block text-sm text-muted-foreground hover:underline text-center"
               >
                 Volver al Registro
               </Link>
@@ -150,7 +150,7 @@ export default function EmailVerificationPage() {
           )}
 
           {verificationState.status === 'loading' && (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Por favor espera mientras verificamos tu email...
             </p>
           )}

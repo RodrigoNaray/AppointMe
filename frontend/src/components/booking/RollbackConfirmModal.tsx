@@ -70,10 +70,10 @@ export function RollbackConfirmModal({
         <div className="space-y-3 py-2">
           {successfulItems.length > 0 && (
             <div>
-              <p className="text-sm font-medium text-green-700 mb-1">Reservados correctamente:</p>
+              <p className="text-sm font-medium text-success mb-1">Reservados correctamente:</p>
               <ul className="space-y-1">
                 {successfulItems.map((item) => (
-                  <li key={item.serviceId} className="flex items-center gap-2 text-sm text-green-600">
+                  <li key={item.serviceId} className="flex items-center gap-2 text-sm text-success">
                     <CheckCircle className="w-4 h-4 flex-shrink-0" />
                     {item.serviceName}
                   </li>
@@ -84,14 +84,14 @@ export function RollbackConfirmModal({
 
           {failedItems.length > 0 && (
             <div>
-              <p className="text-sm font-medium text-red-700 mb-1">Fallaron:</p>
+              <p className="text-sm font-medium text-destructive mb-1">Fallaron:</p>
               <ul className="space-y-1">
                 {failedItems.map((item) => (
-                  <li key={item.serviceId} className="flex items-start gap-2 text-sm text-red-600">
+                  <li key={item.serviceId} className="flex items-start gap-2 text-sm text-destructive">
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     <span>
                       {item.serviceName}
-                      {item.error && <span className="text-red-500"> — {item.error}</span>}
+                      {item.error && <span className="text-destructive/80"> — {item.error}</span>}
                     </span>
                   </li>
                 ))}
@@ -131,7 +131,7 @@ export function RollbackConfirmModal({
           </DialogFooter>
         ) : (
           <div className="space-y-3 pt-2">
-            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-sm text-success bg-success/10 rounded-lg p-3">
               <CheckCircle className="w-4 h-4 flex-shrink-0" />
               Reservas canceladas correctamente. Podés reintentar cuando quieras.
             </div>

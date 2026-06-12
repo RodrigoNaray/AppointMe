@@ -84,9 +84,9 @@ function ContactInfoCard({ contactInfo, isLoading }: ContactInfoCardProps) {
     const Icon = icon;
     return (
       <div className="flex items-start gap-3">
-        <Icon className="w-5 h-5 mt-0.5 text-gray-900 flex-shrink-0" />
+        <Icon className="w-5 h-5 mt-0.5 text-foreground flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-500 mb-1">{label}</p>
+          <p className="text-sm font-medium text-muted-foreground mb-1">{label}</p>
           {content}
         </div>
       </div>
@@ -96,18 +96,18 @@ function ContactInfoCard({ contactInfo, isLoading }: ContactInfoCardProps) {
   // Loading skeleton
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+      <div className="bg-card rounded-2xl shadow-sm border border-border p-6">
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-6 h-6 bg-gray-200 rounded animate-pulse" />
-          <div className="h-6 w-40 bg-gray-200 rounded animate-pulse" />
+          <div className="w-6 h-6 bg-muted rounded animate-pulse" />
+          <div className="h-6 w-40 bg-muted rounded animate-pulse" />
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex items-start gap-3">
-              <div className="w-5 h-5 mt-0.5 bg-gray-200 rounded animate-pulse flex-shrink-0" />
+              <div className="w-5 h-5 mt-0.5 bg-muted rounded animate-pulse flex-shrink-0" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-                <div className="h-5 w-full bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-20 bg-muted rounded animate-pulse" />
+                <div className="h-5 w-full bg-muted rounded animate-pulse" />
               </div>
             </div>
           ))}
@@ -119,12 +119,12 @@ function ContactInfoCard({ contactInfo, isLoading }: ContactInfoCardProps) {
   // Validación: contactInfo es requerido para renderizar contenido
   if (!contactInfo) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+      <div className="bg-card rounded-2xl shadow-sm border border-border p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Phone className="w-6 h-6 text-gray-900" />
-          <h3 className="text-lg font-semibold text-gray-900">Información de Contacto</h3>
+          <Phone className="w-6 h-6 text-foreground" />
+          <h3 className="text-lg font-semibold text-foreground">Información de Contacto</h3>
         </div>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           No se pudo cargar la información de contacto. Por favor, intenta más tarde.
         </p>
       </div>
@@ -135,11 +135,11 @@ function ContactInfoCard({ contactInfo, isLoading }: ContactInfoCardProps) {
   const { phone, email, address } = contactInfo;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+    <div className="bg-card rounded-2xl shadow-sm border border-border p-6">
       {/* Header */}
       <div className="flex items-center gap-2 mb-6">
-        <Phone className="w-6 h-6 text-gray-900" />
-        <h3 className="text-lg font-semibold text-gray-900">Información de Contacto</h3>
+        <Phone className="w-6 h-6 text-foreground" />
+        <h3 className="text-lg font-semibold text-foreground">Información de Contacto</h3>
       </div>
 
       {/* Contact rows */}
@@ -150,7 +150,7 @@ function ContactInfoCard({ contactInfo, isLoading }: ContactInfoCardProps) {
           'Teléfono',
           <a
             href={`tel:${phone}`}
-            className="text-gray-900 hover:text-gray-700 transition-colors duration-200 text-sm"
+            className="text-foreground hover:text-foreground/80 transition-colors duration-200 text-sm"
             aria-label={`Llamar a ${phone}`}
           >
             {phone}
@@ -163,7 +163,7 @@ function ContactInfoCard({ contactInfo, isLoading }: ContactInfoCardProps) {
           'Email',
           <a
             href={`mailto:${email}`}
-            className="text-gray-900 hover:text-gray-700 transition-colors duration-200 text-sm break-all"
+            className="text-foreground hover:text-foreground/80 transition-colors duration-200 text-sm break-all"
             aria-label={`Enviar email a ${email}`}
           >
             {email}
@@ -174,7 +174,7 @@ function ContactInfoCard({ contactInfo, isLoading }: ContactInfoCardProps) {
         {renderContactRow(
           MapPin,
           'Dirección',
-          <p className="text-gray-900 text-sm whitespace-pre-line">
+          <p className="text-foreground text-sm whitespace-pre-line">
             {address}
           </p>
         )}

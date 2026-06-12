@@ -59,11 +59,11 @@ export default function VerifyEmailChangePage() {
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader className="text-center">
-            <Loader className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+            <Loader className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
             <CardTitle className="text-2xl font-bold">Verificando...</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               Por favor espera mientras verificamos tu nuevo email.
             </p>
           </CardContent>
@@ -73,26 +73,26 @@ export default function VerifyEmailChangePage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+    <div className="flex items-center justify-center min-h-screen bg-muted/30 px-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           {isSuccess ? (
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+            <CheckCircle className="w-16 h-16 text-success mx-auto mb-4" />
           ) : (
-            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <XCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
           )}
           <CardTitle className="text-2xl font-bold">
             {isSuccess ? '¡Email Actualizado!' : 'Error en Verificación'}
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center space-y-4">
-          <p className={`text-sm ${isSuccess ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-sm ${isSuccess ? 'text-success' : 'text-destructive'}`}>
             {message}
           </p>
 
           {isSuccess ? (
             <>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Tu dirección de email ha sido actualizada exitosamente. 
                 Por favor inicia sesión nuevamente con tu nuevo email.
               </p>

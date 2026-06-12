@@ -355,7 +355,7 @@ export default function SettingsPage() {
             )}
             
             {successMessage && (
-              <div className="flex items-start gap-3 bg-green-50 text-green-700 px-4 py-3 rounded-md text-sm">
+              <div className="flex items-start gap-3 bg-success/10 text-success px-4 py-3 rounded-md text-sm">
                 <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" />
                 <span>{successMessage}</span>
               </div>
@@ -625,7 +625,7 @@ export default function SettingsPage() {
             )}
             
             {contactSuccess && (
-              <div className="flex items-start gap-3 bg-green-50 text-green-700 px-4 py-3 rounded-md text-sm">
+              <div className="flex items-start gap-3 bg-success/10 text-success px-4 py-3 rounded-md text-sm">
                 <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" />
                 <span>{contactSuccess}</span>
               </div>

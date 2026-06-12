@@ -202,7 +202,7 @@ function BusinessHoursCard({ businessHours, isLoading }: BusinessHoursCardProps)
     
     // Determinar color del punto (verde solo si está EXPLÍCITAMENTE abierto)
     const isOpen = schedule.isOpen === true;
-    const statusColor = isOpen ? 'bg-green-500' : 'bg-gray-400';
+    const statusColor = isOpen ? 'bg-success' : 'bg-muted-foreground/40';
     const statusLabel = isOpen ? 'Abierto' : 'Cerrado';
 
     return (

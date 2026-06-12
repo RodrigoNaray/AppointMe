@@ -262,7 +262,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 {/* Badge de Disponibilidad */}
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-green-500 px-3 py-1 text-xs font-semibold text-white">
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-success px-3 py-1 text-xs font-semibold text-success-foreground">
                   {t('home.availableToday')}
                 </div>
               </div>
@@ -282,7 +282,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-center gap-2 sm:justify-start">
                   <div className="flex gap-0.5">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400 sm:h-5 sm:w-5" />
+                      <Star key={star} className="h-4 w-4 fill-accent text-accent sm:h-5 sm:w-5" />
                     ))}
                   </div>
                   <span className="text-sm font-medium text-foreground/70 sm:text-base">
