@@ -10,7 +10,7 @@ test.describe('Booking flow — happy path', () => {
     await loginAsClient(request, context);
 
     await page.goto('/book');
-    await expect(page.getByText('Corte y Peinado').first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Corte y Peinado' }).first()).toBeVisible();
 
     await page.locator('[data-testid^="add-to-cart-"]').first().click();
     await expect(page.locator('[data-testid="continue-to-checkout"]')).toBeEnabled();

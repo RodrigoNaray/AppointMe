@@ -19,6 +19,7 @@ export default defineConfig({
     video: 'retain-on-failure',
     viewport: { width: 390, height: 844 },
     locale: 'es-AR',
+    timezoneId: 'America/Argentina/Buenos_Aires',
   },
   projects: [
     {
