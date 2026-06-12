@@ -4,21 +4,44 @@ import logger from "../utils/logger";
 import { t } from './emailTranslations';
 
 
-if (!process.env.RESEND_API_KEY) {
-  logger.error('RESEND_API_KEY is not configured. Set it in .env file.');
-  throw new Error('Missing required environment variable: RESEND_API_KEY');
+const isEmailMocked = (): boolean => process.env.MOCK_EMAILS === 'true';
+
+if (isEmailMocked()) {
+  logger.warn('MOCK_EMAILS=true — all transactional emails will be suppressed and logged instead of sent via Resend. Do NOT use in production.');
 }
 
-if (!process.env.RESEND_FROM_EMAIL) {
-  logger.error('RESEND_FROM_EMAIL is not configured. Set it in .env file.');
-  throw new Error('Missing required environment variable: RESEND_FROM_EMAIL');
+if (!isEmailMocked()) {
+  if (!process.env.RESEND_API_KEY) {
+    logger.error('RESEND_API_KEY is not configured. Set it in .env file.');
+    throw new Error('Missing required environment variable: RESEND_API_KEY');
+  }
+
+  if (!process.env.RESEND_FROM_EMAIL) {
+    logger.error('RESEND_FROM_EMAIL is not configured. Set it in .env file.');
+    throw new Error('Missing required environment variable: RESEND_FROM_EMAIL');
+  }
 }
 
-// Inicializar cliente Resend (solo si validación pasó)
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Inicializar cliente Resend solo si no estamos mockeando
+const resend = isEmailMocked() ? null : new Resend(process.env.RESEND_API_KEY ?? '');
 
-// Email "from" garantizado por validación
-const FROM_EMAIL: string = process.env.RESEND_FROM_EMAIL;
+// Email "from" garantizado por validación cuando no se mockea
+const FROM_EMAIL: string = process.env.RESEND_FROM_EMAIL ?? 'mock@localhost';
+
+interface DispatchEmailPayload {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}
+
+const dispatchEmail = async (payload: DispatchEmailPayload) => {
+  if (!resend) {
+    throw new Error('Resend client not initialized — MOCK_EMAILS=true should have short-circuited the call');
+  }
+  return resend.emails.send(payload);
+};
 
 interface VerificationEmailData {
   to: string;
@@ -83,6 +106,11 @@ interface BookingRescheduledEmailData {
  * @returns Promise<boolean> true si el email se envió exitosamente
  */
 export const sendVerificationEmail = async (data: VerificationEmailData): Promise<boolean> => {
+  if (isEmailMocked()) {
+    logger.info({ to: data.to }, '[MOCK] Email suppressed (MOCK_EMAILS=true)');
+    return true;
+  }
+
   try {
     // URL de verificación - usar CLIENT_URL del entorno
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${data.verificationToken}`;
@@ -149,7 +177,7 @@ Si no te registraste en AppointMePro, ignora este email.
     `.trim();
 
     const lang = data.clientLanguage;
-    const result = await resend.emails.send({
+    const result = await dispatchEmail({
       from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.to,
       subject: t('verification.subject', lang),
@@ -183,6 +211,11 @@ Si no te registraste en AppointMePro, ignora este email.
  * @returns Promise<boolean> true si el email se envió exitosamente
  */
 export const sendEmailChangeVerification = async (data: EmailChangeData): Promise<boolean> => {
+  if (isEmailMocked()) {
+    logger.info({ to: data.to }, '[MOCK] Email suppressed (MOCK_EMAILS=true)');
+    return true;
+  }
+
   try {
     // URL de verificación de cambio de email
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email-change?token=${data.emailChangeToken}`;
@@ -256,7 +289,7 @@ Si no solicitaste este cambio, ignora este email.
     `.trim();
 
     const lang = data.clientLanguage;
-    const result = await resend.emails.send({
+    const result = await dispatchEmail({
       from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.newEmail,
       subject: t('email-change.subject', lang),
@@ -289,6 +322,11 @@ Si no solicitaste este cambio, ignora este email.
  * @returns Promise<boolean> true si el email se envió exitosamente
  */
 export const sendBookingConfirmationEmail = async (data: BookingConfirmationData): Promise<boolean> => {
+  if (isEmailMocked()) {
+    logger.info({ to: data.to, bookings: data.bookings.length }, '[MOCK] Email suppressed (MOCK_EMAILS=true)');
+    return true;
+  }
+
   try {
     /**
      * Formatea fecha/hora en el timezone del cliente
@@ -413,7 +451,7 @@ ${process.env.CLIENT_URL}/client/bookings
     `.trim();
 
     const lang = data.clientLanguage;
-    const result = await resend.emails.send({
+    const result = await dispatchEmail({
       from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.to,
       subject: `✓ ${t('booking-confirmed.subject', lang)}`,
@@ -457,6 +495,11 @@ ${process.env.CLIENT_URL}/client/bookings
  * - Alternativa de texto plano para clientes sin HTML
  */
 export const sendPasswordResetEmail = async (data: PasswordResetEmailData): Promise<boolean> => {
+  if (isEmailMocked()) {
+    logger.info({ to: data.to }, '[MOCK] Email suppressed (MOCK_EMAILS=true)');
+    return true;
+  }
+
   try {
     const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${data.resetToken}`;
 
@@ -534,7 +577,7 @@ ${resetUrl}
     `.trim();
 
     const lang = data.clientLanguage;
-    const result = await resend.emails.send({
+    const result = await dispatchEmail({
       from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.to,
       subject: t('password-reset.subject', lang),
@@ -567,6 +610,11 @@ ${resetUrl}
  * @returns Promise<boolean> true si el email se envió exitosamente
  */
 export const sendAdminCancellationEmail = async (data: AdminCancellationEmailData): Promise<boolean> => {
+  if (isEmailMocked()) {
+    logger.info({ to: data.to, serviceName: data.serviceName }, '[MOCK] Email suppressed (MOCK_EMAILS=true)');
+    return true;
+  }
+
   try {
     const formatDateTime = (date: Date, timezone: string): string => {
       return formatInTimeZone(date, timezone, 'dd/MM/yyyy HH:mm');
@@ -671,7 +719,7 @@ ${process.env.CLIENT_URL}/client/bookings
     `.trim();
 
     const lang = data.clientLanguage;
-    const result = await resend.emails.send({
+    const result = await dispatchEmail({
       from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.to,
       subject: t('admin-cancellation.subject', lang),
@@ -704,6 +752,11 @@ ${process.env.CLIENT_URL}/client/bookings
  * @returns Promise<boolean> true si el email se envió exitosamente
  */
 export const sendBookingRescheduledEmail = async (data: BookingRescheduledEmailData): Promise<boolean> => {
+  if (isEmailMocked()) {
+    logger.info({ to: data.to, serviceName: data.serviceName }, '[MOCK] Email suppressed (MOCK_EMAILS=true)');
+    return true;
+  }
+
   try {
     const formatDateTime = (date: Date, timezone: string): string => {
       return formatInTimeZone(date, timezone, 'dd/MM/yyyy HH:mm');
@@ -803,7 +856,7 @@ Ver mis reservas: ${process.env.CLIENT_URL}/client/bookings
     `.trim();
 
     const lang = data.clientLanguage;
-    const result = await resend.emails.send({
+    const result = await dispatchEmail({
       from: `AppointMePro <${FROM_EMAIL}>`,
       to: data.to,
       subject: t('booking-rescheduled.subject', lang),
