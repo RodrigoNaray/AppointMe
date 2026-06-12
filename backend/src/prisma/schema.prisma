@@ -9,9 +9,8 @@ generator client {
 // Define la fuente de datos, en este caso, PostgreSQL.
 // La URL de conexión se toma de la variable de entorno DATABASE_URL.
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
 }
 
 // Enum para el estado de las reservas
