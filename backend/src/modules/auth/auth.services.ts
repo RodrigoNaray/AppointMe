@@ -18,7 +18,7 @@ export const generateToken = (user: userWithoutPassword) => {
   };
 
   if(!process.env.JWT_SECRET) {
-    logger.error({JWT_SECRET: process.env.JWT_SECRET}, 'JWT_SECRET no esta definida en las variables de entorno')
+    logger.error('JWT_SECRET no esta definida en las variables de entorno')
     throw new Error('JWT_SECRET no esta definida en las variables de entorno');
 
   };

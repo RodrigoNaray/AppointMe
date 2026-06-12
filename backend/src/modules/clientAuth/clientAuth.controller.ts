@@ -133,7 +133,7 @@ export const verifyEmailController = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Token de verificación requerido' });
     }
 
-    logger.info({ tokenPreview: token.substring(0, 10) + '...' }, 'Processing email verification');
+    logger.info('Processing email verification');
 
     const result = await service.verifyClientEmail(token);
 
@@ -396,7 +396,7 @@ export const resetPasswordController = async (req: Request, res: Response) => {
     // Intentar restablecer contraseña
     await service.resetPassword(token, newPassword);
 
-    logger.info({ token: token.substring(0, 10) + '...' }, 'Password reset successful');
+    logger.info('Password reset successful');
     res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
   } catch (error: unknown) {
     const errorMessage = getErrorMessage(error);

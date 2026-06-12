@@ -172,7 +172,7 @@ export const getClientProfile = async (clientId: string): Promise<PublicClient |
  * @returns Objeto con resultado de verificación y estado del cliente.
  */
 export const verifyClientEmail = async (token: string): Promise<EmailVerificationResult> => {
-  logger.info({ token: token.substring(0, 10) + '...' }, 'Attempting email verification');
+  logger.info('Attempting email verification');
   
   // Buscar cliente con el token de verificación pendiente
   const client = await prisma.client.findFirst({
@@ -185,7 +185,7 @@ export const verifyClientEmail = async (token: string): Promise<EmailVerificatio
   if (!client) {
     // El token no existe o ya fue usado
     // Por seguridad OWASP, no revelamos si la cuenta existe o está verificada
-    logger.warn({ token: token.substring(0, 10) + '...' }, 'Token not found - may be invalid, expired, or already used');
+    logger.warn('Token not found - may be invalid, expired, or already used');
     return {
       success: false,
       alreadyVerified: false,
@@ -417,7 +417,7 @@ export const requestEmailChange = async (
  * @returns EmailChangeResult con éxito o error
  */
 export const verifyEmailChange = async (token: string): Promise<EmailChangeResult> => {
-  logger.info({ token: token.substring(0, 10) + '...' }, 'Attempting email change verification');
+  logger.info('Attempting email change verification');
 
   // Buscar cliente con el token de cambio de email
   const client = await prisma.client.findFirst({
@@ -427,7 +427,7 @@ export const verifyEmailChange = async (token: string): Promise<EmailChangeResul
   });
 
   if (!client || !client.pendingEmail) {
-    logger.warn({ token: token.substring(0, 10) + '...' }, 'Invalid email change token');
+    logger.warn('Invalid email change token');
     return {
       success: false,
       message: 'Este link de verificación no es válido o ya fue usado.',

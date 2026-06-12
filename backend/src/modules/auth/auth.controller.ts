@@ -12,7 +12,7 @@ export const loginController = async ( req: Request<{},{},LoginAdminDto>, res: R
 
     if(!user){
 
-      logger.warn({ email: req.body.email }, 'Intento de login fallido');
+      logger.warn('Intento de login fallido');
       return res.status(401).json({message: 'Credenciales incorrecctas'})
     };
 

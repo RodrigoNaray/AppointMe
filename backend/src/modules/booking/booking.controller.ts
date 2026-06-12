@@ -91,7 +91,7 @@ export const createBooking = async (
     });
 
   } catch (error) {
-    logger.error({ error, body: req.body }, 'Error in createBookingController');
+    logger.error({ error }, 'Error in createBookingController');
 
     if (error instanceof Error && 'statusCode' in error) {
       const bookingError = error as BookingError;
@@ -279,7 +279,7 @@ export const cancelBookingByAdminController = async (
     });
 
   } catch (error) {
-    logger.error({ error, params: req.params, body: req.body }, 'Error in cancelBookingByAdminController');
+    logger.error({ error }, 'Error in cancelBookingByAdminController');
 
     if (error instanceof Error && 'statusCode' in error) {
       const bookingError = error as BookingError;
@@ -369,7 +369,7 @@ export const rescheduleBookingByAdminController = async (
     });
 
   } catch (error) {
-    logger.error({ error, params: req.params, body: req.body }, 'Error in rescheduleBookingByAdminController');
+    logger.error({ error }, 'Error in rescheduleBookingByAdminController');
 
     if (error instanceof Error && 'statusCode' in error) {
       const bookingError = error as BookingError;

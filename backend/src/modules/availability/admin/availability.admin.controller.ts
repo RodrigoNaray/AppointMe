@@ -19,7 +19,7 @@ export const getScheduleController = async (req: Request, res: Response) => {
 };
 
 export const updateScheduleController = async (req: Request, res: Response) => {
-  logger.info({ body: req.body }, "Datos recibidos en updateScheduleController");
+  logger.info("Datos recibidos en updateScheduleController");
   
   const admin = req.user as AdminUser;
   const userId = admin.id;

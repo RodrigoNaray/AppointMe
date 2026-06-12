@@ -170,7 +170,7 @@ export const updateBookingRules = async (
     });
 
   } catch (error) {
-    logger.error({ error, body: req.body }, 'Error in updateBookingRules controller');
+    logger.error({ error }, 'Error in updateBookingRules controller');
 
     if (error instanceof Error && 'statusCode' in error) {
       const settingsError = error as SettingsError;
@@ -292,7 +292,7 @@ export const updateContactInfo = async (
     });
 
   } catch (error) {
-    logger.error({ error, body: req.body }, 'Error in updateContactInfo controller');
+    logger.error({ error }, 'Error in updateContactInfo controller');
 
     if (error instanceof Error && 'statusCode' in error) {
       const settingsError = error as SettingsError;
