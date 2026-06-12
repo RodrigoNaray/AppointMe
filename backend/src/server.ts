@@ -18,6 +18,7 @@ import { settingsRoutes, adminSettingsRoutes } from './modules/settings/settings
 import sitemapRoutes from './modules/sitemap/sitemap.routes';
 import compression from "compression";
 import helmet from "helmet";
+import logger from "./utils/logger";
 
 
 dotenv.config();
@@ -73,7 +74,7 @@ app.use('/', sitemapRoutes); // Sitemap en raíz (público)
 
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(err.stack);
+  logger.error(err.stack);
   res.status(500).json({ message: 'Algo salió mal en el servidor.' });
 });
 
