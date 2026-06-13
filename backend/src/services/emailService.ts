@@ -349,19 +349,19 @@ export const sendBookingConfirmationEmail = async (data: BookingConfirmationData
     // Generar filas HTML para cada reserva
     const bookingRows = data.bookings.map(booking => `
       <tr>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 12px; border-bottom: 1px solid #e8e6e0; color: #1a2744;">
           <strong>${booking.serviceName}</strong>
         </td>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 12px; border-bottom: 1px solid #e8e6e0; color: #1a2744;">
           ${formatDateTime(booking.bookingTime, data.clientTimezone)}
         </td>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 12px; border-bottom: 1px solid #e8e6e0; color: #8a8780;">
           ${booking.durationMinutes} min
         </td>
       </tr>
     `).join('');
 
-    // Template HTML del email de confirmación (reutilizado de Nodemailer)
+    // Template HTML del email de confirmación
     const htmlTemplate = `
     <!DOCTYPE html>
     <html lang="es">
@@ -370,12 +370,12 @@ export const sendBookingConfirmationEmail = async (data: BookingConfirmationData
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Confirmación de Reserva - AppointMePro</title>
     </head>
-    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="margin: 0; font-size: 28px;">✓ Reserva Confirmada</h1>
+    <body style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; line-height: 1.6; color: #1a2744; max-width: 600px; margin: 0 auto; padding: 20px; background: #faf9f6;">
+        <div style="background: #1a2744; color: #faf9f6; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px; font-weight: 700;">Reserva Confirmada</h1>
         </div>
         
-        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+        <div style="background: #faf9f6; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e8e6e0; border-top: none;">
             <p style="font-size: 16px; margin-bottom: 20px;">
                 Hola <strong>${data.clientName}</strong>,
             </p>
@@ -384,12 +384,12 @@ export const sendBookingConfirmationEmail = async (data: BookingConfirmationData
                 Tu${data.bookings.length > 1 ? 's' : ''} reserva${data.bookings.length > 1 ? 's han' : ' ha'} sido confirmada${data.bookings.length > 1 ? 's' : ''} exitosamente. A continuación los detalles:
             </p>
 
-            <table style="width: 100%; background: white; border-radius: 8px; overflow: hidden; border-collapse: collapse; margin-bottom: 20px;">
+            <table style="width: 100%; background: white; border-radius: 8px; overflow: hidden; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #e8e6e0;">
               <thead>
-                <tr style="background: #f3f4f6;">
-                  <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Servicio</th>
-                  <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Fecha y Hora</th>
-                  <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Duración</th>
+                <tr style="background: #f5f4f0;">
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: #1a2744; border-bottom: 1px solid #e8e6e0;">Servicio</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: #1a2744; border-bottom: 1px solid #e8e6e0;">Fecha y Hora</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: #1a2744; border-bottom: 1px solid #e8e6e0;">Duración</th>
                 </tr>
               </thead>
               <tbody>
@@ -397,30 +397,30 @@ export const sendBookingConfirmationEmail = async (data: BookingConfirmationData
               </tbody>
             </table>
 
-            <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
-                <p style="margin: 0; font-size: 14px; color: #1e40af;">
+            <div style="background: #f0eeea; border-left: 4px solid #1a2744; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                <p style="margin: 0; font-size: 14px; color: #1a2744;">
                     <strong>Recordatorio:</strong> Por favor, llega 5 minutos antes de tu primera reserva.
                 </p>
             </div>
 
-            <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">
+            <p style="font-size: 14px; color: #8a8780; margin-bottom: 20px;">
                 Si necesitas cancelar o reagendar, puedes hacerlo desde tu perfil en nuestra plataforma.
             </p>
 
             <div style="text-align: center; margin-top: 30px;">
                 <a href="${process.env.CLIENT_URL}/client/bookings" 
-                   style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                   style="display: inline-block; background: #1a2744; color: #faf9f6; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: 600;">
                     Ver Mis Reservas
                 </a>
             </div>
 
-            <p style="font-size: 14px; color: #6b7280; margin-top: 30px; text-align: center;">
+            <p style="font-size: 14px; color: #8a8780; margin-top: 30px; text-align: center;">
                 ¿Tienes preguntas? Contáctanos respondiendo este email.
             </p>
         </div>
         
-        <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <p style="font-size: 12px; color: #9ca3af;">
+        <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e8e6e0;">
+            <p style="font-size: 12px; color: #8a8780;">
                 © 2025 AppointMePro. Todos los derechos reservados.
             </p>
         </div>
