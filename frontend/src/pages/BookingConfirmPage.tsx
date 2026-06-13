@@ -327,7 +327,7 @@ export default function BookingConfirmPage() {
               {cart.map((item) => (
                 <div
                   key={item.service.id}
-                  className="flex items-center justify-between p-3 bg-muted rounded-lg border"
+                  className="flex items-center justify-between p-3 bg-muted rounded-lg border-l-4 border-l-primary"
                 >
                   <div className="flex-1">
                     <p className="font-medium">{item.service.name}</p>

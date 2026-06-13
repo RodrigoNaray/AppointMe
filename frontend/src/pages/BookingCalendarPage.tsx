@@ -426,7 +426,7 @@ export default function BookingCalendarPage() {
                           key={time}
                           variant={selectedTime === time ? 'default' : 'outline'}
                           onClick={() => handleSelectSlot(time)}
-                          className="h-10 sm:h-12 text-sm sm:text-base font-medium"
+                          className="h-10 sm:h-12 text-sm sm:text-base font-medium transition-all duration-200 hover:scale-105 data-[selected=true]:shadow-md"
                           data-testid="available-slot"
                           data-time-slot={time}
                         >

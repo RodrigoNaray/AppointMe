@@ -107,7 +107,7 @@ export default function LoginPage() {
                         </div>
                     </form>
                     <Separator className="my-4" />
-                    <Button variant="outline" className="w-full flex items-center justify-center gap-2" onClick={handleGoogleLogin}>
+                    <Button variant="outline" className="w-full flex items-center justify-center gap-2 border-2 hover:bg-muted/50" onClick={handleGoogleLogin}>
                         <GoogleIcon />
                         <span>{t('auth.googleLogin')}</span>
                     </Button>

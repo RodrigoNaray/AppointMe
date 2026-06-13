@@ -4,7 +4,7 @@
     "login": "Iniciar Sesión"
   },
   "language": {
-    "es": "Español (AR)",
+    "es": "Español",
     "en": "English"
   },
   "home": {
@@ -19,7 +19,8 @@
     "professionalBio": "Más de 10 años de experiencia brindando servicios de barbería premium. Especializado en cortes modernos, afeitado clásico y cuidado de barba.",
     "rating": "5.0 (248 reseñas)",
     "ourServices": "Nuestros Servicios",
-    "viewAllServices": "Ver todos los servicios →",
+    "viewAllServices": "Ver todos los servicios",
+    "noServicesAvailable": "No hay servicios disponibles aún.",
     "location": "Ubicación",
     "bookNow": "Reservar Ahora",
     "whyTitle": "¿Por qué AppointMePro?",

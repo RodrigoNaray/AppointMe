@@ -126,7 +126,7 @@ export default function RegisterPage() {
     const confirmDescribedBy = !passwordsMatch && confirmPassword.length > 0 ? 'confirm-error' : undefined;
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+        <div className="flex items-center justify-center min-h-screen bg-muted/30 px-4">
             <Card className="w-full max-w-md shadow-lg">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-bold">{t('auth.registerTitle')}</CardTitle>
@@ -134,7 +134,7 @@ export default function RegisterPage() {
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {errorMessage && (
-                            <div className="text-red-600 text-sm">{errorMessage}</div>
+                            <div className="text-destructive text-sm">{errorMessage}</div>
                         )}
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium">{t('auth.name')}</label>

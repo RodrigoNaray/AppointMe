@@ -131,11 +131,11 @@ export function AppMap({
         doubleClickZoom={false}
         boxZoom={false}
         keyboard={false}
-        className="z-0"
+        className="z-0 map-warm"
         attributionControl={false}
       >
         <TileLayer
-          url="https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png"
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           subdomains="abcd"
           maxZoom={19}
         />

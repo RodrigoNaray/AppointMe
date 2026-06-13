@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Calendar, Home, User, Clock } from "lucide-react";
+import { CheckCircle, Calendar, Home, User, Clock, ArrowRight } from "lucide-react";
 
 export interface BookingResultData {
   serviceId: string;
@@ -23,7 +22,7 @@ export default function BookingSuccessPage() {
   const [secondsLeft, setSecondsLeft] = useState(10);
 
   const stateResults = (location.state as { results?: BookingResultData[] } | null)?.results;
-  
+
   const countParam = searchParams.get('count');
   const bookingCount = stateResults
     ? stateResults.length
@@ -31,7 +30,6 @@ export default function BookingSuccessPage() {
       ? parseInt(countParam, 10)
       : 1;
 
-  // Countdown timer visual (actualiza cada segundo)
   useEffect(() => {
     const countdown = setInterval(() => {
       setSecondsLeft((prev) => {
@@ -43,113 +41,117 @@ export default function BookingSuccessPage() {
       });
     }, 1000);
 
-    return () => clearInterval(countdown); // Cleanup
+    return () => clearInterval(countdown);
   }, []);
 
-  // Auto-redirect al home después de 10 segundos
   useEffect(() => {
     const timer = setTimeout(() => {
       navigate('/');
     }, 10000);
 
-    return () => clearTimeout(timer); // Cleanup
+    return () => clearTimeout(timer);
   }, [navigate]);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <Card className="border-2 border-success/30 shadow-lg">
-        <CardHeader className="text-center pb-4">
-          {/* Icono de éxito */}
-          <div className="flex justify-center mb-4">
-            <div className="rounded-full bg-success/10 p-4">
-              <CheckCircle className="w-16 h-16 text-success" />
-            </div>
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-lg px-4 py-12 sm:py-16">
+        {/* Icono de éxito */}
+        <div className="flex justify-center mb-6">
+          <div className="rounded-full bg-accent/10 p-5 ring-4 ring-accent/5">
+            <CheckCircle className="h-12 w-12 text-accent" strokeWidth={1.5} />
           </div>
-          
-          <CardTitle className="text-3xl font-bold text-success mb-2" data-testid="success-title">
-            ¡Reserva Confirmada!
-          </CardTitle>
-          <p className="text-lg text-muted-foreground">
+        </div>
+
+        {/* Título y subtítulo */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-3" data-testid="success-title">
+            Reserva Confirmada
+          </h1>
+          <p className="text-base text-muted-foreground">
             {bookingCount === 1
               ? 'Tu reserva ha sido creada exitosamente'
               : `Tus ${bookingCount} reservas han sido creadas exitosamente`}
           </p>
-        </CardHeader>
+        </div>
 
-        <CardContent className="space-y-6">
-          {/* Detalle de servicios reservados */}
-          {stateResults && stateResults.length > 0 && (
-            <div className="space-y-2">
-              {stateResults.map((r) => {
-                const dt = parseISO(r.bookingTime);
-                return (
-                  <div
-                    key={r.bookingId || r.serviceId}
-                    className="flex items-center gap-3 p-3 bg-muted rounded-lg border"
-                  >
-                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{r.serviceName}</p>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
+        {/* Detalles de reservas */}
+        {stateResults && stateResults.length > 0 && (
+          <div className="space-y-3 mb-8">
+            {stateResults.map((r) => {
+              const dt = parseISO(r.bookingTime);
+              return (
+                <div
+                  key={r.bookingId || r.serviceId}
+                  className="flex items-start gap-4 p-4 rounded-xl border border-border bg-card"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground">{r.serviceName}</p>
+                    <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {format(dt, "dd/MM/yyyy", { locale: es })}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3.5 w-3.5" />
                         {format(dt, "HH:mm", { locale: es })}
-                      </p>
+                      </span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Mensaje informativo */}
-          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
-            <p className="text-sm text-foreground text-center">
-              Recibirás un correo de confirmación con los detalles de tu{bookingCount === 1 ? '' : 's'} reserva{bookingCount === 1 ? '' : 's'}.
-              Puedes revisar y gestionar tu{bookingCount === 1 ? '' : 's'} reserva{bookingCount === 1 ? '' : 's'} desde tu perfil.
-            </p>
+                </div>
+              );
+            })}
           </div>
+        )}
 
-          {/* Botones de acción */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              onClick={() => navigate('/')}
-              variant="outline"
-              className="flex-1"
-            >
-              <Home className="w-4 h-4 mr-2" />
-              Volver al Inicio
-            </Button>
-            
+        {/* Mensaje informativo */}
+        <div className="rounded-xl border border-border bg-card p-4 mb-8">
+          <p className="text-sm text-muted-foreground text-center">
+            Recibirás un correo de confirmación con los detalles de tu{bookingCount === 1 ? '' : 's'} reserva{bookingCount === 1 ? '' : 's'}.
+            Puedes revisar y gestionar tu{bookingCount === 1 ? '' : 's'} reserva{bookingCount === 1 ? '' : 's'} desde tu perfil.
+          </p>
+        </div>
+
+        {/* Botones de acción */}
+        <div className="flex flex-col gap-3 mb-8">
+          <Button
+            onClick={() => navigate('/client/bookings')}
+            className="h-12 text-base font-semibold"
+            data-testid="go-to-bookings"
+          >
+            <User className="h-4 w-4 mr-2" />
+            Ver Mis Reservas
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+
+          <div className="grid grid-cols-2 gap-3">
             <Button
               onClick={() => navigate('/book/calendar')}
               variant="outline"
-              className="flex-1"
+              className="h-11"
             >
-              <Calendar className="w-4 h-4 mr-2" />
+              <Calendar className="h-4 w-4 mr-2" />
               Nueva Reserva
             </Button>
-            
+
             <Button
-              onClick={() => navigate('/client/bookings')}
-              className="flex-1"
-              data-testid="go-to-bookings"
+              onClick={() => navigate('/')}
+              variant="outline"
+              className="h-11"
             >
-              <User className="w-4 h-4 mr-2" />
-              Ver Mis Reservas
+              <Home className="h-4 w-4 mr-2" />
+              Volver al Inicio
             </Button>
           </div>
+        </div>
 
-          {/* Nota de auto-redirect con contador */}
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground/60 mb-2">
-              Redirigiendo al inicio en:
-            </p>
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted border-2 border-border">
-              <span className="text-lg font-bold text-foreground">{secondsLeft}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Auto-redirect sutil */}
+        <p className="text-center text-xs text-muted-foreground">
+          Redirigiendo al inicio en {secondsLeft}s
+        </p>
+      </div>
     </div>
   );
 }
