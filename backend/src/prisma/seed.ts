@@ -18,7 +18,12 @@ async function main() {
   const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || '', 10);
   const admin = await prisma.adminUser.upsert({
     where: { email: process.env.ADMIN_EMAIL || '' },
-    update: {},
+    update: {
+      businessLatitude: -34.9011,
+      businessLongitude: -56.1645,
+      businessAddress: 'Av. 18 de Julio 1234, Montevideo, Uruguay',
+      businessPhone: '+598 2900 0000',
+    },
     create: {
       email: process.env.ADMIN_EMAIL || '',
       passwordHash: adminPassword,
@@ -28,6 +33,10 @@ async function main() {
       // Miércoles: 09:00-13:00 local → 12:00-16:00 UTC
       // Viernes: 09:00-17:00 local → 12:00-20:00 UTC
       // Sábado: 10:00-14:00 local → 13:00-17:00 UTC (inactivo)
+      businessLatitude: -34.9011,
+      businessLongitude: -56.1645,
+      businessAddress: 'Av. 18 de Julio 1234, Montevideo, Uruguay',
+      businessPhone: '+598 2900 0000',
       schedule: {
         monday: { start: '12:00', end: '21:00', isActive: true },
         tuesday: { start: '12:00', end: '21:00', isActive: true },
