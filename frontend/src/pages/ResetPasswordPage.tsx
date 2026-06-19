@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
+import { PageContainer } from "@/components/layout/PageContainer";
 import { API_BASE_URL } from '@/api/config';
 
 interface PasswordFeedback {
@@ -161,17 +162,17 @@ export default function ResetPasswordPage() {
   // No renderizar hasta tener token
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10 dark:from-card dark:to-background">
+      <PageContainer fullHeight centered padding="none">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
           <span>Validando token...</span>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/30 px-4">
+    <PageContainer maxWidth="md" fullHeight centered padding="none">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Restablecer contraseña</CardTitle>
@@ -297,6 +298,6 @@ export default function ResetPasswordPage() {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }
