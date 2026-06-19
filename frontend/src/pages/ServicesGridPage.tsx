@@ -1,6 +1,8 @@
 import ServicesList from '@/components/shared/ServicesList';
 import CartSidebar from '@/components/CartSidebar';
 import { useBookingStore, selectCart } from '@/stores/bookingStore';
+import { PageContainer } from "@/components/layout/PageContainer";
+import { useScrollReveal } from '@/hooks/useScrollReveal';
 
 /**
  * ServicesGridPage - Página principal de reservas con categorías y carrito
@@ -31,9 +33,11 @@ import { useBookingStore, selectCart } from '@/stores/bookingStore';
 export default function ServicesGridPage() {
   const cart = useBookingStore(selectCart);
   const hasItems = cart.length > 0;
+  const reveal = useScrollReveal(0.1);
 
   return (
-    <div className={`container mx-auto px-4 py-6 sm:py-8 ${hasItems ? 'pb-64' : 'pb-32'} sm:pb-32 lg:pb-8`}>
+    <PageContainer maxWidth="4xl" padding="none">
+      <div ref={reveal.ref} className={`px-4 py-6 sm:py-8 ${hasItems ? 'pb-64' : 'pb-32'} sm:pb-32 lg:pb-8 ${reveal.isVisible ? 'visible' : ''} animate-reveal`}>
       {/* Header - Responsive */}
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
@@ -61,6 +65,7 @@ export default function ServicesGridPage() {
       <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden border-t border-border bg-background shadow-2xl">
         <CartSidebar />
       </div>
-    </div>
+      </div>
+    </PageContainer>
   );
 }
