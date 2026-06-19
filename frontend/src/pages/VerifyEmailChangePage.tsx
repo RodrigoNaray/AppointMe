@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
 import { clientAuthService } from '@/api/modules/clientAuth';
+import { PageContainer } from "@/components/layout/PageContainer";
 
 /**
  * Página para verificar el cambio de email mediante token
@@ -56,7 +57,7 @@ export default function VerifyEmailChangePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <PageContainer maxWidth="md" fullHeight centered padding="none">
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader className="text-center">
             <Loader className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
@@ -68,12 +69,12 @@ export default function VerifyEmailChangePage() {
             </p>
           </CardContent>
         </Card>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/30 px-4">
+    <PageContainer maxWidth="md" fullHeight centered padding="none">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           {isSuccess ? (
@@ -114,6 +115,6 @@ export default function VerifyEmailChangePage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }
