@@ -47,8 +47,8 @@ export default function PublicLayout() {
         )}
       </header>
 
-      <main className="flex flex-1 flex-col">
-        <Outlet /> 
+      <main className="flex flex-1 flex-col bg-background">
+        <Outlet />
         <Footer />
       </main>
     </div>
