@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useTranslation } from 'react-i18next';
+import { PageContainer } from "@/components/layout/PageContainer";
 
 function GoogleIcon({ className }: { className?: string }) {
     return (
@@ -65,7 +66,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-muted/30">
+        <PageContainer maxWidth="md" fullHeight centered padding="none">
             <Card className="w-full max-w-md shadow-lg">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-bold">{t('auth.loginTitle')}</CardTitle>
@@ -122,6 +123,6 @@ export default function LoginPage() {
                     </p>
                 </CardContent>
             </Card>
-        </div>
+        </PageContainer>
     );
 }
