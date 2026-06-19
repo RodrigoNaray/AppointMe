@@ -1,5 +1,5 @@
 import { Link, Outlet } from 'react-router-dom';
-import { Menu, Package2, ChevronLeft, ChevronRight, LayoutDashboard, Tags, Calendar, BookOpen, Briefcase } from "lucide-react"
+import { Menu, Package2, ChevronLeft, ChevronRight, LayoutDashboard, Tags, Calendar, BookOpen, Briefcase, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetDescription } from "@/components/ui/sheet"
 import { AdminNav } from '@/components/shared/AdminNav';
@@ -64,6 +64,16 @@ export default function AdminLayout() {
         <Link to="/" className="flex items-center gap-2 font-semibold">
           <Package2 className="h-6 w-6" />
           <span>AppointMePro</span>
+        </Link>
+
+        <Link
+          to="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          title="Ver homepage"
+        >
+          <ExternalLink className="h-4 w-4" />
         </Link>
 
         {/* Spacer para empujar AdminNav a la derecha */}
