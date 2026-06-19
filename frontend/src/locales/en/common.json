@@ -75,6 +75,7 @@
     "passwordsDoNotMatch": "Passwords must match",
     "passwordRequirementsNotMet": "Password does not meet all requirements",
     "emailMustContainAt": "Email must contain an '@'",
-    "internalError": "Internal server error"
+    "internalError": "Internal server error",
+    "adminLoginLink": "Are you an admin? Log in here"
   }
 }

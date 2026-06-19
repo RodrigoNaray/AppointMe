@@ -75,6 +75,7 @@
     "passwordsDoNotMatch": "Las contraseñas deben coincidir",
     "passwordRequirementsNotMet": "La contraseña no cumple con todos los requisitos",
     "emailMustContainAt": "El correo electrónico debe contener un '@'",
-    "internalError": "Error interno del servidor"
+    "internalError": "Error interno del servidor",
+    "adminLoginLink": "¿Eres administrador? Inicia sesión aquí"
   }
 }

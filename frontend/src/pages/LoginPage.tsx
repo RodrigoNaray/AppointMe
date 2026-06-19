@@ -121,6 +121,14 @@ export default function LoginPage() {
                             {t('auth.registerHere')}
                         </Link>
                     </p>
+                    <p className="mt-3 text-center text-xs">
+                        <Link
+                            to="/Adminlogin"
+                            className="text-muted-foreground hover:text-foreground hover:underline"
+                        >
+                            {t('auth.adminLoginLink')}
+                        </Link>
+                    </p>
                 </CardContent>
             </Card>
         </PageContainer>
