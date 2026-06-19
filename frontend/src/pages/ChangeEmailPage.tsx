@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Mail, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { clientAuthService } from '@/api/modules/clientAuth';
 import { useAuthStore, selectAuthState } from '@/stores/authStore';
+import { PageContainer } from "@/components/layout/PageContainer";
 
 /**
  * Componente para solicitar cambio de email (usuario autenticado)
@@ -29,7 +30,7 @@ export default function ChangeEmailPage() {
   // Verificar si el usuario está autenticado
   if (!authState.isAuthenticated || authState.type !== 'client') {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+      <PageContainer maxWidth="md" fullHeight centered padding="none">
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader className="text-center">
             <AlertCircle className="w-12 h-12 text-accent mx-auto mb-2" />
@@ -44,7 +45,7 @@ export default function ChangeEmailPage() {
             </Link>
           </CardContent>
         </Card>
-      </div>
+      </PageContainer>
     );
   }
 
@@ -88,7 +89,7 @@ export default function ChangeEmailPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/30 px-4">
+    <PageContainer maxWidth="md" fullHeight centered padding="none">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Cambiar Email</CardTitle>
@@ -230,6 +231,6 @@ export default function ChangeEmailPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }
