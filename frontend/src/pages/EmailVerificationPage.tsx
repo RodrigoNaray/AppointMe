@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
 import { clientAuthService } from '@/api/modules/clientAuth';
+import { PageContainer } from "@/components/layout/PageContainer";
 
 export default function EmailVerificationPage() {
   const [searchParams] = useSearchParams();
@@ -90,7 +91,7 @@ export default function EmailVerificationPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/30 px-4">
+    <PageContainer maxWidth="md" fullHeight centered padding="none">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Verificación de Email</CardTitle>
@@ -156,6 +157,6 @@ export default function EmailVerificationPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }
