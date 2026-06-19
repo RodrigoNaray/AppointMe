@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { Mail, User, Calendar, Lock, Globe, Loader2 } from 'lucide-react';
 import clientAuthService from '@/api/modules/clientAuth';
 import { API_BASE_URL } from '@/api/config';
+import { PageContainer } from "@/components/layout/PageContainer";
 
 /**
  * ClientProfilePage Component
@@ -59,7 +60,7 @@ export default function ClientProfilePage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <PageContainer maxWidth="2xl">
       <h1 className="text-3xl font-bold mb-6">Mi Perfil</h1>
       
       <Card>
@@ -152,6 +153,6 @@ export default function ClientProfilePage() {
           </Card>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }
