@@ -11,6 +11,8 @@ import { es } from 'date-fns/locale';
 import { getBookingRules } from '@/api/modules/settings';
 import { availabilityService } from '@/api/modules/availability';
 import { convertSlotLocalToUTC, convertSlotUTCToLocal } from '@/lib/timezoneSlots';
+import { PageContainer } from "@/components/layout/PageContainer";
+import { useScrollReveal } from '@/hooks/useScrollReveal';
 
 const FIRST_MONTH_REGEX = /^(\d{4})-(\d{2})$/;
 
@@ -48,8 +50,9 @@ export default function BookingCalendarPage() {
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loadingMonth, setLoadingMonth] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState<Date | null>(null); // null hasta encontrar primer mes disponible
+  const [currentMonth, setCurrentMonth] = useState<Date | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const reveal = useScrollReveal(0.1);
   const [minBookingAdvanceMinutes, setMinBookingAdvanceMinutes] = useState(15); // Default fallback
 
   const totalServices = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -296,19 +299,9 @@ export default function BookingCalendarPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8 max-w-7xl">
+    <PageContainer maxWidth="4xl" padding="normal">
         {/* Header */}
-        <div className="mb-4 sm:mb-6 lg:mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/book')}
-            className="mb-3 sm:mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a Servicios
-          </Button>
-          
+        <div ref={reveal.ref} className={`mb-4 sm:mb-6 lg:mb-8 ${reveal.isVisible ? 'visible' : ''} animate-reveal`}>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Selecciona Fecha y Horario</h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
             Elige el día y la hora que mejor te convenga
@@ -551,7 +544,6 @@ export default function BookingCalendarPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+    </PageContainer>
   );
 }
