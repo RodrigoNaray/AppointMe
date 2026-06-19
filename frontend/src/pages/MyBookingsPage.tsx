@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import { canCancelBooking } from '@/lib/bookingUtils';
+import { PageContainer } from "@/components/layout/PageContainer";
 
 /**
  * MyBookingsPage Component
@@ -383,17 +384,17 @@ export default function MyBookingsPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <PageContainer maxWidth="4xl">
         <h1 className="text-3xl font-bold mb-6">Mis Reservas</h1>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <PageContainer maxWidth="4xl">
       {/* Header con navegación */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="text-3xl font-bold">Mis Reservas</h1>
@@ -488,6 +489,6 @@ export default function MyBookingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageContainer>
   );
 }
