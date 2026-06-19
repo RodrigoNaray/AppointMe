@@ -12,6 +12,7 @@ import { Calendar, Clock, DollarSign, CheckCircle, AlertCircle, Loader2, Mail, S
 import { createBooking, cancelBooking } from "@/api/modules/bookings";
 import { clientAuthService } from "@/api/modules/clientAuth";
 import { RollbackConfirmModal, type RollbackItem } from "@/components/booking/RollbackConfirmModal";
+import { PageContainer } from "@/components/layout/PageContainer";
 
 interface BookingResult {
   serviceId: string;
@@ -283,14 +284,14 @@ export default function BookingConfirmPage() {
   // Loading state
   if (!dateParam || !timeParam || cart.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <PageContainer fullHeight centered>
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground/60" />
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <PageContainer maxWidth="4xl">
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Confirmar Reserva</CardTitle>
@@ -475,6 +476,6 @@ export default function BookingConfirmPage() {
         onRollback={handleRollback}
         onKeepPartial={handleKeepPartial}
       />
-    </div>
+    </PageContainer>
   );
 }
