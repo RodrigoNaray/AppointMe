@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
+import { PageContainer } from "@/components/layout/PageContainer";
 import { API_BASE_URL } from '@/api/config';
 
 /**
@@ -84,7 +85,7 @@ export default function ForgotPasswordPage() {
 
   if (isSuccess) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-muted/30 px-4">
+      <PageContainer maxWidth="md" fullHeight centered padding="none">
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader className="text-center">
             <div className="mx-auto w-12 h-12 bg-success/10 dark:bg-success/20 rounded-full flex items-center justify-center mb-4">
@@ -114,12 +115,12 @@ export default function ForgotPasswordPage() {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+    <PageContainer maxWidth="md" fullHeight centered padding="none">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">¿Olvidaste tu contraseña?</CardTitle>
@@ -184,6 +185,6 @@ export default function ForgotPasswordPage() {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }
