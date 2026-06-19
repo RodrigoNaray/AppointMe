@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { clientAuthService } from '@/api/modules/clientAuth';
+import { PageContainer } from "@/components/layout/PageContainer";
 import { useAuthStore, selectAuthState } from '@/stores/authStore';
 
 /**
@@ -19,7 +20,7 @@ export default function ResendVerificationPage() {
   // Verificar si el usuario está autenticado
   if (!authState.isAuthenticated || authState.type !== 'client') {
     return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/30 px-4">
+    <PageContainer maxWidth="md" fullHeight centered padding="none">
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader className="text-center">
             <AlertCircle className="w-12 h-12 text-accent mx-auto mb-2" />
@@ -34,7 +35,7 @@ export default function ResendVerificationPage() {
             </Link>
           </CardContent>
         </Card>
-      </div>
+      </PageContainer>
     );
   }
 
@@ -61,7 +62,7 @@ export default function ResendVerificationPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+    <PageContainer maxWidth="md" fullHeight centered padding="none">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Reenviar Verificación</CardTitle>
@@ -140,6 +141,6 @@ export default function ResendVerificationPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }
