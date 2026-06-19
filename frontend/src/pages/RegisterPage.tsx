@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CheckCircle, XCircle } from "lucide-react";
 import { useTranslation } from 'react-i18next';
+import { PageContainer } from "@/components/layout/PageContainer";
 
 interface PasswordFeedback {
     label: string;
@@ -126,7 +127,7 @@ export default function RegisterPage() {
     const confirmDescribedBy = !passwordsMatch && confirmPassword.length > 0 ? 'confirm-error' : undefined;
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-muted/30 px-4">
+        <PageContainer maxWidth="md" fullHeight centered padding="none">
             <Card className="w-full max-w-md shadow-lg">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-bold">{t('auth.registerTitle')}</CardTitle>
@@ -254,6 +255,6 @@ export default function RegisterPage() {
                     </p>
                 </CardContent>
             </Card>
-        </div>
+        </PageContainer>
     );
 }
