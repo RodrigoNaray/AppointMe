@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
+import { PageContainer } from "@/components/layout/PageContainer";
 
 export default function NotFoundPage() {
   return (
-    <div className="flex flex-col items-center justify-center text-center py-20">
+    <PageContainer maxWidth="4xl" fullHeight centered>
       <AlertTriangle className="w-16 h-16 text-accent mb-4" />
       <h1 className="text-6xl font-bold text-foreground">404</h1>
       <h2 className="text-2xl font-semibold text-muted-foreground mt-2 mb-4">Página No Encontrada</h2>
@@ -16,6 +17,6 @@ export default function NotFoundPage() {
       >
         Volver al Inicio
       </Link>
-    </div>
+    </PageContainer>
   );
 }
