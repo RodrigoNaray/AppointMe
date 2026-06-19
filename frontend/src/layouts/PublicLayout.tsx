@@ -36,9 +36,13 @@ export default function PublicLayout() {
         
         {authState.isAuthenticated && authState.type === 'client' ? (
           <UserMenu />
+        ) : authState.isAuthenticated && authState.type === 'admin' ? (
+          <Link to="/admin">
+            <Button size="sm">Admin</Button>
+          </Link>
         ) : (
           <Link to="/login">
-            <Button size="sm">{authState.isAuthenticated ? 'Perfil' : 'Ingresar'}</Button>
+            <Button size="sm">Ingresar</Button>
           </Link>
         )}
       </header>
