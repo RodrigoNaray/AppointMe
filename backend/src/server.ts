@@ -29,10 +29,9 @@ const PORT: string | number = process.env.PORT || 5000;
 
 app.set('trust proxy', 1);
 
-const clientOrigin: string = (process.env.CLIENT_URL || '').replace(/\/+$/, '');
 
 app.use(cors({
-  origin: clientOrigin, 
+  origin: process.env.CLIENT_URL, 
   credentials: true, // Si necesitas enviar cookies o cabeceras de autorización
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
