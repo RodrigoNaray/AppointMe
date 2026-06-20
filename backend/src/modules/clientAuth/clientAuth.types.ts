@@ -30,7 +30,7 @@ export interface ClientJwtPayload {
 // - passwordResetExpires: fecha de expiración del token de reset
 export type PublicClient = Omit<
   Client, 
-  "passwordHash" | "emailVerificationToken" | "passwordResetToken" | "passwordResetExpires"
+  "passwordHash" | "emailVerificationToken" | "passwordResetToken" | "passwordResetExpires" | "emailChangeToken" | "emailChangeExpires" | "pendingEmail" | "emailVerificationExpires"
 >;
 
 // Resultado de la verificación de email con diferentes estados

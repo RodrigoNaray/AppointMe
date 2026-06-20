@@ -3,6 +3,14 @@ import { formatInTimeZone } from 'date-fns-tz';
 import logger from "../utils/logger";
 import { t } from './emailTranslations';
 
+const escapeHtml = (value: string): string => {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+};
 
 const isEmailMocked = (): boolean => process.env.MOCK_EMAILS === 'true';
 
@@ -140,7 +148,7 @@ export const sendVerificationEmail = async (data: VerificationEmailData): Promis
         </div>
         
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-            <h2 style="color: #333; margin-top: 0;">Hola ${data.name},</h2>
+            <h2 style="color: #333; margin-top: 0;">Hola ${escapeHtml(data.name)},</h2>
             
             <p>Gracias por registrarte en AppointMePro. Para completar tu registro y comenzar a usar nuestra plataforma, necesitas verificar tu dirección de email.</p>
             
@@ -174,7 +182,7 @@ export const sendVerificationEmail = async (data: VerificationEmailData): Promis
 
     // Texto plano como fallback
     const textContent = `
-¡Bienvenido a AppointMePro, ${data.name}!
+¡Bienvenido a AppointMePro, ${escapeHtml(data.name)}!
 
 Para completar tu registro, verifica tu email haciendo clic en el siguiente enlace:
 ${verificationUrl}
@@ -245,9 +253,9 @@ export const sendEmailChangeVerification = async (data: EmailChangeData): Promis
         </div>
         
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-            <h2 style="color: #333; margin-top: 0;">Hola ${data.name},</h2>
+            <h2 style="color: #333; margin-top: 0;">Hola ${escapeHtml(data.name)},</h2>
             
-            <p>Has solicitado cambiar tu dirección de email en AppointMePro a <strong>${data.newEmail}</strong>.</p>
+            <p>Has solicitado cambiar tu dirección de email en AppointMePro a <strong>${escapeHtml(data.newEmail)}</strong>.</p>
             
             <p>Para confirmar este cambio, haz clic en el botón de abajo:</p>
             
@@ -284,9 +292,9 @@ export const sendEmailChangeVerification = async (data: EmailChangeData): Promis
 
     // Texto plano como fallback
     const textContent = `
-Hola ${data.name},
+Hola ${escapeHtml(data.name)},
 
-Has solicitado cambiar tu email en AppointMePro a ${data.newEmail}.
+Has solicitado cambiar tu email en AppointMePro a ${escapeHtml(data.newEmail)}.
 
 Para confirmar este cambio, haz clic en el siguiente enlace:
 ${verificationUrl}
@@ -360,7 +368,7 @@ export const sendBookingConfirmationEmail = async (data: BookingConfirmationData
     const bookingRows = data.bookings.map(booking => `
       <tr>
         <td style="padding: 12px; border-bottom: 1px solid #e8e6e0; color: #1a2744;">
-          <strong>${booking.serviceName}</strong>
+          <strong>${escapeHtml(booking.serviceName)}</strong>
         </td>
         <td style="padding: 12px; border-bottom: 1px solid #e8e6e0; color: #1a2744;">
           ${formatDateTime(booking.bookingTime, data.clientTimezone)}
@@ -387,7 +395,7 @@ export const sendBookingConfirmationEmail = async (data: BookingConfirmationData
         
         <div style="background: #faf9f6; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e8e6e0; border-top: none;">
             <p style="font-size: 16px; margin-bottom: 20px;">
-                Hola <strong>${data.clientName}</strong>,
+                Hola <strong>${escapeHtml(data.clientName)}</strong>,
             </p>
             
             <p style="font-size: 16px; margin-bottom: 20px;">
@@ -442,13 +450,13 @@ export const sendBookingConfirmationEmail = async (data: BookingConfirmationData
     const textContent = `
 Confirmación de Reserva - AppointMePro
 
-Hola ${data.clientName},
+Hola ${escapeHtml(data.clientName)},
 
 Tu${data.bookings.length > 1 ? 's' : ''} reserva${data.bookings.length > 1 ? 's han' : ' ha'} sido confirmada${data.bookings.length > 1 ? 's' : ''} exitosamente.
 
 Detalles de la${data.bookings.length > 1 ? 's' : ''} reserva${data.bookings.length > 1 ? 's' : ''}:
 
-${data.bookings.map(b => `- ${b.serviceName}\n  ${formatDateTime(b.bookingTime, data.clientTimezone)}\n  Duración: ${b.durationMinutes} minutos\n`).join('\n')}
+${data.bookings.map(b => `- ${escapeHtml(b.serviceName)}\n  ${formatDateTime(b.bookingTime, data.clientTimezone)}\n  Duración: ${b.durationMinutes} minutos\n`).join('\n')}
 
 Recordatorio: Por favor, llega 5 minutos antes de tu primera reserva.
 
@@ -528,7 +536,7 @@ export const sendPasswordResetEmail = async (data: PasswordResetEmailData): Prom
         </div>
         
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-            <h2 style="color: #333; margin-top: 0;">Hola ${data.name},</h2>
+            <h2 style="color: #333; margin-top: 0;">Hola ${escapeHtml(data.name)},</h2>
             
             <p>Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en AppointMePro.</p>
             
@@ -572,7 +580,7 @@ export const sendPasswordResetEmail = async (data: PasswordResetEmailData): Prom
     const textContent = `
 Recuperación de Contraseña - AppointMePro
 
-Hola ${data.name},
+Hola ${escapeHtml(data.name)},
 
 Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en AppointMePro.
 
@@ -635,12 +643,12 @@ export const sendAdminCancellationEmail = async (data: AdminCancellationEmailDat
       ? `
         <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
           <p style="margin: 0; font-size: 14px; color: #92400e;">
-            <strong>Motivo:</strong> ${data.reason}
+            <strong>Motivo:</strong> ${escapeHtml(data.reason)}
           </p>
         </div>`
       : '';
 
-    const reasonText = data.reason ? `\nMotivo: ${data.reason}\n` : '';
+    const reasonText = data.reason ? `\nMotivo: ${escapeHtml(data.reason)}\n` : '';
 
     const htmlTemplate = `
     <!DOCTYPE html>
@@ -657,7 +665,7 @@ export const sendAdminCancellationEmail = async (data: AdminCancellationEmailDat
 
         <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
             <p style="font-size: 16px; margin-bottom: 20px;">
-                Hola <strong>${data.clientName}</strong>,
+                Hola <strong>${escapeHtml(data.clientName)}</strong>,
             </p>
 
             <p style="font-size: 16px; margin-bottom: 20px;">
@@ -668,7 +676,7 @@ export const sendAdminCancellationEmail = async (data: AdminCancellationEmailDat
               <tbody>
                 <tr>
                   <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151;">Servicio</td>
-                  <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${data.serviceName}</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(data.serviceName)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151;">Fecha y Hora</td>
@@ -711,12 +719,12 @@ export const sendAdminCancellationEmail = async (data: AdminCancellationEmailDat
     const textContent = `
 Reserva Cancelada - AppointMePro
 
-Hola ${data.clientName},
+Hola ${escapeHtml(data.clientName)},
 
 Lamentamos informarte que tu reserva ha sido cancelada por el establecimiento.
 
 Detalles de la reserva cancelada:
-- Servicio: ${data.serviceName}
+- Servicio: ${escapeHtml(data.serviceName)}
 - Fecha y Hora: ${formattedTime}
 - Duración: ${data.durationMinutes} minutos
 ${reasonText}
@@ -790,7 +798,7 @@ export const sendBookingRescheduledEmail = async (data: BookingRescheduledEmailD
 
         <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
             <p style="font-size: 16px; margin-bottom: 20px;">
-                Hola <strong>${data.clientName}</strong>,
+                Hola <strong>${escapeHtml(data.clientName)}</strong>,
             </p>
 
             <p style="font-size: 16px; margin-bottom: 20px;">
@@ -801,7 +809,7 @@ export const sendBookingRescheduledEmail = async (data: BookingRescheduledEmailD
               <tbody>
                 <tr>
                   <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151;">Servicio</td>
-                  <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${data.serviceName}</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${escapeHtml(data.serviceName)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151;">Fecha y hora anterior</td>
@@ -846,12 +854,12 @@ export const sendBookingRescheduledEmail = async (data: BookingRescheduledEmailD
     const textContent = `
 Reserva Reagendada - AppointMePro
 
-Hola ${data.clientName},
+Hola ${escapeHtml(data.clientName)},
 
 Tu reserva ha sido reagendada.
 
 Detalles actualizados:
-- Servicio: ${data.serviceName}
+- Servicio: ${escapeHtml(data.serviceName)}
 - Fecha y hora anterior: ${oldTime}
 - Nueva fecha y hora: ${newTime}
 - Duración: ${data.durationMinutes} minutos
@@ -921,7 +929,7 @@ export const sendClientCancellationEmail = async (data: ClientCancellationEmailD
 
         <div style="background: #faf9f6; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e8e6e0; border-top: none;">
             <p style="font-size: 16px; margin-bottom: 20px;">
-                Hola <strong>${data.clientName}</strong>,
+                Hola <strong>${escapeHtml(data.clientName)}</strong>,
             </p>
 
             <p style="font-size: 16px; margin-bottom: 20px;">
@@ -932,7 +940,7 @@ export const sendClientCancellationEmail = async (data: ClientCancellationEmailD
               <tbody>
                 <tr>
                   <td style="padding: 12px; border-bottom: 1px solid #e8e6e0; font-weight: 600; color: #1a2744;">Servicio</td>
-                  <td style="padding: 12px; border-bottom: 1px solid #e8e6e0;">${data.serviceName}</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #e8e6e0;">${escapeHtml(data.serviceName)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 12px; border-bottom: 1px solid #e8e6e0; font-weight: 600; color: #1a2744;">Fecha y Hora</td>
@@ -973,12 +981,12 @@ export const sendClientCancellationEmail = async (data: ClientCancellationEmailD
     const textContent = `
 Cancelación Confirmada - AppointMePro
 
-Hola ${data.clientName},
+Hola ${escapeHtml(data.clientName)},
 
 Tu reserva ha sido cancelada exitosamente.
 
 Detalles de la reserva cancelada:
-- Servicio: ${data.serviceName}
+- Servicio: ${escapeHtml(data.serviceName)}
 - Fecha y Hora: ${formattedTime}
 - Duración: ${data.durationMinutes} minutos
 

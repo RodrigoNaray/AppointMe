@@ -23,6 +23,14 @@ import logger from '../../utils/logger';
  * @returns El objeto del cliente público (sin contraseña).
  */
 export const registerClient = async (data: RegisterClientDto, acceptLanguage?: string): Promise<PublicClient> => {
+  // 0. Validar nombre
+  if (!data.name || typeof data.name !== 'string' || data.name.trim().length === 0) {
+    throw new Error('El nombre es requerido');
+  }
+  if (data.name.length > 100) {
+    throw new Error('El nombre no puede exceder los 100 caracteres');
+  }
+
   // 1. Verificar si el email ya está en uso
   const existingClient = await prisma.client.findUnique({
     where: { email: data.email },
@@ -102,13 +110,15 @@ export const validateClient = async (data: LoginClientDto): Promise<PublicClient
   });
 
   if (!client || !client.passwordHash) {
-    return null; // Usuario no encontrado o no tiene contraseña (se registró con Google)
+    logger.warn({ email: data.email }, 'Intento de login de cliente fallido: usuario no encontrado');
+    return null;
   }
 
   const isPasswordValid = await bcrypt.compare(data.password, client.passwordHash);
 
   if (!isPasswordValid) {
-    return null; // Contraseña incorrecta
+    logger.warn({ email: data.email }, 'Intento de login de cliente fallido: contraseña incorrecta');
+    return null;
   }
 
   const { passwordHash: _, emailVerificationToken: __, ...publicClient } = client;
@@ -155,7 +165,7 @@ export const getClientProfile = async (clientId: string): Promise<PublicClient |
     }
 
     // Retornar cliente público sin datos sensibles
-    const { passwordHash, emailVerificationToken, ...publicClient } = client;
+    const { passwordHash, emailVerificationToken, passwordResetToken, passwordResetExpires, emailChangeToken, emailChangeExpires, pendingEmail, emailVerificationExpires, ...publicClient } = client;
     return publicClient;
   } catch (error) {
     logger.error({
@@ -617,10 +627,6 @@ export const updateClientProfile = async (
       emailLanguage: updatedClient.emailLanguage,
       emailVerified: updatedClient.emailVerified,
       googleId: updatedClient.googleId,
-      emailVerificationExpires: updatedClient.emailVerificationExpires,
-      pendingEmail: updatedClient.pendingEmail,
-      emailChangeToken: updatedClient.emailChangeToken,
-      emailChangeExpires: updatedClient.emailChangeExpires,
       createdAt: updatedClient.createdAt,
       updatedAt: updatedClient.updatedAt,
     };
@@ -720,8 +726,8 @@ export const requestPasswordReset = async (email: string, acceptLanguage?: strin
  */
 export const resetPassword = async (token: string, newPassword: string): Promise<void> => {
   // 1. Validar que la nueva contraseña cumple requisitos mínimos
-  if (!newPassword || newPassword.length < 6) {
-    throw new Error('La contraseña debe tener al menos 6 caracteres.');
+  if (!newPassword || newPassword.length < 8) {
+    throw new Error('La contraseña debe tener al menos 8 caracteres.');
   }
 
   // 2. Buscar cliente por token de reset
