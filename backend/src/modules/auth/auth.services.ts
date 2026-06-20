@@ -1,7 +1,7 @@
 import { AdminUser } from '@prisma/client';
 import prisma from '../../config/prisma';
 import bcrypt from 'bcryptjs';
-import { RegisterAdminDto, LoginAdminDto} from "./auth.types";
+import { RegisterAdminDto, LoginAdminDto, ChangePasswordDto} from "./auth.types";
 import logger from '../../utils/logger';
 import { ConflictError } from "../../utils/error";
 import jwt from 'jsonwebtoken';
@@ -84,4 +84,24 @@ export const validateUser = async (loginData: LoginAdminDto): Promise<userWithou
   const { passwordHash, ...userWithoutPassword } = user;
   return userWithoutPassword;
 
+};
+
+export const changeAdminPassword = async (adminId: string, data: ChangePasswordDto): Promise<void> => {
+  const admin = await prisma.adminUser.findUnique({ where: { id: adminId } });
+  if (!admin || !admin.passwordHash) {
+    throw new Error('Administrador no encontrado');
+  }
+
+  const isCurrentPasswordValid = await bcrypt.compare(data.currentPassword, admin.passwordHash);
+  if (!isCurrentPasswordValid) {
+    throw new Error('Contraseña actual incorrecta');
+  }
+
+  const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+  await prisma.adminUser.update({
+    where: { id: adminId },
+    data: { passwordHash: hashedPassword },
+  });
+
+  logger.info({ adminId }, 'Admin password changed successfully');
 };

@@ -10,6 +10,11 @@ export interface LoginAdminDto {
   password: string;
 }
 
+export interface ChangePasswordDto {
+  currentPassword: string;
+  newPassword: string;
+}
+
 // Esta será la estructura de datos que guardaremos dentro del JWT.
 export interface JwtPayload {
   sub: string; // "Subject", comúnmente el ID del usuario.

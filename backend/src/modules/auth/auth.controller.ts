@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { RegisterAdminDto, LoginAdminDto } from './auth.types';
+import { RegisterAdminDto, LoginAdminDto, ChangePasswordDto } from './auth.types';
 import * as authServices from './auth.services';
 import logger from '../../utils/logger';
 import { cookieOptions, clearCookieOptions, ACCESS_ADMIN_TOKEN_COOKIE_NAME, ACCESS_CLIENT_TOKEN_COOKIE_NAME } from '../../config/auth.config';
@@ -42,4 +42,32 @@ export const logoutController = async ( req: Request, res: Response) => {
 
 export const getProfileController = async ( req: Request, res: Response) => {
     res.status(200).json({ user: req.user });
+};
+
+export const changePasswordController = async ( req: Request<{}, {}, ChangePasswordDto>, res: Response) => {
+  try {
+    const admin = req.user as { id: string };
+    if (!admin?.id) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'currentPassword and newPassword are required' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+
+    await authServices.changeAdminPassword(admin.id, req.body);
+    logger.info({ adminId: admin.id }, 'Admin password changed via API');
+    res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Error interno del servidor';
+    const status = message === 'Contraseña actual incorrecta' ? 400 : 500;
+    logger.error({ error }, 'Error in changePasswordController');
+    res.status(status).json({ message });
+  }
 };
