@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore, selectAuthState } from '@/stores/authStore';
 import UserMenu from '@/components/UserMenu';
 import ScrollToTopOnNavigate from '@/components/ScrollToTopOnNavigate';
-import LanguageSelector from '@/components/LanguageSelector';
+
 import Footer from '@/components/Footer';
 
 export default function PublicLayout() {
@@ -31,8 +31,6 @@ export default function PublicLayout() {
         </nav>
         
         <div className="flex-1" />
-        
-        <LanguageSelector />
         
         {authState.isAuthenticated && authState.type === 'client' ? (
           <UserMenu />
