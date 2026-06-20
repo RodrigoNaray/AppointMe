@@ -15,7 +15,7 @@ import {
 } from './booking.types';
 import * as service from './booking.services'
 import logger from '../../utils/logger';
-import { sendBookingConfirmationEmail, sendAdminCancellationEmail, sendBookingRescheduledEmail } from '../../services/emailService';
+import { sendBookingConfirmationEmail, sendAdminCancellationEmail, sendBookingRescheduledEmail, sendClientCancellationEmail } from '../../services/emailService';
 
 /**
  * Crear una nueva reserva (Cliente)
@@ -190,6 +190,18 @@ export const cancelBooking = async (
       bookingId: id,
       clientId: client.id
     }, 'Booking cancelled via API');
+
+    sendClientCancellationEmail({
+      to: client.email,
+      clientName: client.name,
+      clientTimezone: 'America/Montevideo',
+      clientLanguage: client.emailLanguage,
+      serviceName: updatedBooking.service?.name || 'Servicio',
+      bookingTime: updatedBooking.bookingTime,
+      durationMinutes: updatedBooking.durationMinutes,
+    }).catch((error) => {
+      logger.error({ error, bookingId: id }, 'Failed to send client cancellation email');
+    });
 
     return res.status(200).json({
       success: true,

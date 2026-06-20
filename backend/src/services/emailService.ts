@@ -100,6 +100,16 @@ interface BookingRescheduledEmailData {
   clientLanguage?: string;
 }
 
+interface ClientCancellationEmailData {
+  to: string;
+  clientName: string;
+  serviceName: string;
+  bookingTime: Date;
+  durationMinutes: number;
+  clientTimezone: string;
+  clientLanguage?: string;
+}
+
 /**
  * Envía un email de verificación al cliente recién registrado
  * @param data Datos necesarios para el email de verificación
@@ -879,6 +889,130 @@ Ver mis reservas: ${process.env.CLIENT_URL}/client/bookings
       error: error instanceof Error ? error.message : 'Unknown error',
       to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2')
     }, 'Failed to send booking rescheduled email via Resend');
+    return false;
+  }
+};
+
+export const sendClientCancellationEmail = async (data: ClientCancellationEmailData): Promise<boolean> => {
+  if (isEmailMocked()) {
+    logger.info({ to: data.to, serviceName: data.serviceName }, '[MOCK] Email suppressed (MOCK_EMAILS=true)');
+    return true;
+  }
+
+  try {
+    const formatDateTime = (date: Date, timezone: string): string => {
+      return formatInTimeZone(date, timezone, 'dd/MM/yyyy HH:mm');
+    };
+
+    const formattedTime = formatDateTime(data.bookingTime, data.clientTimezone);
+
+    const htmlTemplate = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Cancelación Confirmada - AppointMePro</title>
+    </head>
+    <body style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; line-height: 1.6; color: #1a2744; max-width: 600px; margin: 0 auto; padding: 20px; background: #faf9f6;">
+        <div style="background: #1a2744; color: #faf9f6; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px; font-weight: 700;">Cancelación Confirmada</h1>
+        </div>
+
+        <div style="background: #faf9f6; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e8e6e0; border-top: none;">
+            <p style="font-size: 16px; margin-bottom: 20px;">
+                Hola <strong>${data.clientName}</strong>,
+            </p>
+
+            <p style="font-size: 16px; margin-bottom: 20px;">
+                Tu reserva ha sido cancelada exitosamente. Aquí están los detalles de la reserva cancelada:
+            </p>
+
+            <table style="width: 100%; background: white; border-radius: 8px; overflow: hidden; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #e8e6e0;">
+              <tbody>
+                <tr>
+                  <td style="padding: 12px; border-bottom: 1px solid #e8e6e0; font-weight: 600; color: #1a2744;">Servicio</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #e8e6e0;">${data.serviceName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px; border-bottom: 1px solid #e8e6e0; font-weight: 600; color: #1a2744;">Fecha y Hora</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #e8e6e0;">${formattedTime}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px; font-weight: 600; color: #1a2744;">Duración</td>
+                  <td style="padding: 12px;">${data.durationMinutes} min</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p style="font-size: 14px; color: #8a8780; margin-bottom: 20px;">
+                Si deseas reservar nuevamente, puedes hacerlo desde nuestra plataforma cuando lo desees.
+            </p>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="${process.env.CLIENT_URL}/book"
+                   style="display: inline-block; background: #1a2744; color: #faf9f6; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: 600;">
+                    Reservar Nuevamente
+                </a>
+            </div>
+
+            <p style="font-size: 14px; color: #8a8780; margin-top: 30px; text-align: center;">
+                ¿Tienes preguntas? Contáctanos respondiendo este email.
+            </p>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e8e6e0;">
+            <p style="font-size: 12px; color: #8a8780;">
+                © 2025 AppointMePro. Todos los derechos reservados.
+            </p>
+        </div>
+    </body>
+    </html>
+    `;
+
+    const textContent = `
+Cancelación Confirmada - AppointMePro
+
+Hola ${data.clientName},
+
+Tu reserva ha sido cancelada exitosamente.
+
+Detalles de la reserva cancelada:
+- Servicio: ${data.serviceName}
+- Fecha y Hora: ${formattedTime}
+- Duración: ${data.durationMinutes} minutos
+
+Si deseas reservar nuevamente: ${process.env.CLIENT_URL}/book
+
+¿Tienes preguntas? Contáctanos respondiendo este email.
+
+© 2025 AppointMePro
+    `.trim();
+
+    const lang = data.clientLanguage;
+    const result = await dispatchEmail({
+      from: `AppointMePro <${FROM_EMAIL}>`,
+      to: data.to,
+      subject: t('client-cancellation.subject', lang),
+      html: htmlTemplate,
+      text: textContent,
+    });
+
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+
+    logger.info({
+      messageId: result.data?.id,
+      to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2')
+    }, 'Client cancellation email sent successfully via Resend');
+
+    return true;
+  } catch (error) {
+    logger.error({
+      error: error instanceof Error ? error.message : 'Unknown error',
+      to: data.to.replace(/(.{2}).*(@.*)/, '$1***$2')
+    }, 'Failed to send client cancellation email via Resend');
     return false;
   }
 };
