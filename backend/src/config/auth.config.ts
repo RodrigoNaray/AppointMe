@@ -10,7 +10,7 @@ const domain = hostname.replace(/^www\./, "");
 
 export const cookieOptions: CookieOptions = {
   httpOnly: true, // Impide el acceso desde JavaScript (protección XSS)
-  secure: true, // Solo se envía en HTTPS en producción  
+  secure: process.env.NODE_ENV === 'production', // Solo se envía en HTTPS en producción  
   sameSite: 'lax', // Cambio de 'none' a 'lax' para compatibilidad iOS Safari
   signed: true, // La cookie estará firmada
   maxAge: 1000 * 60 * 60 * 8, // 8 horas en milisegundos, consistente con la expiración del JWT
@@ -20,7 +20,7 @@ export const cookieOptions: CookieOptions = {
 // Opciones para clearCookie (sin maxAge según Express 5.x deprecation warning)
 export const clearCookieOptions: CookieOptions = {
   httpOnly: true,
-  secure: true,
+  secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax',
   signed: true,
   domain: domain,

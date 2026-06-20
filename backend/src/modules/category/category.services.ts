@@ -67,7 +67,13 @@ export const getCategoryById = async (id: string) => {
  * Prisma: unique constraint en schema.prisma (name)
  */
 export const createCategory = async (data: CreateCategoryDto) => {
-  // Validar nombre único
+  if (!data.name || typeof data.name !== 'string' || data.name.trim().length === 0) {
+    throw new Error('El nombre de la categoría es requerido');
+  }
+  if (data.name.length > 100) {
+    throw new Error('El nombre de la categoría no puede exceder los 100 caracteres');
+  }
+
   const existing = await prisma.category.findUnique({
     where: { name: data.name },
   });

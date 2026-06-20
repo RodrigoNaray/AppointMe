@@ -33,14 +33,14 @@ app.set('trust proxy', 1);
 app.use(cors({
   origin: process.env.CLIENT_URL, 
   credentials: true, // Si necesitas enviar cookies o cabeceras de autorización
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
 }));
 
 
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 app.use(
   helmet({
@@ -50,7 +50,9 @@ app.use(
 app.use(compression()); 
 
 //-- COOKIE PARSER --//
-app.use(cookieParser(process.env.JWT_SECRET));
+const cookieSecret: string = process.env.COOKIE_SECRET || process.env.JWT_SECRET!;
+
+app.use(cookieParser(cookieSecret));
 
 //-- PASSPORT --//
 app.use(passport.initialize());

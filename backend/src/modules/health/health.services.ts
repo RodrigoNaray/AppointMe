@@ -1,4 +1,5 @@
 import prisma from "../../config/prisma";
+import logger from "../../utils/logger";
 import { HealthResponse } from "./health.types";
 
 export const getStatus = async () => {
@@ -12,7 +13,7 @@ export const getStatus = async () => {
         health.db.status = "ok";
         return health;
   } catch (err) {
-        console.error("Health check DB error:", err);
+        logger.error({ error: err instanceof Error ? err.message : 'Unknown error' }, 'Health check DB error');
         return health;
   }
 }

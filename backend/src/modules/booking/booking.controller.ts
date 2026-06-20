@@ -194,7 +194,7 @@ export const cancelBooking = async (
     sendClientCancellationEmail({
       to: client.email,
       clientName: client.name,
-      clientTimezone: 'America/Montevideo',
+      clientTimezone: client.emailLanguage === 'en' ? 'UTC' : 'America/Montevideo',
       clientLanguage: client.emailLanguage,
       serviceName: updatedBooking.service?.name || 'Servicio',
       bookingTime: updatedBooking.bookingTime,
