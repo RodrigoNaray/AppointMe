@@ -112,10 +112,22 @@ export const cancelBooking = async (bookingId: string): Promise<{ success: boole
   return response.data;
 };
 
+export const cancelBookingByAdmin = async (bookingId: string, reason?: string): Promise<{ success: boolean; message: string }> => {
+  const response = await apiClient.put(`/admin/bookings/${bookingId}/cancel`, { reason });
+  return response.data;
+};
+
+export const rescheduleBookingByAdmin = async (bookingId: string, newBookingTime: string): Promise<{ success: boolean; message: string }> => {
+  const response = await apiClient.put(`/admin/bookings/${bookingId}/reschedule`, { newBookingTime });
+  return response.data;
+};
+
 export default {
   // Admin
   getAllBookings,
   getBookingMetrics,
+  cancelBookingByAdmin,
+  rescheduleBookingByAdmin,
 
   // Client
   getMyBookings,

@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import toast from "react-hot-toast";
 import { DataTable } from "@/components/shared/DataTable";
-import { columns, Booking } from "./columns";
+import { getColumns, BookingActions, Booking } from "./columns";
 import bookingService, { Booking as ApiBooking } from "@/api/modules/bookings";
 import { Loader2, Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -18,33 +18,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { cancelBookingByAdmin, rescheduleBookingByAdmin } from "@/api/modules/bookings";
 
-/**
- * BookingsPage - Página de administración de reservas
- * 
- * Funcionalidad:
- * - Lista todas las reservas del sistema (admin)
- * - Filtros: búsqueda por cliente/servicio, estado, fecha
- * - Paginación interactiva con botones prev/next
- * - Responsive: mobile-first design
- * 
- * OWASP Security:
- * - Auth: Requiere admin autenticado (AdminRoute wrapper)
- * - Data exposure: Solo admin puede ver todas las reservas
- * - Input sanitization: Búsqueda en backend (no SQL injection)
- * 
- * React Best Practices (2025):
- * - Debounced search para performance
- * - Controlled inputs con useState
- * - useEffect con cleanup para cancelar requests
- * - Memoization de filtros (futuro: useMemo)
- * 
- * shadcn-ui Components:
- * - Input (búsqueda)
- * - Select (filtros estado)
- * - Button (paginación)
- * - Card (contenedor filtros)
- */
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,10 +50,17 @@ export default function BookingsPage() {
     per_page: 20,
   });
 
-  // Filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [cancelBookingId, setCancelBookingId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const [rescheduleBookingId, setRescheduleBookingId] = useState<string | null>(null);
+  const [newDateTime, setNewDateTime] = useState("");
+  const [isRescheduling, setIsRescheduling] = useState(false);
 
   useEffect(() => {
     fetchBookings(currentPage);
@@ -73,7 +75,6 @@ export default function BookingsPage() {
       });
       
       if (response.success) {
-        // Mapear datos del backend (ApiBooking) al formato UI (Booking de columns)
         const mappedBookings: Booking[] = response.bookings.map((booking: ApiBooking) => ({
           id: booking.id,
           clientName: booking.client.name,
@@ -93,7 +94,6 @@ export default function BookingsPage() {
     }
   };
 
-  // Mapear estados del backend a formato UI
   const mapBackendStatus = (status: string): "Confirmada" | "Completada" | "Cancelada" => {
     switch (status) {
       case 'CONFIRMED':
@@ -108,15 +108,46 @@ export default function BookingsPage() {
     }
   };
 
-  // Filtrado local (client-side)
+  const handleCancelBooking = async () => {
+    if (!cancelBookingId) return;
+    try {
+      setIsCancelling(true);
+      const reason = cancelReason.trim() || undefined;
+      await cancelBookingByAdmin(cancelBookingId, reason);
+      toast.success('Reserva cancelada exitosamente');
+      setCancelBookingId(null);
+      setCancelReason("");
+      fetchBookings(currentPage);
+    } catch (error) {
+      toast.error('Error al cancelar la reserva');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const handleRescheduleBooking = async () => {
+    if (!rescheduleBookingId || !newDateTime) return;
+    try {
+      setIsRescheduling(true);
+      const isoTime = new Date(newDateTime).toISOString();
+      await rescheduleBookingByAdmin(rescheduleBookingId, isoTime);
+      toast.success('Reserva reprogramada exitosamente');
+      setRescheduleBookingId(null);
+      setNewDateTime("");
+      fetchBookings(currentPage);
+    } catch (error) {
+      toast.error('Error al reprogramar la reserva');
+    } finally {
+      setIsRescheduling(false);
+    }
+  };
+
   const filteredBookings = bookings.filter((booking) => {
-    // Filtro de búsqueda (cliente o servicio)
     const matchesSearch = 
       searchTerm === "" ||
       booking.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.serviceName.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Filtro de estado
     const matchesStatus = 
       statusFilter === "all" || 
       booking.status === statusFilter;
@@ -137,10 +168,16 @@ export default function BookingsPage() {
   };
 
   const handleSearch = () => {
-    // Recargar desde página 1 cuando se aplican filtros
     setCurrentPage(1);
     fetchBookings(1);
   };
+
+  const actions = useMemo<BookingActions>(() => ({
+    onCancel: (id: string) => setCancelBookingId(id),
+    onReschedule: (id: string) => setRescheduleBookingId(id),
+  }), []);
+
+  const columns = useMemo(() => getColumns(actions), [actions]);
 
   if (isLoading && bookings.length === 0) {
     return (
@@ -152,7 +189,6 @@ export default function BookingsPage() {
 
   return (
     <div className="w-full space-y-4 sm:space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Reservas</h1>
@@ -162,11 +198,9 @@ export default function BookingsPage() {
         </div>
       </div>
 
-      {/* Filtros */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4">
-            {/* Búsqueda por cliente o servicio */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
@@ -183,7 +217,6 @@ export default function BookingsPage() {
                 />
               </div>
 
-              {/* Filtro por estado */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-[200px]">
                   <Filter className="h-4 w-4 mr-2" />
@@ -198,7 +231,6 @@ export default function BookingsPage() {
               </Select>
             </div>
 
-            {/* Mostrar filtros activos */}
             {(searchTerm || statusFilter !== "all") && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span className="font-medium">Filtros activos:</span>
@@ -229,7 +261,6 @@ export default function BookingsPage() {
         </CardContent>
       </Card>
 
-      {/* Tabla */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-muted-foreground/60" />
@@ -248,7 +279,6 @@ export default function BookingsPage() {
             <DataTable columns={columns} data={filteredBookings} />
           </div>
 
-          {/* Paginación */}
           {pagination.total_pages > 1 && (
             <Card>
               <CardContent className="py-4">
@@ -311,6 +341,63 @@ export default function BookingsPage() {
           )}
         </>
       )}
+
+      <AlertDialog open={cancelBookingId !== null} onOpenChange={(open) => !open && setCancelBookingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar reserva</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El cliente recibirá un email de notificación.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="cancel-reason">Motivo (opcional)</Label>
+            <Textarea
+              id="cancel-reason"
+              placeholder="Motivo de la cancelación..."
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              maxLength={500}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setCancelBookingId(null); setCancelReason(""); }}>
+              Volver
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancelBooking} disabled={isCancelling}>
+              {isCancelling ? "Cancelando..." : "Sí, cancelar reserva"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={rescheduleBookingId !== null} onOpenChange={(open) => !open && setRescheduleBookingId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reprogramar reserva</DialogTitle>
+            <DialogDescription>
+              Selecciona la nueva fecha y hora. El cliente recibirá un email con el cambio.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="reschedule-datetime">Nueva fecha y hora</Label>
+            <Input
+              id="reschedule-datetime"
+              type="datetime-local"
+              value={newDateTime}
+              onChange={(e) => setNewDateTime(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRescheduleBookingId(null); setNewDateTime(""); }}>
+              Cancelar
+            </Button>
+            <Button onClick={handleRescheduleBooking} disabled={isRescheduling || !newDateTime}>
+              {isRescheduling ? "Reprogramando..." : "Reprogramar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
