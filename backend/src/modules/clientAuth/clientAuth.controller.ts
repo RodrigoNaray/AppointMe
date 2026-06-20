@@ -26,6 +26,14 @@ export const registerClientController = async (req: Request, res: Response) => {
 
 export const loginClientController = async (req: Request, res: Response) => {
   try {
+    if (!req.body.email || typeof req.body.email !== 'string' || !req.body.email.includes('@')) {
+      return res.status(400).json({ message: 'Email inválido' });
+    }
+
+    if (!req.body.password || typeof req.body.password !== 'string') {
+      return res.status(400).json({ message: 'Contraseña requerida' });
+    }
+
     const loginData: LoginClientDto = req.body;
     const client = await service.validateClient(loginData);
 
@@ -279,8 +287,8 @@ export const changePasswordController = async (req: Request, res: Response) => {
     }
 
     // Validación de longitud (OWASP A02:2021)
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'La nueva contraseña debe tener al menos 6 caracteres' });
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: 'La nueva contraseña debe tener al menos 8 caracteres' });
     }
 
     // Llamar al servicio

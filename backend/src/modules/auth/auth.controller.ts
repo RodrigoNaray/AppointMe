@@ -8,6 +8,14 @@ import { cookieOptions, clearCookieOptions, ACCESS_ADMIN_TOKEN_COOKIE_NAME, ACCE
 export const loginController = async ( req: Request<{},{},LoginAdminDto>, res: Response) => {
   try{
 
+    if (!req.body.email || typeof req.body.email !== 'string' || !req.body.email.includes('@')) {
+      return res.status(400).json({ message: 'Email inválido' });
+    }
+
+    if (!req.body.password || typeof req.body.password !== 'string') {
+      return res.status(400).json({ message: 'Contraseña requerida' });
+    }
+
     const user = await authServices.validateUser(req.body);
 
     if(!user){

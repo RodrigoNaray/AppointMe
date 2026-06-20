@@ -74,6 +74,7 @@ export const rateLimit = (preset: Preset = 'normal') => {
       if (!success) {
         const retryAfter = Math.max(0, Math.ceil((reset - Date.now()) / 1000));
         res.setHeader('Retry-After', retryAfter.toString());
+        logger.warn({ preset, path: req.path }, 'Rate limit exceeded; request blocked');
         res.status(429).json({
           success: false,
           message: 'Demasiadas solicitudes. Por favor, intenta más tarde.',

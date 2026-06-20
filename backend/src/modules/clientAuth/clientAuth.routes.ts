@@ -23,12 +23,12 @@ clientAuthRoutes.post('/verify-email', rateLimit('normal'), controller.verifyEma
 clientAuthRoutes.post('/resend-verification', rateLimit('strict'), isClientAuthenticated, controller.resendVerificationController);
 
 // Rutas para cambio de email (requieren autenticación)
-clientAuthRoutes.post('/request-email-change', isClientAuthenticated, controller.requestEmailChangeController);
+clientAuthRoutes.post('/request-email-change', rateLimit('strict'), isClientAuthenticated, controller.requestEmailChangeController);
 clientAuthRoutes.post('/verify-email-change', rateLimit('normal'), controller.verifyEmailChangeController);
 
 // Ruta para cambio de contraseña (requiere autenticación)
 // OWASP A02:2021: Protegida con middleware isClientAuthenticated
-clientAuthRoutes.post('/change-password', isClientAuthenticated, controller.changePasswordController);
+clientAuthRoutes.post('/change-password', rateLimit('strict'), isClientAuthenticated, controller.changePasswordController);
 
 // Rutas de recuperación de contraseña (públicas - no requieren autenticación)
 // OWASP A01:2021: forgotPassword retorna siempre 200 para prevenir enumeración de usuarios
