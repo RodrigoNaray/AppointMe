@@ -1,5 +1,5 @@
 import {lazy, useEffect} from 'react'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAuthStore, selectCheckSession } from './stores/authStore';
@@ -45,7 +45,8 @@ const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: 'Adminlogin', element: <AdminLoginPage /> },
+      { path: 'admin/login', element: <AdminLoginPage /> },
+      { path: 'Adminlogin', element: <Navigate to="/admin/login" replace /> },
       { path: 'book', element: <ServicesGridPage /> },
       { path: 'book/calendar', element: <BookingCalendarPage /> },
       { path: 'book/confirm', element: <BookingConfirmPage /> },

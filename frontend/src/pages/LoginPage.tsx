@@ -123,7 +123,7 @@ export default function LoginPage() {
                     </p>
                     <p className="mt-3 text-center text-xs">
                         <Link
-                            to="/Adminlogin"
+                            to="/admin/login"
                             className="text-muted-foreground hover:text-foreground hover:underline"
                         >
                             {t('auth.adminLoginLink')}
