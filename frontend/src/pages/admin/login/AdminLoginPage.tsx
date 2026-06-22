@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useScrollReveal } from '@/hooks/useScrollReveal';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -16,6 +17,7 @@ export default function AdminLoginPage() {
 
   const loginAdmin = useAuthStore(selectLoginAdmin);
   const navigate = useNavigate();
+  const reveal = useScrollReveal(0.1);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -33,8 +35,8 @@ export default function AdminLoginPage() {
   };
 
    return (
-    <div className="flex items-center justify-center min-h-[80vh]">
-      <Card className="w-full max-w-sm">
+    <div ref={reveal.ref} className={`flex items-center justify-center min-h-[80vh] ${reveal.isVisible ? 'visible' : ''} animate-reveal`}>
+        <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
           <CardDescription>
@@ -83,7 +85,7 @@ export default function AdminLoginPage() {
             </Button>
           </form>
         </CardContent>
-      </Card>
+        </Card>
     </div>
   );
 }
