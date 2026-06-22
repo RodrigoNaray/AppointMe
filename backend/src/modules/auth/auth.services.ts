@@ -1,7 +1,7 @@
 import { AdminUser } from '@prisma/client';
 import prisma from '../../config/prisma';
 import bcrypt from 'bcryptjs';
-import { RegisterAdminDto, LoginAdminDto, ChangePasswordDto} from "./auth.types";
+import { RegisterAdminDto, LoginAdminDto, ChangePasswordDto, UpdateAdminProfileDto } from "./auth.types";
 import logger from '../../utils/logger';
 import { ConflictError } from "../../utils/error";
 import jwt from 'jsonwebtoken';
@@ -104,4 +104,30 @@ export const changeAdminPassword = async (adminId: string, data: ChangePasswordD
   });
 
   logger.info({ adminId }, 'Admin password changed successfully');
+};
+
+export const updateAdminProfile = async (adminId: string, data: UpdateAdminProfileDto): Promise<userWithoutPassword> => {
+  const updated = await prisma.adminUser.update({
+    where: { id: adminId },
+    data: { name: data.name },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      googleId: true,
+      schedule: true,
+      minBookingAdvanceMinutes: true,
+      minCancellationNoticeMinutes: true,
+      businessPhone: true,
+      businessEmail: true,
+      businessAddress: true,
+      businessLatitude: true,
+      businessLongitude: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  logger.info({ adminId }, 'Admin profile updated successfully');
+  return updated;
 };

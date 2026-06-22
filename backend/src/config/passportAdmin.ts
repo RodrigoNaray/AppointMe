@@ -30,7 +30,23 @@ const opts: StrategyOptions = {
 const adminJwtStrategy = new JwtStrategy(opts, async (payload, done) => {
   try{
     const user = await prisma.adminUser.findUnique({
-      where: { id: payload.sub},
+      where: { id: payload.sub },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        googleId: true,
+        schedule: true,
+        minBookingAdvanceMinutes: true,
+        minCancellationNoticeMinutes: true,
+        businessPhone: true,
+        businessEmail: true,
+        businessAddress: true,
+        businessLatitude: true,
+        businessLongitude: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
     if (user) {

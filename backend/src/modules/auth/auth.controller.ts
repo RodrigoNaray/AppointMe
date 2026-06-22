@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { RegisterAdminDto, LoginAdminDto, ChangePasswordDto } from './auth.types';
+import { RegisterAdminDto, LoginAdminDto, ChangePasswordDto, UpdateAdminProfileDto } from './auth.types';
 import * as authServices from './auth.services';
 import logger from '../../utils/logger';
 import { cookieOptions, clearCookieOptions, ACCESS_ADMIN_TOKEN_COOKIE_NAME, ACCESS_CLIENT_TOKEN_COOKIE_NAME } from '../../config/auth.config';
@@ -77,5 +77,26 @@ export const changePasswordController = async ( req: Request<{}, {}, ChangePassw
     const status = message === 'Contraseña actual incorrecta' ? 400 : 500;
     logger.error({ error }, 'Error in changePasswordController');
     res.status(status).json({ message });
+  }
+};
+
+export const updateProfileController = async (req: Request<{}, {}, UpdateAdminProfileDto>, res: Response) => {
+  try {
+    const admin = req.user as { id: string };
+    if (!admin?.id) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const { name } = req.body;
+    if (typeof name !== 'string' || name.length > 100) {
+      return res.status(400).json({ message: 'INVALID_NAME' });
+    }
+
+    const updated = await authServices.updateAdminProfile(admin.id, { name });
+    logger.info({ adminId: admin.id }, 'Admin profile updated via API');
+    res.status(200).json({ success: true, user: updated });
+  } catch (error) {
+    logger.error({ error }, 'Error in updateProfileController');
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
