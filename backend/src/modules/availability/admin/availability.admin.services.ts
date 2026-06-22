@@ -19,6 +19,15 @@ const toMinutes = (time: string): number => {
   return (hours * 60) + minutes;
 };
 
+const getDurationMinutes = (start: string, end: string): number => {
+  let startMin = toMinutes(start);
+  let endMin = toMinutes(end);
+  if (endMin <= startMin) {
+    endMin += 1440;
+  }
+  return endMin - startMin;
+};
+
 const validateSchedulePayload = (schedule: UpdateScheduleDto): void => {
   for (const [day, daySchedule] of Object.entries(schedule)) {
     if (!dayMap.includes(day)) {
@@ -39,8 +48,13 @@ const validateSchedulePayload = (schedule: UpdateScheduleDto): void => {
       throw new AvailabilityValidationError(`Formato de hora inválido en ${day}. Use HH:mm.`);
     }
 
-    if (toMinutes(start) >= toMinutes(end)) {
+    if (start === end) {
       throw new AvailabilityValidationError(`El rango horario en ${day} debe cumplir start < end.`);
+    }
+
+    const duration = getDurationMinutes(start, end);
+    if (duration > 1440) {
+      throw new AvailabilityValidationError(`El rango horario en ${day} supera las 24 horas.`);
     }
   }
 };
@@ -193,6 +207,10 @@ export const getCalendarEvents = async (userId: string, month: Date): Promise<Ca
       const endDateTime = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), 0, 0, 0, 0));
       const [endHour, endMinute] = daySchedule.end.split(':').map(Number);
       endDateTime.setUTCHours(endHour, endMinute, 0, 0);
+
+      if (endDateTime <= startDateTime) {
+        endDateTime.setUTCDate(endDateTime.getUTCDate() + 1);
+      }
 
       events.push({
         title: 'Horario de Trabajo',
