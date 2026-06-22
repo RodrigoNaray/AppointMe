@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import apiClient from "@/api/client";
 import type {
@@ -47,12 +47,23 @@ import WeeklyScheduleCard from "@/components/admin/WeeklyScheduleCard";
 import BlocksListCard from "@/components/admin/BlocksListCard";
 import BlockForm from "@/components/BlockForm";
 import { cancelBookingByAdmin, rescheduleBookingByAdmin, createBookingByAdmin } from "@/api/modules/bookings";
+import { updateBlock } from "@/api/modules/availability";
 import { getAdminClients, type AdminClient } from "@/api/modules/clients";
 
 const defaultDaySchedule: DaySchedule = {
   start: "09:00",
   end: "18:00",
   isActive: false,
+};
+
+const WEEKDAY_NAMES: Record<number, string> = {
+  0: "sunday",
+  1: "monday",
+  2: "tuesday",
+  3: "wednesday",
+  4: "thursday",
+  5: "friday",
+  6: "saturday",
 };
 
 function convertTimeUTCToLocal(timeUTC: string): string {
@@ -115,6 +126,13 @@ export default function AvailabilityPage() {
   const [selectedServiceId, setSelectedServiceId] = useState<string>("");
   const [services, setServices] = useState<{ id: string; name: string; durationMinutes: number }[]>([]);
   const [creatingBooking, setCreatingBooking] = useState(false);
+  const [manualBookingDate, setManualBookingDate] = useState("");
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [isQuickBlocking, setIsQuickBlocking] = useState(false);
+  const [selectedBlock, setSelectedBlock] = useState<CalendarEvent | null>(null);
+  const [blockReason, setBlockReason] = useState("");
+  const [isSavingBlockReason, setIsSavingBlockReason] = useState(false);
+  const [isDeletingBlock, setIsDeletingBlock] = useState(false);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -230,16 +248,80 @@ export default function AvailabilityPage() {
     }
   };
 
-  const handleBlockSlot = (startTime: Date, endTime: Date) => {
-    setBlockModalDefaults({
-      startTime: formatDateForInput(startTime),
-      endTime: formatDateForInput(endTime),
-    });
-    setIsModalOpen(true);
+  const undoCreateBlock = async (blockId: string) => {
+    try {
+      await apiClient.delete(`/admin/availability/blocks/${blockId}`);
+      setRefreshKey((k) => k + 1);
+      toast.success("Bloqueo eliminado");
+    } catch {
+      toast.error("No se pudo deshacer");
+    }
   };
 
-  const handleCalendarBlockClick = (blockId: string) => {
-    setBlockToDelete(blockId);
+  const handleQuickBlock = async () => {
+    if (!slotAction) return;
+    setIsQuickBlocking(true);
+    try {
+      const response = await apiClient.post("/admin/availability/blocks", {
+        startTime: slotAction.startTime.toISOString(),
+        endTime: slotAction.endTime.toISOString(),
+      });
+      setIsSlotDialogOpen(false);
+      setSlotAction(null);
+      setRefreshKey((k) => k + 1);
+      toast.success("Bloqueo creado", {
+        duration: 5000,
+        action: {
+          label: "Deshacer",
+          onClick: () => undoCreateBlock(response.data.id),
+        },
+      });
+    } catch {
+      toast.error("Error al crear el bloqueo");
+    } finally {
+      setIsQuickBlocking(false);
+    }
+  };
+
+  const handleCalendarBlockClick = (event: CalendarEvent) => {
+    setSelectedBlock(event);
+    setBlockReason(event.reason || "");
+  };
+
+  const handleSaveBlockReason = async () => {
+    if (!selectedBlock?.id) return;
+    setIsSavingBlockReason(true);
+    try {
+      await updateBlock(selectedBlock.id, {
+        startTime: new Date(selectedBlock.start).toISOString(),
+        endTime: new Date(selectedBlock.end).toISOString(),
+        reason: blockReason.trim() || undefined,
+      });
+      toast.success("Motivo guardado");
+      setSelectedBlock(null);
+      setBlockReason("");
+      setRefreshKey((k) => k + 1);
+    } catch {
+      toast.error("Error al guardar el motivo");
+    } finally {
+      setIsSavingBlockReason(false);
+    }
+  };
+
+  const handleDeleteBlockFromDialog = async () => {
+    if (!selectedBlock?.id) return;
+    setIsDeletingBlock(true);
+    try {
+      await apiClient.delete(`/admin/availability/blocks/${selectedBlock.id}`);
+      toast.success("Bloqueo eliminado");
+      setSelectedBlock(null);
+      setBlockReason("");
+      setRefreshKey((k) => k + 1);
+    } catch {
+      toast.error("Error al eliminar el bloqueo");
+    } finally {
+      setIsDeletingBlock(false);
+    }
   };
 
   const handleOpenCancelDialog = (bookingId: string) => {
@@ -304,6 +386,9 @@ export default function AvailabilityPage() {
     setSelectedServiceId("");
     setIsSlotDialogOpen(false);
     setIsBookingFormOpen(true);
+    if (slotAction) {
+      setManualBookingDate(formatDateForInput(slotAction.startTime));
+    }
 
     apiClient
       .get<{ id: string; name: string; durationMinutes: number }[]>(
@@ -331,13 +416,13 @@ export default function AvailabilityPage() {
   };
 
   const handleCreateManualBooking = async () => {
-    if (!selectedClientId || !selectedServiceId || !slotAction) return;
+    if (!selectedClientId || !selectedServiceId || !manualBookingDate) return;
     setCreatingBooking(true);
     try {
       await createBookingByAdmin({
         clientId: selectedClientId,
         serviceId: selectedServiceId,
-        bookingTime: slotAction.startTime.toISOString(),
+        bookingTime: new Date(manualBookingDate).toISOString(),
       });
       toast.success("Reserva creada exitosamente");
       setIsBookingFormOpen(false);
@@ -354,6 +439,70 @@ export default function AvailabilityPage() {
       setCreatingBooking(false);
     }
   };
+
+  const conflictWarning = useMemo<{
+    severity: "error" | "warning" | "ok";
+    message: string;
+  } | null>(() => {
+    if (!manualBookingDate || !selectedServiceId) return null;
+    const start = new Date(manualBookingDate);
+    if (isNaN(start.getTime())) return null;
+    const selectedService = services.find(
+      (s) => s.id === selectedServiceId
+    );
+    if (!selectedService) return null;
+    const end = new Date(
+      start.getTime() + selectedService.durationMinutes * 60000
+    );
+
+    for (const evt of calendarEvents) {
+      if (evt.type === "working_hours") continue;
+      const evtStart = new Date(evt.start);
+      const evtEnd = new Date(evt.end);
+      if (start < evtEnd && end > evtStart) {
+        if (evt.type === "booking") {
+          return {
+            severity: "error",
+            message: `Conflicto con reserva${
+              evt.clientName ? ` de ${evt.clientName}` : " existente"
+            }`,
+          };
+        }
+        return {
+          severity: "error",
+          message: `Conflicto con bloqueo${
+            evt.title && evt.title !== "Bloqueo sin motivo"
+              ? `: ${evt.title}`
+              : ""
+          }`,
+        };
+      }
+    }
+
+    const dayName =
+      WEEKDAY_NAMES[start.getDay()];
+    const daySchedule = schedule[dayName];
+    if (!daySchedule?.isActive) {
+      return {
+        severity: "warning",
+        message: "Fuera de tu horario laboral (no trabajás este día)",
+      };
+    }
+    const bookingTimeStr = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+    const [sh, sm] = daySchedule.start.split(":").map(Number);
+    const [eh, em] = daySchedule.end.split(":").map(Number);
+    const bookingMins = start.getHours() * 60 + start.getMinutes();
+    const startMins = sh * 60 + sm;
+    const endMins = eh * 60 + em;
+    if (bookingMins < startMins || bookingMins >= endMins) {
+      return {
+        severity: "warning",
+        message: `Fuera de tu horario laboral (${daySchedule.start} – ${daySchedule.end})`,
+      };
+    }
+
+    return { severity: "ok", message: "Disponible" };
+  }, [manualBookingDate, selectedServiceId, services, calendarEvents, schedule]);
 
   if (isLoading) return <PageSkeleton variant="availability" />;
 
@@ -384,6 +533,7 @@ export default function AvailabilityPage() {
             onBlockSlot={handleSlotClick}
             onBlockClick={handleCalendarBlockClick}
             onBookingClick={(event) => setBookingInfo(event)}
+            onEventsLoaded={setCalendarEvents}
             refreshKey={refreshKey}
             onRefresh={() => setRefreshKey((k) => k + 1)}
             schedule={schedule}
@@ -636,6 +786,78 @@ export default function AvailabilityPage() {
       </Dialog>
 
       <Dialog
+        open={selectedBlock !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedBlock(null);
+            setBlockReason("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Bloqueo de horario</DialogTitle>
+          </DialogHeader>
+          {selectedBlock && (
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Franja</p>
+                <p className="font-medium">
+                  {format(
+                    new Date(selectedBlock.start),
+                    "d 'de' MMMM, HH:mm",
+                    { locale: es }
+                  )}
+                  {" - "}
+                  {format(
+                    new Date(selectedBlock.end),
+                    "HH:mm'hs'",
+                    { locale: es }
+                  )}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="block-reason">Motivo (opcional)</Label>
+                <Input
+                  id="block-reason"
+                  placeholder="Ej: Almuerzo, consulta médica..."
+                  maxLength={200}
+                  value={blockReason}
+                  onChange={(e) => setBlockReason(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-row gap-2 sm:justify-between">
+            <Button
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+              onClick={handleDeleteBlockFromDialog}
+              disabled={isDeletingBlock || isSavingBlockReason}
+            >
+              {isDeletingBlock ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : null}
+              Eliminar
+            </Button>
+            <Button
+              onClick={handleSaveBlockReason}
+              disabled={
+                isSavingBlockReason ||
+                isDeletingBlock ||
+                blockReason === (selectedBlock?.reason || "")
+              }
+            >
+              {isSavingBlockReason ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : null}
+              Guardar motivo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
         open={isSlotDialogOpen}
         onOpenChange={setIsSlotDialogOpen}
       >
@@ -656,14 +878,14 @@ export default function AvailabilityPage() {
             <Button
               variant="outline"
               className="h-14 text-base justify-start gap-3 px-4"
-              onClick={() => {
-                setIsSlotDialogOpen(false);
-                if (slotAction) {
-                  handleBlockSlot(slotAction.startTime, slotAction.endTime);
-                }
-              }}
+              onClick={handleQuickBlock}
+              disabled={isQuickBlocking}
             >
-              <Lock className="h-5 w-5 text-destructive" />
+              {isQuickBlocking ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Lock className="h-5 w-5 text-destructive" />
+              )}
               <div className="text-left">
                 <span className="block font-medium">Bloquear horario</span>
                 <span className="block text-xs text-muted-foreground">
@@ -691,7 +913,10 @@ export default function AvailabilityPage() {
         open={isBookingFormOpen}
         onOpenChange={(open) => {
           setIsBookingFormOpen(open);
-          if (!open) setSlotAction(null);
+          if (!open) {
+            setSlotAction(null);
+            setManualBookingDate("");
+          }
         }}
       >
         <DialogContent>
@@ -766,20 +991,43 @@ export default function AvailabilityPage() {
 
             {slotAction && (
               <div className="space-y-2">
-                <Label>Fecha y hora</Label>
-                <p className="text-sm bg-muted rounded-md px-3 py-2">
-                  {format(
-                    slotAction.startTime,
-                    "d 'de' MMMM 'de' yyyy, HH:mm",
-                    { locale: es }
+                <Label htmlFor="manual-booking-datetime">Fecha y hora</Label>
+                <Input
+                  id="manual-booking-datetime"
+                  type="datetime-local"
+                  value={manualBookingDate}
+                  onChange={(e) => setManualBookingDate(e.target.value)}
+                />
+                {selectedServiceId &&
+                  manualBookingDate &&
+                  !isNaN(new Date(manualBookingDate).getTime()) && (
+                    <p className="text-xs text-muted-foreground">
+                      {(() => {
+                        const svc = services.find(
+                          (s) => s.id === selectedServiceId
+                        );
+                        if (!svc) return null;
+                        const endDate = new Date(
+                          new Date(manualBookingDate).getTime() +
+                            svc.durationMinutes * 60000
+                        );
+                        return `Duración: ${svc.durationMinutes} min · Termina a las ${format(endDate, "HH:mm", { locale: es })}`;
+                      })()}
+                    </p>
                   )}
-                  {" - "}
-                  {format(
-                    slotAction.endTime,
-                    "HH:mm",
-                    { locale: es }
-                  )}
-                </p>
+                {conflictWarning && (
+                  <div
+                    className={`text-xs rounded-md px-3 py-2 ${
+                      conflictWarning.severity === "error"
+                        ? "bg-destructive/10 text-destructive font-medium"
+                        : conflictWarning.severity === "warning"
+                          ? "bg-warning/10 text-warning font-medium"
+                          : "bg-success/10 text-success font-medium"
+                    }`}
+                  >
+                    {conflictWarning.message}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -795,7 +1043,12 @@ export default function AvailabilityPage() {
             </Button>
             <Button
               onClick={handleCreateManualBooking}
-              disabled={!selectedClientId || !selectedServiceId || creatingBooking}
+              disabled={
+                !selectedClientId ||
+                !selectedServiceId ||
+                creatingBooking ||
+                conflictWarning?.severity === "error"
+              }
             >
               {creatingBooking ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-1" />

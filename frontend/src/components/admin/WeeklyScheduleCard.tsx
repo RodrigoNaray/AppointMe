@@ -72,23 +72,25 @@ export default function WeeklyScheduleCard({
             return (
               <div
                 key={day.id}
-                className="flex items-center gap-2 sm:gap-4 p-2 rounded-lg hover:bg-muted/50"
+                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-2.5 sm:p-3 rounded-lg hover:bg-muted/50"
               >
-                <Checkbox
-                  id={`check-${day.id}`}
-                  checked={daySchedule.isActive}
-                  onCheckedChange={(checked) =>
-                    onScheduleChange(day.id, "isActive", !!checked)
-                  }
-                  className="h-5 w-5"
-                />
-                <Label
-                  htmlFor={`check-${day.id}`}
-                  className="w-16 sm:w-24 text-sm font-medium"
-                >
-                  {day.label}
-                </Label>
-                <div className="flex items-center gap-1 sm:gap-2 flex-1">
+                <div className="flex items-center gap-2.5">
+                  <Checkbox
+                    id={`check-${day.id}`}
+                    checked={daySchedule.isActive}
+                    onCheckedChange={(checked) =>
+                      onScheduleChange(day.id, "isActive", !!checked)
+                    }
+                    className="h-5 w-5"
+                  />
+                  <Label
+                    htmlFor={`check-${day.id}`}
+                    className="text-sm font-medium"
+                  >
+                    {day.label}
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2 pl-[30px] sm:pl-0 sm:flex-1">
                   <Input
                     type="time"
                     value={daySchedule.start}
@@ -96,9 +98,9 @@ export default function WeeklyScheduleCard({
                       onScheduleChange(day.id, "start", e.target.value)
                     }
                     disabled={!daySchedule.isActive}
-                    className="h-9 px-2 text-sm"
+                    className="h-9 px-2 text-sm flex-1 sm:flex-none sm:w-28"
                   />
-                  <span className="text-muted-foreground shrink-0">-</span>
+                  <span className="text-muted-foreground shrink-0">—</span>
                   <Input
                     type="time"
                     value={daySchedule.end}
@@ -106,7 +108,7 @@ export default function WeeklyScheduleCard({
                       onScheduleChange(day.id, "end", e.target.value)
                     }
                     disabled={!daySchedule.isActive}
-                    className="h-9 px-2 text-sm"
+                    className="h-9 px-2 text-sm flex-1 sm:flex-none sm:w-28"
                   />
                 </div>
               </div>
