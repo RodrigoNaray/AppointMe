@@ -210,6 +210,7 @@ export default function BookingCalendarPage() {
 
         // Si hoy no tiene slots válidos por anticipación, avanzar al próximo día disponible.
         if (isToday && filteredSlots.length === 0) {
+          setAvailableDays((prev) => prev.filter((d) => d !== selectedDateStr));
           const nextAvailableDay = availableDays.find((day) => day > selectedDateStr);
 
           if (nextAvailableDay) {
@@ -219,6 +220,10 @@ export default function BookingCalendarPage() {
               setSelectedDate(nextDate);
               return;
             }
+          } else {
+            setAvailableSlots([]);
+            setSelectedDate(undefined);
+            return;
           }
         }
         

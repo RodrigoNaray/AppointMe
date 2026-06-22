@@ -406,6 +406,12 @@
   .fc .fc-toolbar {
     flex-wrap: wrap;
     gap: 0.5rem;
+    justify-content: center;
+  }
+  .fc .fc-toolbar-chunk:nth-child(3) {
+    flex-basis: 100%;
+    display: flex;
+    justify-content: center;
   }
   .fc .fc-toolbar-title {
     font-size: var(--font-size-base);

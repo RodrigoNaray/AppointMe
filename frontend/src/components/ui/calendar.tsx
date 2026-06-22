@@ -41,10 +41,10 @@ function Calendar({
         day_button: "h-9 w-9 p-0 font-normal",
         selected:
           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-        today: "bg-accent text-accent-foreground",
+        today: "",
         outside:
           "day-outside text-muted-foreground opacity-50",
-        disabled: "text-muted-foreground opacity-50",
+        disabled: "text-muted-foreground opacity-50 hover:bg-transparent! hover:text-muted-foreground! [&_button]:cursor-not-allowed",
         range_middle:
           "aria-selected:bg-accent aria-selected:text-accent-foreground",
         hidden: "invisible",
