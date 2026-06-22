@@ -122,6 +122,15 @@ export const rescheduleBookingByAdmin = async (bookingId: string, newBookingTime
   return response.data;
 };
 
+export const createBookingByAdmin = async (data: {
+  clientId: string;
+  serviceId: string;
+  bookingTime: string;
+}): Promise<CreateBookingResponse> => {
+  const response = await apiClient.post<CreateBookingResponse>('/admin/bookings', data);
+  return response.data;
+};
+
 export default {
   // Admin
   getAllBookings,
