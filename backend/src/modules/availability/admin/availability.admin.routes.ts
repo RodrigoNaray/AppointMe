@@ -9,6 +9,7 @@ availabilityRouter.put('/schedule', availabilityController.updateScheduleControl
 
 availabilityRouter.get('/blocks', availabilityController.getBlocksController);
 availabilityRouter.post('/blocks', availabilityController.createBlockController);
+availabilityRouter.put('/blocks/:id', availabilityController.updateBlockController);
 availabilityRouter.delete('/blocks/:id',availabilityController.deleteBlockController);
 
 availabilityRouter.get('/calendar', availabilityController.getCalendarEventsController);

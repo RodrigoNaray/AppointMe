@@ -21,3 +21,9 @@ export interface CalendarEvent {
   durationMinutes?: number;
   status?: string;
 }
+
+export interface UpdateBlockDto {
+  startTime: string;
+  endTime: string;
+  reason?: string;
+}

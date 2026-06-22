@@ -113,6 +113,36 @@ export const deleteBlock = async (blockId: string, adminId: string) => {
   logger.info({ blockId }, "Bloqueo de tiempo eliminado");
 };
 
+export const updateBlock = async (blockId: string, adminId: string, data: { startTime: Date; endTime: Date; reason?: string }) => {
+  if (isNaN(data.startTime.getTime()) || isNaN(data.endTime.getTime())) {
+    throw new AvailabilityValidationError('Las fechas de bloqueo son inválidas.');
+  }
+
+  if (data.startTime >= data.endTime) {
+    throw new AvailabilityValidationError('El bloqueo debe cumplir startTime < endTime.');
+  }
+
+  const existing = await prisma.availabilityBlock.findFirst({
+    where: { id: blockId, adminId },
+  });
+
+  if (!existing) {
+    throw new AvailabilityValidationError('Bloqueo no encontrado.');
+  }
+
+  const updated = await prisma.availabilityBlock.update({
+    where: { id: blockId },
+    data: {
+      startTime: data.startTime,
+      endTime: data.endTime,
+      reason: data.reason ?? existing.reason,
+    },
+  });
+
+  logger.info({ blockId }, "Bloqueo de tiempo actualizado");
+  return updated;
+};
+
 
 export const getCalendarEvents = async (userId: string, month: Date): Promise<CalendarEvent[]> => {
   const startOfMonthDate = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), 1, 0, 0, 0, 0));

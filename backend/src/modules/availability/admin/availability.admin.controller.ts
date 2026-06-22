@@ -99,6 +99,40 @@ export const deleteBlockController = async (req: Request, res: Response) => {
   }
 };
 
+export const updateBlockController = async (req: Request, res: Response) => {
+  try {
+    const { startTime, endTime, reason } = req.body;
+    const admin = req.user as AdminUser;
+    const adminId = admin.id;
+
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({ message: 'startTime y endTime deben ser fechas válidas.' });
+    }
+
+    if (start >= end) {
+      return res.status(400).json({ message: 'El bloqueo debe cumplir startTime < endTime.' });
+    }
+
+    const updated = await service.updateBlock(req.params.id, adminId, {
+      startTime: start,
+      endTime: end,
+      reason,
+    });
+
+    res.status(200).json(updated);
+  } catch (error) {
+    if (error instanceof service.AvailabilityValidationError) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    logger.error(error, "Error al actualizar el bloqueo de tiempo");
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
 export const getCalendarEventsController = async (req: Request, res: Response) => {
   const admin = req.user as AdminUser;
   const userId = admin.id;
