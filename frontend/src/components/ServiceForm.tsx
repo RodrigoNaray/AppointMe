@@ -1,5 +1,6 @@
 // frontend/src/components/ServiceForm.tsx
 import { useState, FormEvent, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { CreateServiceDto, UpdateServiceDto, Service, Category } from '../types/service';
 import apiClient from '@/api/client';
 import { Label } from '@/components/ui/label';
@@ -52,7 +53,7 @@ export default function ServiceForm({ onSubmit, onCancel, initialData }: Service
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!categoryId) {
-      alert('Por favor selecciona una categoría');
+      toast.error('Por favor selecciona una categoría');
       return;
     }
     onSubmit({ 

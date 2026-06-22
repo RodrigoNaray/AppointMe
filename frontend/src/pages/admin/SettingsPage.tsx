@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Clock, CheckCircle2, AlertCircle, Phone, Mail, MapPin } from 'lucide-react';
 import { getBookingRules, updateBookingRules, getContactInfo, updateContactInfo, type ContactInfo, type UpdateContactInfoDTO } from '@/api/modules/settings';
 import { AdminMapPicker } from '@/components/AdminMapPicker';
+import { PageSkeleton } from '@/components/admin/PageSkeleton';
 
 /**
  * SettingsPage - Página de configuración administrativa
@@ -296,15 +297,7 @@ export default function SettingsPage() {
   };
 
   if (isFetching) {
-    return (
-      <div className="grid gap-6">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">Cargando configuración...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <PageSkeleton variant="settings" />;
   }
 
   return (
@@ -341,8 +334,8 @@ export default function SettingsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="bg-blue-50 border border-blue-200 px-4 py-3 rounded-md mb-6">
-            <p className="text-sm text-blue-900">
+          <div className="bg-info/10 border border-info/20 px-4 py-3 rounded-md mb-6">
+            <p className="text-sm text-info-foreground">
               <strong>ℹ️ Aplica a futuro:</strong> Los cambios en estas reglas solo afectan nuevas reservas y cancelaciones. Las reservas ya confirmadas no se verán afectadas.
             </p>
           </div>
@@ -572,11 +565,11 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              <div className="bg-amber-50 border border-amber-200 px-4 py-3 rounded-md space-y-2">
-                <p className="text-sm text-amber-900">
+              <div className="bg-warning/10 border border-warning/20 px-4 py-3 rounded-md space-y-2">
+                <p className="text-sm text-warning-foreground">
                   <strong>⚠️ Política de cancelación:</strong> Los clientes solo podrán cancelar reservas con al menos esta cantidad de tiempo de anticipación.
                 </p>
-                <p className="text-sm text-amber-800">
+                <p className="text-sm text-warning-foreground">
                   Si intentan cancelar con menos tiempo, verán un mensaje de error indicando el plazo mínimo.
                 </p>
               </div>
@@ -710,8 +703,8 @@ export default function SettingsPage() {
                 height="500px"
               />
 
-              <div className="bg-blue-50 border border-blue-200 px-4 py-3 rounded-md">
-                <p className="text-sm text-blue-900">
+              <div className="bg-info/10 border border-info/20 px-4 py-3 rounded-md">
+                <p className="text-sm text-info-foreground">
                   <strong>ℹ️ Nota:</strong> Esta información se mostrará públicamente en la página de inicio y contacto. Si dejas campos vacíos, se mostrarán valores por defecto.
                 </p>
               </div>
@@ -729,6 +722,22 @@ export default function SettingsPage() {
           </form>
         </CardContent>
       </Card>
+
+      {(hasUnsavedChanges || hasUnsavedContactChanges) && (
+        <div className="fixed bottom-16 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur px-4 py-3 md:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm text-muted-foreground">Cambios sin guardar</span>
+            <div className="flex gap-2">
+              {hasUnsavedChanges && (
+                <Button size="sm" onClick={() => handleSubmit({ preventDefault: () => {} } as React.FormEvent)} disabled={isLoading}>Reglas</Button>
+              )}
+              {hasUnsavedContactChanges && (
+                <Button size="sm" onClick={() => handleContactSubmit({ preventDefault: () => {} } as React.FormEvent)} disabled={contactLoading}>Contacto</Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

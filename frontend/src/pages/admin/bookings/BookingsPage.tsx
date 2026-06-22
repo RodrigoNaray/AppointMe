@@ -7,10 +7,12 @@ import toast from "react-hot-toast";
 import { DataTable } from "@/components/shared/DataTable";
 import { getColumns, BookingActions, Booking } from "./columns";
 import bookingService, { Booking as ApiBooking } from "@/api/modules/bookings";
-import { Loader2, Search, Filter } from "lucide-react";
+import { Loader2, Search, Filter, CalendarOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageSkeleton } from '@/components/admin/PageSkeleton';
+import { EmptyState } from '@/components/admin/EmptyState';
 import {
   Select,
   SelectContent,
@@ -180,11 +182,7 @@ export default function BookingsPage() {
   const columns = useMemo(() => getColumns(actions), [actions]);
 
   if (isLoading && bookings.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground/60" />
-      </div>
-    );
+    return <PageSkeleton variant="list" />;
   }
 
   return (
@@ -266,13 +264,19 @@ export default function BookingsPage() {
           <Loader2 className="w-8 h-8 animate-spin text-muted-foreground/60" />
         </div>
       ) : filteredBookings.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            {searchTerm || statusFilter !== "all" 
-              ? "No se encontraron reservas con los filtros aplicados"
-              : "No hay reservas registradas"}
-          </CardContent>
-        </Card>
+        searchTerm || statusFilter !== "all" ? (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              No se encontraron reservas con los filtros aplicados
+            </CardContent>
+          </Card>
+        ) : (
+          <EmptyState
+            icon={CalendarOff}
+            title="No hay reservas"
+            description="Las reservas aparecerán acá cuando los clientes agenden."
+          />
+        )
       ) : (
         <>
           <div className="rounded-md border overflow-x-auto">

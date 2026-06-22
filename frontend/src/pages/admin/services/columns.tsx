@@ -94,7 +94,7 @@ export const createServiceColumns = ({ onEdit, onDelete }: ServiceColumnActionsP
               <DropdownMenuItem onClick={() => onEdit(service)}>
                 Editar Servicio
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onDelete(service.id)} className="text-red-500 focus:bg-red-50 focus:text-red-600">
+              <DropdownMenuItem onClick={() => onDelete(service.id)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                 Borrar Servicio
               </DropdownMenuItem>
             </DropdownMenuContent>

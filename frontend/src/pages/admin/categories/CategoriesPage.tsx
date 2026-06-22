@@ -6,13 +6,16 @@ import apiClient from '@/api/client';
 import { Category } from '@/types/service';
 import { DataTable } from '@/components/shared/DataTable';
 import { createCategoryColumns } from './columns';
-import Modal from '@/components/Modal';
 import CategoryForm, { CategoryFormData } from '@/components/CategoryForm';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PlusCircle, Edit, Trash2, Tag } from 'lucide-react';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
+import { PageSkeleton } from '@/components/admin/PageSkeleton';
+import { EmptyState } from '@/components/admin/EmptyState';
 
 /**
  * CategoriesPage - Página de gestión de categorías (Admin)
@@ -41,6 +44,7 @@ export default function CategoriesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
   // Fetch de categorías (con memoización para evitar recreación)
   const fetchCategories = useCallback(async () => {
@@ -51,9 +55,7 @@ export default function CategoriesPage() {
       setCategories(response.data);
     } catch (err) {
       console.error('No se pudieron cargar las categorías.', err);
-      toast.error('Error al cargar categorías', {
-        description: 'No se pudieron cargar las categorías. Intenta de nuevo.',
-      });
+      toast.error('No se pudieron cargar las categorías. Intenta de nuevo.');
     } finally {
       setIsLoading(false);
     }
@@ -81,15 +83,11 @@ export default function CategoriesPage() {
       if (editingCategory) {
         // Actualizar categoría existente
         await apiClient.put(`categories/admin/${editingCategory.id}`, data);
-        toast.success('Categoría actualizada', {
-          description: `La categoría "${data.name}" se actualizó correctamente.`,
-        });
+        toast.success(`La categoría "${data.name}" se actualizó correctamente.`);
       } else {
         // Crear nueva categoría
         await apiClient.post('categories/admin', data);
-        toast.success('Categoría creada', {
-          description: `La categoría "${data.name}" se creó correctamente.`,
-        });
+        toast.success(`La categoría "${data.name}" se creó correctamente.`);
       }
       setIsModalOpen(false);
       fetchCategories();
@@ -101,45 +99,39 @@ export default function CategoriesPage() {
         ? err.response?.data?.message || 'Error desconocido'
         : 'Error desconocido';
       
-      toast.error('Error al guardar categoría', {
-        description: errorMessage,
-      });
+      toast.error(`Error al guardar categoría: ${errorMessage}`);
     }
   };
 
   // Eliminar categoría con confirmación
   const handleDeleteCategory = async (categoryId: string) => {
-    // Buscar categoría para mostrar nombre en confirmación
     const category = categories.find((c) => c.id === categoryId);
-    const categoryName = category?.name || 'esta categoría';
-    
-    // Validar si tiene servicios
-    const serviceCount = category?._count?.services || 0;
+    if (!category) return;
+
+    const serviceCount = category._count?.services || 0;
     if (serviceCount > 0) {
-      toast.error('No se puede eliminar', {
-        description: `La categoría "${categoryName}" tiene ${serviceCount} servicio(s) asociado(s). Elimina o reasigna los servicios primero.`,
-      });
+      toast.error(`No se puede eliminar. La categoría "${category.name}" tiene ${serviceCount} servicio(s) asociado(s). Elimina o reasigna los servicios primero.`);
       return;
     }
 
-    if (window.confirm(`¿Estás seguro de que quieres eliminar la categoría "${categoryName}"?`)) {
-      try {
-        await apiClient.delete(`categories/admin/${categoryId}`);
-        toast.success('Categoría eliminada', {
-          description: `La categoría "${categoryName}" se eliminó correctamente.`,
-        });
-        fetchCategories();
-      } catch (err: unknown) {
-        console.error('Error al eliminar la categoría:', err);
-        
-        const errorMessage = axios.isAxiosError<{ message?: string }>(err)
-          ? err.response?.data?.message || 'Error al eliminar la categoría'
-          : 'Error al eliminar la categoría';
-        
-        toast.error('Error al eliminar', {
-          description: errorMessage,
-        });
-      }
+    setCategoryToDelete(category);
+  };
+
+  const confirmDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+    const categoryName = categoryToDelete.name;
+    try {
+      await apiClient.delete(`categories/admin/${categoryToDelete.id}`);
+      toast.success(`La categoría "${categoryName}" se eliminó correctamente.`);
+      fetchCategories();
+    } catch (err: unknown) {
+      console.error('Error al eliminar la categoría:', err);
+      const errorMessage = axios.isAxiosError<{ message?: string }>(err)
+        ? err.response?.data?.message || 'Error al eliminar la categoría'
+        : 'Error al eliminar la categoría';
+      toast.error(`Error al eliminar: ${errorMessage}`);
+    } finally {
+      setCategoryToDelete(null);
     }
   };
 
@@ -151,11 +143,7 @@ export default function CategoriesPage() {
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <p className="text-muted-foreground">Cargando categorías...</p>
-      </div>
-    );
+    return <PageSkeleton variant="list" />;
   }
 
   return (
@@ -176,9 +164,13 @@ export default function CategoriesPage() {
       {/* Vista MOBILE: Cards */}
       <div className="md:hidden space-y-3">
         {categories.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground text-sm">
-            No hay categorías disponibles
-          </div>
+          <EmptyState
+            icon={Tag}
+            title="Sin categorías"
+            description="Organizá tus servicios en categorías."
+            actionLabel="Crear categoría"
+            onAction={handleOpenCreateModal}
+          />
         ) : (
           categories.map((category) => (
             <Card key={category.id} className="overflow-hidden">
@@ -228,7 +220,7 @@ export default function CategoriesPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 text-red-500 hover:bg-red-50 hover:text-red-600"
+                      className="flex-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => handleDeleteCategory(category.id)}
                       disabled={(category._count?.services ?? 0) > 0}
                     >
@@ -255,18 +247,28 @@ export default function CategoriesPage() {
         <DataTable columns={columns} data={categories} />
       </div>
 
-      {/* Modal para crear/editar */}
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title={editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
-      >
-        <CategoryForm 
-          onCancel={() => setIsModalOpen(false)}
-          onSubmit={handleFormSubmit}
-          initialData={editingCategory}
-        />
-      </Modal>
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</DialogTitle>
+          </DialogHeader>
+          <CategoryForm
+            onCancel={() => setIsModalOpen(false)}
+            onSubmit={handleFormSubmit}
+            initialData={editingCategory}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={categoryToDelete !== null}
+        onOpenChange={(open) => { if (!open) setCategoryToDelete(null); }}
+        title="Eliminar categoría"
+        description={`¿Seguro que querés eliminar "${categoryToDelete?.name ?? ''}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        onConfirm={confirmDeleteCategory}
+        destructive
+      />
     </div>
   );
 }

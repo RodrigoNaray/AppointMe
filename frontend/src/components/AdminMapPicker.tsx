@@ -20,6 +20,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import {
   MapContainer,
   TileLayer,
@@ -193,7 +194,7 @@ export function AdminMapPicker({
     if (coords) {
       handlePositionChange(coords.lat, coords.lng);
     } else {
-      alert("No se pudo encontrar la dirección. Intenta con otra búsqueda.");
+      toast.error("No se pudo encontrar la dirección. Intenta con otra búsqueda.");
     }
   }, [searchQuery, handlePositionChange]);
 
@@ -202,7 +203,7 @@ export function AdminMapPicker({
    */
   const handleUseCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      alert("Tu navegador no soporta geolocalización.");
+      toast.error("Tu navegador no soporta geolocalización.");
       return;
     }
 
@@ -216,7 +217,7 @@ export function AdminMapPicker({
       (error) => {
         setIsGettingLocation(false);
         console.error("[Geolocation] Error:", error);
-        alert(
+        toast.error(
           "No se pudo obtener tu ubicación. Verifica los permisos del navegador."
         );
       },
