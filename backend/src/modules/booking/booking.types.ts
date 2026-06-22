@@ -47,6 +47,14 @@ export interface RescheduleBookingRequest extends Request {
   };
 }
 
+export interface CreateBookingByAdminRequest extends Request {
+  body: {
+    clientId: string;
+    serviceId: string;
+    bookingTime: string;
+  };
+}
+
 // Interfaces para responses
 export interface BookingWithDetails extends Booking {
   service: {

@@ -7,6 +7,7 @@ import {
   CancelBookingRequest,
   CancelBookingByAdminRequest,
   RescheduleBookingRequest,
+  CreateBookingByAdminRequest,
   CreateBookingResponse,
   GetBookingsResponse,
   BookingError,
@@ -507,6 +508,83 @@ export const getBookingById = async (
     return res.status(500).json({
       success: false,
       message: 'Internal server error'
+    });
+  }
+};
+
+export const createBookingByAdminController = async (
+  req: CreateBookingByAdminRequest,
+  res: Response<CreateBookingResponse>
+) => {
+  try {
+    const admin = req.user as AdminUser;
+    if (!admin?.id) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+
+    const { clientId, serviceId, bookingTime } = req.body;
+
+    if (!clientId || !serviceId || !bookingTime) {
+      return res.status(400).json({
+        success: false,
+        message: 'clientId, serviceId and bookingTime are required',
+      });
+    }
+
+    const bookingTimeDate = new Date(bookingTime);
+    if (isNaN(bookingTimeDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid booking time format',
+      });
+    }
+
+    const booking = await service.createBookingByAdmin(admin.id, {
+      clientId,
+      serviceId,
+      bookingTime: bookingTimeDate,
+    });
+
+    logger.info({
+      bookingId: booking.id,
+      adminId: admin.id,
+      clientId,
+      serviceId,
+    }, 'Booking created by admin');
+
+    sendBookingConfirmationEmail({
+      to: booking.client.email,
+      clientName: booking.client.name,
+      clientTimezone: 'UTC',
+      clientLanguage: 'es',
+      bookings: [{
+        serviceName: booking.service.name,
+        bookingTime: booking.bookingTime,
+        durationMinutes: booking.durationMinutes,
+      }],
+    }).catch((error) => {
+      logger.error({ error, bookingId: booking.id }, 'Failed to send admin-created booking email');
+    });
+
+    return res.status(201).json({
+      success: true,
+      booking,
+      message: 'Booking created successfully',
+    });
+  } catch (error) {
+    logger.error({ error }, 'Error in createBookingByAdminController');
+
+    if (error instanceof Error && 'statusCode' in error) {
+      const bookingError = error as BookingError;
+      return res.status(bookingError.statusCode).json({
+        success: false,
+        message: bookingError.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
     });
   }
 };
