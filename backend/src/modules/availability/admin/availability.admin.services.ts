@@ -224,6 +224,7 @@ export const getCalendarEvents = async (userId: string, month: Date): Promise<Ca
       start: block.startTime,
       end: block.endTime,
       type: 'block',
+      reason: block.reason,
     });
   });
 

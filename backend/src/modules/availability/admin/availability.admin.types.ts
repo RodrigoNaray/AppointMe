@@ -20,6 +20,7 @@ export interface CalendarEvent {
   serviceName?: string;
   durationMinutes?: number;
   status?: string;
+  reason?: string | null;
 }
 
 export interface UpdateBlockDto {

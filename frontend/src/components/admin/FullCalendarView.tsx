@@ -17,8 +17,9 @@ import type { EventContentArg, DayCellContentArg } from "@fullcalendar/core";
 
 interface FullCalendarViewProps {
   onBlockSlot?: (startTime: Date, endTime: Date) => void;
-  onBlockClick?: (blockId: string) => void;
+  onBlockClick?: (event: CalendarEvent) => void;
   onBookingClick?: (event: CalendarEvent) => void;
+  onEventsLoaded?: (events: CalendarEvent[]) => void;
   refreshKey?: number;
   onRefresh?: () => void;
   schedule?: WeeklySchedule;
@@ -128,6 +129,7 @@ export default function FullCalendarView({
   onBlockSlot,
   onBlockClick,
   onBookingClick,
+  onEventsLoaded,
   refreshKey = 0,
   onRefresh,
   schedule,
@@ -237,6 +239,7 @@ export default function FullCalendarView({
         const allEvents = responses.flatMap((r) => r.data);
         setCachedEvents(allEvents);
         computeDayStats(allEvents);
+        onEventsLoaded?.(allEvents);
         successCallback(allEvents.map(mapEvent));
       } catch (error) {
         failureCallback(
@@ -307,7 +310,7 @@ export default function FullCalendarView({
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" style={{ containerType: 'inline-size', containerName: 'fc-container' }}>
       <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground px-1">
         <span className="inline-flex items-center gap-1">
           <span className="w-3 h-3 rounded-sm bg-success shrink-0" />
@@ -376,7 +379,14 @@ export default function FullCalendarView({
           const type = extendedProps.type as CalendarEvent["type"];
 
           if (type === "block") {
-            onBlockClick?.(clickInfo.event.id);
+            onBlockClick?.({
+              id: clickInfo.event.id,
+              title: clickInfo.event.title,
+              start: clickInfo.event.start!,
+              end: clickInfo.event.end!,
+              type: "block",
+              reason: extendedProps.reason as string | null | undefined,
+            });
           } else if (type === "booking") {
             onBookingClick?.({
               id: clickInfo.event.id,
