@@ -337,15 +337,25 @@
 }
 
 .fc .fc-timegrid-slot {
-  height: 2.5rem;
+  height: 3.5rem;
 }
 
 .fc .fc-timegrid-slot-label-cushion {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--foreground);
 }
 
 .fc .fc-timegrid-slot-lane {
   transition: background-color var(--transition-fast);
+}
+
+.fc .fc-slot-hour {
+  border-top: 2px solid var(--border) !important;
+}
+
+.fc .fc-slot-hour-alt {
+  background-color: color-mix(in oklch, var(--muted) 20%, transparent);
 }
 
 .fc .fc-timegrid-slot-lane:hover {
@@ -424,6 +434,6 @@
 
 @media (max-width: 767px) {
   .fc .fc-timegrid-slot {
-    height: 3rem;
+    height: 4rem;
   }
 }

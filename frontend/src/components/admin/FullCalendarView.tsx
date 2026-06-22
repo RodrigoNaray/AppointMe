@@ -150,11 +150,16 @@ export default function FullCalendarView({
     if (!schedule) return undefined;
     return Object.entries(schedule)
       .filter(([, ds]) => ds.isActive)
-      .map(([dayName, ds]) => ({
-        daysOfWeek: [DAY_MAP[dayName]],
-        startTime: ds.start,
-        endTime: ds.end,
-      }));
+      .flatMap(([dayName, ds]) => {
+        const dayIndex = DAY_MAP[dayName];
+        if (ds.end <= ds.start) {
+          return [
+            { daysOfWeek: [dayIndex], startTime: ds.start, endTime: "24:00" },
+            { daysOfWeek: [(dayIndex + 1) % 7], startTime: "00:00", endTime: ds.end },
+          ];
+        }
+        return [{ daysOfWeek: [dayIndex], startTime: ds.start, endTime: ds.end }];
+      });
   }, [schedule]);
 
   const slotMinMax = useMemo(() => {
@@ -168,13 +173,16 @@ export default function FullCalendarView({
       const [sh, sm] = day.start.split(":").map(Number);
       const [eh, em] = day.end.split(":").map(Number);
       const startMins = sh * 60 + sm;
-      const endMins = eh * 60 + em;
+      let endMins = eh * 60 + em;
+      if (endMins <= startMins) {
+        endMins += 1440;
+      }
       if (startMins < earliest) earliest = startMins;
       if (endMins > latest) latest = endMins;
     }
     if (!hasActive) return { min: "07:00:00", max: "22:00:00" };
-    const padMin = Math.max(0, earliest - 30);
-    const padMax = Math.min(24 * 60, latest + 30);
+    const padMin = Math.max(0, Math.floor((earliest - 30) / 60) * 60);
+    const padMax = Math.ceil((latest + 30) / 60) * 60;
     const fmt = (m: number) =>
       `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}:00`;
     return { min: fmt(padMin), max: fmt(padMax) };
@@ -355,6 +363,9 @@ export default function FullCalendarView({
         slotMinTime={slotMinMax.min}
         slotMaxTime={slotMinMax.max}
         slotDuration="00:30:00"
+        slotLabelInterval="01:00:00"
+        slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
+        eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
         nowIndicator
         selectable
         selectMirror
@@ -363,6 +374,21 @@ export default function FullCalendarView({
         events={fetchEvents}
         eventContent={handleEventContent}
         dayCellClassNames={handleDayCellClassNames}
+        slotLaneDidMount={(arg) => {
+          const m = arg.date.getHours() * 60 + arg.date.getMinutes();
+          if (m % 60 === 0) {
+            arg.el.classList.add("fc-slot-hour");
+          }
+          if (Math.floor(m / 60) % 2 === 0) {
+            arg.el.classList.add("fc-slot-hour-alt");
+          }
+        }}
+        slotLabelDidMount={(arg) => {
+          const m = arg.date.getHours() * 60 + arg.date.getMinutes();
+          if (m % 60 === 0) {
+            arg.el.classList.add("fc-slot-label-hour");
+          }
+        }}
         select={(selectInfo) => {
           onBlockSlot?.(selectInfo.start, selectInfo.end);
           calendarRef.current?.getApi().unselect();

@@ -10,9 +10,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const daysOfWeek = [
   { id: "monday", label: "Lunes" },
@@ -39,6 +45,19 @@ interface WeeklyScheduleCardProps {
     value: string | boolean
   ) => void;
   onSave: () => void;
+}
+
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = Math.floor(i / 2);
+  const m = i % 2 === 0 ? "00" : "30";
+  return `${String(h).padStart(2, "0")}:${m}`;
+});
+
+function ensureOption(options: string[], value: string): string[] {
+  if (value && !options.includes(value)) {
+    return [...options, value].sort();
+  }
+  return options;
 }
 
 export default function WeeklyScheduleCard({
@@ -91,25 +110,43 @@ export default function WeeklyScheduleCard({
                   </Label>
                 </div>
                 <div className="flex items-center gap-2 pl-[30px] sm:pl-0 sm:flex-1">
-                  <Input
-                    type="time"
+                  <Select
                     value={daySchedule.start}
-                    onChange={(e) =>
-                      onScheduleChange(day.id, "start", e.target.value)
+                    onValueChange={(value) =>
+                      onScheduleChange(day.id, "start", value)
                     }
                     disabled={!daySchedule.isActive}
-                    className="h-9 px-2 text-sm flex-1 sm:flex-none sm:w-28"
-                  />
+                  >
+                    <SelectTrigger className="h-9 px-2 text-sm flex-1 sm:flex-none sm:w-28">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ensureOption(TIME_OPTIONS, daySchedule.start).map((time) => (
+                        <SelectItem key={time} value={time}>
+                          {time}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <span className="text-muted-foreground shrink-0">—</span>
-                  <Input
-                    type="time"
+                  <Select
                     value={daySchedule.end}
-                    onChange={(e) =>
-                      onScheduleChange(day.id, "end", e.target.value)
+                    onValueChange={(value) =>
+                      onScheduleChange(day.id, "end", value)
                     }
                     disabled={!daySchedule.isActive}
-                    className="h-9 px-2 text-sm flex-1 sm:flex-none sm:w-28"
-                  />
+                  >
+                    <SelectTrigger className="h-9 px-2 text-sm flex-1 sm:flex-none sm:w-28">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ensureOption(TIME_OPTIONS, daySchedule.end).map((time) => (
+                        <SelectItem key={time} value={time}>
+                          {time}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             );
