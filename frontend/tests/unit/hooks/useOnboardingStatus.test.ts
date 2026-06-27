@@ -51,7 +51,7 @@ describe('useOnboardingStatus', () => {
     mockGet.mockImplementation((url: string) => {
       if (url.includes('schedule')) return Promise.resolve({ data: activeSchedule });
       if (url.includes('categories/admin')) return Promise.resolve({ data: [makeCategory('c1')] });
-      if (url.includes('services')) return Promise.resolve({ data: [makeService('s1')] });
+      if (url.includes('services')) return Promise.resolve({ data: { services: [makeService('s1')] } });
       return Promise.reject(new Error(`unexpected ${url}`));
     });
 
@@ -70,7 +70,7 @@ describe('useOnboardingStatus', () => {
     mockGet.mockImplementation((url: string) => {
       if (url.includes('schedule')) return Promise.resolve({ data: emptySchedule });
       if (url.includes('categories/admin')) return Promise.resolve({ data: [] });
-      if (url.includes('services')) return Promise.resolve({ data: [] });
+      if (url.includes('services')) return Promise.resolve({ data: { services: [] } });
       return Promise.reject(new Error(`unexpected ${url}`));
     });
 
@@ -88,7 +88,7 @@ describe('useOnboardingStatus', () => {
     mockGet.mockImplementation((url: string) => {
       if (url.includes('schedule')) return Promise.resolve({ data: activeSchedule });
       if (url.includes('categories/admin')) return Promise.resolve({ data: [] });
-      if (url.includes('services')) return Promise.resolve({ data: [] });
+      if (url.includes('services')) return Promise.resolve({ data: { services: [] } });
       return Promise.reject(new Error(`unexpected ${url}`));
     });
 

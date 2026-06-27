@@ -44,7 +44,8 @@ export function useOnboardingStatus(): OnboardingStatus {
 
       const hasSchedule = hasAnyActiveDay(scheduleRes.data);
       const hasCategories = categoriesRes.data.length > 0;
-      const hasServices = servicesRes.data.length > 0;
+      const allServices = (servicesRes.data as { services: Service[] }).services;
+      const hasServices = allServices.some((s) => s.isActive);
 
       setState({
         hasSchedule,

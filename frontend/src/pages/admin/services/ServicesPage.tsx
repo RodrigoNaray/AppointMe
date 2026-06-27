@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import apiClient from '@/api/client';
+import { getServices } from '@/api/modules/services';
 import { Service, CreateServiceDto, UpdateServiceDto } from '@/types/service';
 import { Category } from '@/types/service';
 import { DataTable } from '@/components/shared/DataTable';
@@ -37,10 +38,10 @@ export default function ServicesPage() {
     setIsLoading(true);
     try {
       const [servicesRes, categoriesRes] = await Promise.all([
-        apiClient.get<Service[]>('services'),
+        getServices({ limit: 1000 }),
         apiClient.get<Category[]>('categories/admin'),
       ]);
-      setServices(servicesRes.data);
+      setServices(servicesRes.services);
       setCategories(categoriesRes.data);
     } catch (err) {
       console.error('No se pudieron cargar los datos.', err);

@@ -44,7 +44,7 @@ const setNeedsOnboarding = (schedule: unknown, categoriesLen: number, servicesLe
   mockGet.mockImplementation((url: string) => {
     if (url.includes('schedule')) return Promise.resolve({ data: schedule });
     if (url.includes('categories/admin')) return Promise.resolve({ data: new Array(categoriesLen).fill({ id: 'x' }) });
-    if (url.includes('services')) return Promise.resolve({ data: new Array(servicesLen).fill({ id: 'x' }) });
+    if (url.includes('services')) return Promise.resolve({ data: { services: new Array(servicesLen).fill({ id: 'x', isActive: true }) } });
     return Promise.reject(new Error(`unexpected ${url}`));
   });
 };
