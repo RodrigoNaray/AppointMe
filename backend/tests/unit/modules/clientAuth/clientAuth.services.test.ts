@@ -297,7 +297,7 @@ describe('clientAuth.services', () => {
   });
 
   it('throws when resetPassword receives a short password', async () => {
-    await expect(resetPassword('token', '123')).rejects.toThrow('al menos 6 caracteres');
+    await expect(resetPassword('token', '123')).rejects.toThrow('al menos 8 caracteres');
   });
 
   it('throws when resetPassword token is invalid', async () => {

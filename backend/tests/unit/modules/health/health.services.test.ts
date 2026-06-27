@@ -1,13 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockPrisma } = vi.hoisted(() => ({
+const { mockPrisma, mockLogger } = vi.hoisted(() => ({
   mockPrisma: {
     $queryRaw: vi.fn()
+  },
+  mockLogger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn()
   }
 }));
 
 vi.mock('../../../../src/config/prisma', () => ({
   default: mockPrisma
+}));
+
+vi.mock('../../../../src/utils/logger', () => ({
+  default: mockLogger
 }));
 
 import { getStatus } from '../../../../src/modules/health/health.services';
@@ -35,14 +44,11 @@ describe('health.services', () => {
   });
 
   it('returns db status error when query fails', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     mockPrisma.$queryRaw.mockRejectedValue(new Error('db down'));
 
     const result = await getStatus();
 
     expect(result.db.status).toBe('error');
-    expect(consoleSpy).toHaveBeenCalled();
-
-    consoleSpy.mockRestore();
+    expect(mockLogger.error).toHaveBeenCalled();
   });
 });

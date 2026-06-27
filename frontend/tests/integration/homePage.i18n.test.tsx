@@ -40,11 +40,10 @@ describe('HomePage i18n', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Plataforma Profesional')).toBeTruthy();
+      expect(screen.getByText('Studio Carlos Méndez')).toBeTruthy();
     });
 
-    expect(screen.getByText('La plataforma para profesionales independientes')).toBeTruthy();
-    expect(screen.getByText('Disponible Hoy')).toBeTruthy();
+    expect(screen.getByText('Barbería Profesional')).toBeTruthy();
     expect(screen.getByText('Reservar Ahora')).toBeTruthy();
   });
 
@@ -58,11 +57,10 @@ describe('HomePage i18n', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Professional Platform')).toBeTruthy();
+      expect(screen.getByText('Studio Carlos Méndez')).toBeTruthy();
     });
 
-    expect(screen.getByText('The platform for independent professionals')).toBeTruthy();
-    expect(screen.getByText('Available Today')).toBeTruthy();
+    expect(screen.getByText('Professional Barber Shop')).toBeTruthy();
     expect(screen.getByText('Book Now')).toBeTruthy();
   });
 });
