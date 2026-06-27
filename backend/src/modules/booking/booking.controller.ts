@@ -195,7 +195,7 @@ export const cancelBooking = async (
     sendClientCancellationEmail({
       to: client.email,
       clientName: client.name,
-      clientTimezone: client.emailLanguage === 'en' ? 'UTC' : 'America/Montevideo',
+      clientTimezone: 'America/Montevideo',
       clientLanguage: client.emailLanguage,
       serviceName: updatedBooking.service?.name || 'Servicio',
       bookingTime: updatedBooking.bookingTime,
@@ -267,7 +267,7 @@ export const cancelBookingByAdminController = async (
       hasReason: Boolean(reason)
     }, 'Booking cancelled by admin via API');
 
-    const clientTimezone = 'UTC';
+    const clientTimezone = 'America/Montevideo';
 
     sendAdminCancellationEmail({
       to: result.clientEmail,
@@ -357,7 +357,7 @@ export const rescheduleBookingByAdminController = async (
       newBookingTime: result.newBookingTime.toISOString()
     }, 'Booking rescheduled by admin via API');
 
-    const clientTimezone = 'UTC';
+    const clientTimezone = 'America/Montevideo';
 
     sendBookingRescheduledEmail({
       to: result.clientEmail,
@@ -555,7 +555,7 @@ export const createBookingByAdminController = async (
     sendBookingConfirmationEmail({
       to: booking.client.email,
       clientName: booking.client.name,
-      clientTimezone: 'UTC',
+      clientTimezone: 'America/Montevideo',
       clientLanguage: 'es',
       bookings: [{
         serviceName: booking.service.name,
