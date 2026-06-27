@@ -102,7 +102,6 @@ export default function MyBookingsPage() {
       fetchBookings();
       fetchSettings();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCheckingAuth, authState.isAuthenticated, authState.type]);
 
   const handleCancelClick = (booking: Booking) => {

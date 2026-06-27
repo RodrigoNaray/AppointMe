@@ -2,12 +2,8 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import esCommon from '../locales/es/common.json';
 import enCommon from '../locales/en/common.json';
-import esBooking from '../locales/es/booking.json';
-import enBooking from '../locales/en/booking.json';
 import esAdmin from '../locales/es/admin.json';
 import enAdmin from '../locales/en/admin.json';
-import esEmail from '../locales/es/email.json';
-import enEmail from '../locales/en/email.json';
 
 const supportedLngs = ['es', 'en'];
 
@@ -20,21 +16,17 @@ i18n.use(initReactI18next).init({
   lng,
   fallbackLng: 'es' as const,
   supportedLngs,
-  ns: ['common', 'booking', 'admin', 'email'] as const,
+  ns: ['common', 'admin'] as const,
   defaultNS: 'common',
   interpolation: { escapeValue: false },
   resources: {
     es: {
       common: esCommon,
-      booking: esBooking,
       admin: esAdmin,
-      email: esEmail,
     },
     en: {
       common: enCommon,
-      booking: enBooking,
       admin: enAdmin,
-      email: enEmail,
     },
   },
 });
