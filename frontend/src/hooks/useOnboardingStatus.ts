@@ -57,7 +57,7 @@ export function useOnboardingStatus(): OnboardingStatus {
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error desconocido';
-      setState((prev) => ({ ...prev, isLoading: false, error: message }));
+      setState((prev) => ({ ...prev, isLoading: false, error: message, needsOnboarding: false }));
     }
   }, []);
 
