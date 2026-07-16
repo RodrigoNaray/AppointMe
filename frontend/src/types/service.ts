@@ -70,3 +70,16 @@ export interface UpdateCategoryDto {
   description?: string;
   isActive?: boolean;
 }
+
+export interface PaginationResponse {
+  current_page: number;
+  total_pages: number;
+  total_count: number;
+  per_page: number;
+}
+
+export interface PaginatedServicesResult {
+  success: boolean;
+  services: Service[];
+  pagination: PaginationResponse;
+}

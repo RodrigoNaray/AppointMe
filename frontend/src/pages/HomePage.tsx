@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import type { Service } from "@/types/service";
 import type { BusinessHours, ContactInfo } from "@/api/modules/settings";
 import { getBusinessHours, getContactInfo } from "@/api/modules/settings";
-import { API_BASE_URL } from "@/api/config";
+import { getServices } from "@/api/modules/services";
 import { geocodeAddress, type GeocodingResult } from "@/lib/geocoding";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { ServicesCarousel } from "@/components/home/ServicesCarousel";
@@ -113,14 +113,10 @@ export default function HomePage() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
-        const response = await fetch(`${baseUrl}/services`);
-        if (response.ok) {
-          const data: unknown = await response.json();
-          setServices(parseActiveServicesPreview(data));
-        }
-      } catch (error) {
-        console.error('Error fetching services:', error);
+        const res = await getServices({ limit: 5 });
+        setServices(res.services);
+      } catch {
+        setServices([]);
       } finally {
         setLoadingServices(false);
       }

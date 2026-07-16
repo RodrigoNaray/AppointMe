@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -12,116 +13,79 @@ import {
 } from '@/components/ui/pagination';
 import ServicesTable from '@/components/shared/ServicesTable';
 import type { Service, Category } from '@/types/service';
-import { API_BASE_URL } from '@/api/config';
-
-/**
- * ServicesList - Componente reutilizable con Tabs de categorías y tabla de servicios
- * 
- * Mejores prácticas React 19:
- * - useMemo para cálculos costosos (filtrado + paginación)
- * - useState para estado local (servicios, categorías, página actual)
- * - useEffect para fetch de datos en mount
- * - shadcn-ui Tabs para filtros por categoría
- * - ServicesTable para vista compacta tipo tabla (reemplaza grid de cards)
- * - Pagination cliente-side (mejor UX que server-side para datasets pequeños)
- * 
- * Arquitectura:
- * - Fetch de servicios y categorías desde API pública
- * - Filtrado por categoría seleccionada (tab activo)
- * - Paginación cliente-side con servicios por página configurables
- * - Vista tabla compacta responsive (tabla desktop, lista mobile)
- * 
- * Referencias:
- * - React 19 useMemo: https://react.dev/reference/react/useMemo
- * - shadcn-ui Tabs: https://ui.shadcn.com/docs/components/tabs
- * - shadcn-ui Pagination: https://ui.shadcn.com/docs/components/pagination
- */
+import { getServices, getCategories } from '@/api/modules/services';
+import type { PaginationResponse } from '@/api/modules/services';
 
 interface ServicesListProps {
-  /** Número de servicios por página (default: 12 para tabla compacta) */
   itemsPerPage?: number;
 }
 
 export default function ServicesList({ itemsPerPage = 12 }: ServicesListProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [pagination, setPagination] = useState<PaginationResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch de servicios y categorías al montar el componente
+  const selectedCategory = searchParams.get('category') ?? 'all';
+  const currentPage = Number(searchParams.get('page') ?? '1') || 1;
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
 
-        // Fetch paralelo para mejor performance (Promise.all)
-        const [servicesRes, categoriesRes] = await Promise.all([
-          fetch(`${baseUrl}/services`),
-          fetch(`${baseUrl}/categories`),
-        ]);
+    Promise.all([
+      getServices({
+        page: currentPage,
+        limit: itemsPerPage,
+        categoryId: selectedCategory === 'all' ? null : selectedCategory,
+      }),
+      categories.length ? Promise.resolve(categories) : getCategories(),
+    ])
+      .then(([res, cats]) => {
+        if (cancelled) return;
+        setServices(res.services);
+        setPagination(res.pagination);
+        if (cats !== categories) setCategories(cats as Category[]);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : 'Error al cargar los datos');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-        if (!servicesRes.ok || !categoriesRes.ok) {
-          throw new Error('Error al cargar los datos');
-        }
+    return () => { cancelled = true; };
+  }, [currentPage, selectedCategory, itemsPerPage]);
 
-        const [servicesData, categoriesData] = await Promise.all([
-          servicesRes.json(),
-          categoriesRes.json(),
-        ]);
-
-        setServices(servicesData);
-        setCategories(categoriesData);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error desconocido');
-      } finally {
-        setLoading(false);
+  const handleCategoryChange = useCallback((value: string) => {
+    setSearchParams((prev) => {
+      if (value === 'all') {
+        prev.delete('category');
+      } else {
+        prev.set('category', value);
       }
-    };
+      prev.set('page', '1');
+      return prev;
+    }, { replace: true });
+  }, [setSearchParams]);
 
-    fetchData();
-  }, []);
-
-  // Filtrar servicios por categoría seleccionada (memoizado para performance)
-  const filteredServices = useMemo(() => {
-    if (selectedCategory === 'all') {
-      return services;
-    }
-    return services.filter((service) => service.categoryId === selectedCategory);
-  }, [services, selectedCategory]);
-
-  // Calcular total de páginas
-  const totalPages = Math.ceil(filteredServices.length / itemsPerPage);
-
-  // Resetear a página 1 cuando cambia el filtro de categoría
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedCategory]);
-
-  // Servicios de la página actual (memoizado)
-  const paginatedServices = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredServices.slice(startIndex, endIndex);
-  }, [filteredServices, currentPage, itemsPerPage]);
-
-  // Handler para cambiar categoría
-  const handleCategoryChange = (categoryId: string) => {
-    setSelectedCategory(categoryId);
-  };
-
-  // Handler para cambiar página
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
+    const totalPages = pagination?.total_pages ?? 1;
     if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-      // Scroll suave al inicio de la lista
+      setSearchParams((prev) => {
+        prev.set('page', String(page));
+        return prev;
+      }, { replace: true });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  };
+  }, [setSearchParams, pagination]);
 
-  // Loading state
+  const totalAll = categories.reduce((acc, c) => acc + (c._count?.services ?? 0), 0);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -131,7 +95,6 @@ export default function ServicesList({ itemsPerPage = 12 }: ServicesListProps) {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -143,8 +106,7 @@ export default function ServicesList({ itemsPerPage = 12 }: ServicesListProps) {
     );
   }
 
-  // Empty state
-  if (services.length === 0) {
+  if (pagination && pagination.total_count === 0 && selectedCategory === 'all') {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <p className="text-muted-foreground">No hay servicios disponibles</p>
@@ -152,40 +114,34 @@ export default function ServicesList({ itemsPerPage = 12 }: ServicesListProps) {
     );
   }
 
+  const totalPages = pagination?.total_pages ?? 1;
+  const showCategory = selectedCategory === 'all';
+
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Tabs de categorías */}
       <Tabs value={selectedCategory} onValueChange={handleCategoryChange}>
-        {/* TabsList con snap scroll y padding para scroll completo */}
         <TabsList className="w-full justify-start overflow-x-auto flex gap-0.5 sm:gap-1 scrollbar-hide snap-x snap-mandatory scroll-smooth">
-          <TabsTrigger 
-            value="all" 
+          <TabsTrigger
+            value="all"
             className="flex-shrink-0 text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 whitespace-nowrap snap-center"
           >
-            {/* Mobile: solo "Todos" | Desktop: "Todos (X)" */}
             <span className="sm:hidden">Todos</span>
-            <span className="hidden sm:inline">Todos ({services.length})</span>
+            <span className="hidden sm:inline">Todos ({totalAll})</span>
           </TabsTrigger>
-          {categories.map((category) => {
-            const count = services.filter((s) => s.categoryId === category.id).length;
-            return (
-              <TabsTrigger
-                key={category.id}
-                value={category.id}
-                className="flex-shrink-0 text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 whitespace-nowrap snap-center"
-              >
-                {/* Mobile: solo nombre | Desktop: nombre + contador */}
-                <span className="sm:hidden">{category.name}</span>
-                <span className="hidden sm:inline">{category.name} ({count})</span>
-              </TabsTrigger>
-            );
-          })}
+          {categories.map((category) => (
+            <TabsTrigger
+              key={category.id}
+              value={category.id}
+              className="flex-shrink-0 text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 whitespace-nowrap snap-center"
+            >
+              <span className="sm:hidden">{category.name}</span>
+              <span className="hidden sm:inline">{category.name} ({category._count?.services ?? 0})</span>
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        {/* Content no es necesario por tab, solo renderizamos la tabla */}
         <TabsContent value={selectedCategory} className="mt-4 sm:mt-6">
-          {/* Empty state para categoría sin servicios */}
-          {filteredServices.length === 0 ? (
+          {services.length === 0 ? (
             <div className="flex justify-center items-center min-h-[200px]">
               <p className="text-sm sm:text-base text-muted-foreground">
                 No hay servicios en esta categoría
@@ -193,13 +149,11 @@ export default function ServicesList({ itemsPerPage = 12 }: ServicesListProps) {
             </div>
           ) : (
             <>
-              {/* Tabla de servicios - Responsive optimizada */}
-              <ServicesTable 
-                services={paginatedServices} 
-                showCategory={selectedCategory === 'all'}
+              <ServicesTable
+                services={services}
+                showCategory={showCategory}
               />
 
-              {/* Paginación (solo mostrar si hay más de 1 página) */}
               {totalPages > 1 && (
                 <div className="mt-6 sm:mt-8">
                   <Pagination>
@@ -216,16 +170,13 @@ export default function ServicesList({ itemsPerPage = 12 }: ServicesListProps) {
                         />
                       </PaginationItem>
 
-                      {/* Páginas */}
                       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                        // Mostrar solo páginas cercanas a la actual (max 7 páginas visibles)
                         const showPage =
                           page === 1 ||
                           page === totalPages ||
                           (page >= currentPage - 1 && page <= currentPage + 1);
 
                         if (!showPage) {
-                          // Mostrar ellipsis solo una vez entre grupos
                           if (
                             page === currentPage - 2 ||
                             page === currentPage + 2
