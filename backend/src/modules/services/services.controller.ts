@@ -8,8 +8,13 @@ import logger from '../../utils/logger';
 
 export const findAll = async (req: Request, res: Response) => {
   try {
-    const services = await service.getAllServices();
-    res.status(200).json(services);
+    const { page, limit, categoryId } = req.query as Record<string, string | undefined>;
+    const result = await service.getAllServices({
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      categoryId: categoryId || undefined,
+    });
+    res.status(200).json({ success: true, ...result });
   } catch (error) {
     logger.error(error, "Error al obtener los servicios");
     res.status(500).json({ message: 'Error interno del servidor' });

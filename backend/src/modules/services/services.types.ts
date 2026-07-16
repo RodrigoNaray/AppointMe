@@ -29,3 +29,20 @@ export interface UpdateServiceDto {
   price?: number;
   isActive?: boolean;
 }
+
+export interface GetServicesQuery {
+  page?: string;
+  limit?: string;
+  categoryId?: string;
+}
+
+export interface PaginatedServicesResponse {
+  success: boolean;
+  services: Record<string, unknown>[];
+  pagination: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    per_page: number;
+  };
+}

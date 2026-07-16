@@ -28,12 +28,36 @@ const validateServicePayload = (data: CreateServiceDto | UpdateServiceDto): void
  * Obtiene todos los servicios con sus categorías asociadas
  * React 19 best practice: Incluir relaciones necesarias para evitar N+1 queries
  */
-export const getAllServices = async () => {
-  return prisma.service.findMany({
-    include: {
-      category: true, // Incluir información de categoría
+export const getAllServices = async (query?: { page?: number; limit?: number; categoryId?: string }) => {
+  const page = Number.isFinite(query?.page) && (query?.page ?? 1) > 0 ? query!.page! : 1;
+  const limit = Number.isFinite(query?.limit) && (query?.limit ?? 8) > 0 ? query!.limit! : 8;
+  const skip = (page - 1) * limit;
+
+  const where: Record<string, unknown> = { isActive: true };
+  if (query?.categoryId) {
+    where.categoryId = query.categoryId;
+  }
+
+  const [services, total] = await Promise.all([
+    prisma.service.findMany({
+      where,
+      include: { category: true },
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.service.count({ where }),
+  ]);
+
+  return {
+    services,
+    pagination: {
+      current_page: page,
+      total_pages: Math.ceil(total / limit),
+      total_count: total,
+      per_page: limit,
     },
-  });
+  };
 };
 
 export const getServiceById = async (id: string) => {
