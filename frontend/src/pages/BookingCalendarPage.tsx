@@ -10,7 +10,7 @@ import { format, isBefore, startOfToday, parse, addMonths, subMonths, startOfMon
 import { es } from 'date-fns/locale';
 import { getBookingRules } from '@/api/modules/settings';
 import { availabilityService } from '@/api/modules/availability';
-import { convertSlotLocalToUTC, convertSlotUTCToLocal } from '@/lib/timezoneSlots';
+import { convertSlotUTCToLocal, convertSlotsUTCToLocal } from '@/lib/timezoneSlots';
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 
@@ -189,7 +189,8 @@ export default function BookingCalendarPage() {
         const slotsUTC = response as string[];
         
         // PASO 1: Convertir slots UTC → Local timezone para display
-        const slotsLocal = slotsUTC.map(slotUTC => convertSlotUTCToLocal(slotUTC, selectedDate));
+        // (detecta el wrap de medianoche: slots del día siguiente UTC)
+        const slotsLocal = convertSlotsUTCToLocal(slotsUTC, selectedDate);
         
         // PASO 2: FILTRO CRÍTICO - Si es hoy, eliminar horarios que ya pasaron (comparar en LOCAL)
         const now = new Date();
@@ -261,10 +262,15 @@ export default function BookingCalendarPage() {
     if (!selectedTime || !selectedDate) return;
 
     const isClientAuthenticated = authState.isAuthenticated && authState.type === 'client';
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    
-    // CRÍTICO: Convertir selectedTime (local) de vuelta a UTC para el backend
-    const timeUTC = convertSlotLocalToUTC(selectedTime, selectedDate);
+
+    // Calcular el instante exacto desde la hora LOCAL elegida: la conversión
+    // UTC puede caer en el día siguiente (horarios que cruzan medianoche).
+    const [selectedHours, selectedMinutes] = selectedTime.split(':').map(Number);
+    const localSlot = new Date(selectedDate);
+    localSlot.setHours(selectedHours, selectedMinutes, 0, 0);
+    const isoInstant = localSlot.toISOString();
+    const dateStr = isoInstant.slice(0, 10);
+    const timeUTC = isoInstant.slice(11, 16);
 
     if (!isClientAuthenticated) {
       // Redirigir a login con returnUrl (guardar hora UTC en URL)

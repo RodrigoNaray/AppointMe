@@ -41,6 +41,7 @@ vi.mock('../../src/components/ui/calendar', () => ({
 vi.mock('../../src/lib/timezoneSlots', () => ({
   convertSlotUTCToLocal: (value: string) => value,
   convertSlotLocalToUTC: (value: string) => value,
+  convertSlotsUTCToLocal: (values: string[]) => values,
 }));
 
 describe('BookingCalendarPage integration', () => {
