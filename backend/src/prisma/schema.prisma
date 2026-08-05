@@ -27,10 +27,11 @@ enum CancellationReason {
 
 // Modelo para el Administrador (el profesional que usa la app)
 model AdminUser {
-  id            String    @id @default(cuid()) // Clave primaria, generada automáticamente
-  email         String    @unique             // Email único para el login
-  passwordHash  String?                       // Hash de la contraseña (opcional si solo usa Google Login)
-  googleId      String?   @unique             // ID de Google para el login social (opcional y único)
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String?
+  googleId      String?   @unique
 
   // Configuraciones específicas del administrador
   schedule      Json?     // Horario base semanal, almacenado como JSON. Ejemplo:

@@ -1,4 +1,5 @@
 import { useState, FormEvent } from 'react';
+import toast from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ export default function BlockForm({ onSubmit, onCancel, defaultStartTime, defaul
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (new Date(endTime) < new Date(startTime)) {
-      alert("La fecha de fin no puede ser anterior a la fecha de inicio.");
+      toast.error("La fecha de fin no puede ser anterior a la fecha de inicio.");
       return;
     }
     onSubmit({ startTime, endTime, reason });

@@ -38,7 +38,7 @@ describe('availability.admin.services', () => {
   it('validates schedule payload before update', async () => {
     await expect(
       updateSchedule('admin-1', {
-        monday: { isActive: true, start: '10:00', end: '09:00' }
+        monday: { isActive: true, start: '10:00', end: '10:00' }
       } as unknown as Parameters<typeof updateSchedule>[1])
     ).rejects.toBeInstanceOf(AvailabilityValidationError);
 

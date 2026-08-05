@@ -1,14 +1,20 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuthStore, selectUser } from "@/stores/authStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Calendar, DollarSign, Clock } from "lucide-react";
-import { getBookingMetrics } from '@/api/modules/bookings';
-import type { BookingMetrics } from '@/api/modules/bookings';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Users, Calendar, DollarSign, Clock, ArrowRight } from "lucide-react";
+import { getBookingMetrics, getAllBookings } from '@/api/modules/bookings';
+import type { BookingMetrics, Booking } from '@/api/modules/bookings';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import OnboardingBanner from '@/components/admin/OnboardingBanner';
 
 export default function DashboardPage() {
   const user = useAuthStore(selectUser);
   const [metrics, setMetrics] = useState<BookingMetrics | null>(null);
+  const [nextBooking, setNextBooking] = useState<Booking | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -16,6 +22,9 @@ export default function DashboardPage() {
     getBookingMetrics()
       .then(res => { if (!cancelled) setMetrics(res.metrics); })
       .catch(() => { if (!cancelled) setError('Error al cargar métricas'); });
+    getAllBookings({ from: new Date().toISOString(), limit: 1 })
+      .then(res => { if (!cancelled && res.bookings.length > 0) setNextBooking(res.bookings[0]); })
+      .catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
@@ -54,9 +63,14 @@ export default function DashboardPage() {
                     ? (todayDiff >= 0 ? '+' : '') + todayDiff + ' que ayer'
                     : 'Cargando...'}
                 </p>
+                {metrics.upcomingBookings > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Próximos 7 días: {metrics.upcomingBookings}
+                  </p>
+                )}
               </>
             ) : (
-              <div className="h-9 animate-pulse bg-muted rounded" />
+              <Skeleton className="h-9 w-20" />
             )}
           </CardContent>
         </Card>
@@ -79,7 +93,7 @@ export default function DashboardPage() {
                 </p>
               </>
             ) : (
-              <div className="h-9 animate-pulse bg-muted rounded" />
+              <Skeleton className="h-9 w-24" />
             )}
           </CardContent>
         </Card>
@@ -96,9 +110,14 @@ export default function DashboardPage() {
               <>
                 <div className="text-2xl font-bold">{metrics.activeServices}</div>
                 <p className="text-xs text-muted-foreground">Total de servicios ofrecidos</p>
+                {metrics.cancellationRate > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Cancelación: {metrics.cancellationRate.toFixed(1)}%
+                  </p>
+                )}
               </>
             ) : (
-              <div className="h-9 animate-pulse bg-muted rounded" />
+              <Skeleton className="h-9 w-16" />
             )}
           </CardContent>
         </Card>
@@ -117,11 +136,37 @@ export default function DashboardPage() {
                 <p className="text-xs text-muted-foreground">Este mes</p>
               </>
             ) : (
-              <div className="h-9 animate-pulse bg-muted rounded" />
+              <Skeleton className="h-9 w-16" />
             )}
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Próxima reserva</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {nextBooking ? (
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="font-medium truncate">{nextBooking.client.name}</p>
+                <p className="text-sm text-muted-foreground truncate">
+                  {nextBooking.service.name} · {format(new Date(nextBooking.bookingTime), "d 'de' MMMM, HH:mm", { locale: es })}
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" asChild className="flex-shrink-0">
+                <Link to="/admin/bookings">
+                  Ver
+                  <ArrowRight className="ml-1 h-3 w-3" />
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Sin reservas próximas</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

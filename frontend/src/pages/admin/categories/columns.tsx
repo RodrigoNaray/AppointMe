@@ -127,7 +127,7 @@ export const createCategoryColumns = ({
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => onDelete(category.id)} 
-                className="text-xs sm:text-sm text-red-500 focus:bg-red-50 focus:text-red-600"
+                className="text-xs sm:text-sm text-destructive focus:bg-destructive/10 focus:text-destructive"
                 disabled={(category._count?.services ?? 0) > 0}
               >
                 Borrar Categoría

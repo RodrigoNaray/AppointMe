@@ -9,6 +9,19 @@ if (!_origHasPointerCapture) {
   EventTarget.prototype.releasePointerCapture = () => {};
 }
 
+if (!('IntersectionObserver' in globalThis)) {
+  class MockIntersectionObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() { return []; }
+    root = null;
+    rootMargin = '';
+    thresholds = [];
+  }
+  (globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver = MockIntersectionObserver;
+}
+
 afterEach(() => {
 	cleanup();
 	sessionStorage.clear();

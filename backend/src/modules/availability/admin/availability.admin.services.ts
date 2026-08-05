@@ -19,6 +19,15 @@ const toMinutes = (time: string): number => {
   return (hours * 60) + minutes;
 };
 
+const getDurationMinutes = (start: string, end: string): number => {
+  let startMin = toMinutes(start);
+  let endMin = toMinutes(end);
+  if (endMin <= startMin) {
+    endMin += 1440;
+  }
+  return endMin - startMin;
+};
+
 const validateSchedulePayload = (schedule: UpdateScheduleDto): void => {
   for (const [day, daySchedule] of Object.entries(schedule)) {
     if (!dayMap.includes(day)) {
@@ -39,8 +48,13 @@ const validateSchedulePayload = (schedule: UpdateScheduleDto): void => {
       throw new AvailabilityValidationError(`Formato de hora inválido en ${day}. Use HH:mm.`);
     }
 
-    if (toMinutes(start) >= toMinutes(end)) {
+    if (start === end) {
       throw new AvailabilityValidationError(`El rango horario en ${day} debe cumplir start < end.`);
+    }
+
+    const duration = getDurationMinutes(start, end);
+    if (duration > 1440) {
+      throw new AvailabilityValidationError(`El rango horario en ${day} supera las 24 horas.`);
     }
   }
 };
@@ -113,6 +127,36 @@ export const deleteBlock = async (blockId: string, adminId: string) => {
   logger.info({ blockId }, "Bloqueo de tiempo eliminado");
 };
 
+export const updateBlock = async (blockId: string, adminId: string, data: { startTime: Date; endTime: Date; reason?: string }) => {
+  if (isNaN(data.startTime.getTime()) || isNaN(data.endTime.getTime())) {
+    throw new AvailabilityValidationError('Las fechas de bloqueo son inválidas.');
+  }
+
+  if (data.startTime >= data.endTime) {
+    throw new AvailabilityValidationError('El bloqueo debe cumplir startTime < endTime.');
+  }
+
+  const existing = await prisma.availabilityBlock.findFirst({
+    where: { id: blockId, adminId },
+  });
+
+  if (!existing) {
+    throw new AvailabilityValidationError('Bloqueo no encontrado.');
+  }
+
+  const updated = await prisma.availabilityBlock.update({
+    where: { id: blockId },
+    data: {
+      startTime: data.startTime,
+      endTime: data.endTime,
+      reason: data.reason ?? existing.reason,
+    },
+  });
+
+  logger.info({ blockId }, "Bloqueo de tiempo actualizado");
+  return updated;
+};
+
 
 export const getCalendarEvents = async (userId: string, month: Date): Promise<CalendarEvent[]> => {
   const startOfMonthDate = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), 1, 0, 0, 0, 0));
@@ -164,6 +208,10 @@ export const getCalendarEvents = async (userId: string, month: Date): Promise<Ca
       const [endHour, endMinute] = daySchedule.end.split(':').map(Number);
       endDateTime.setUTCHours(endHour, endMinute, 0, 0);
 
+      if (endDateTime <= startDateTime) {
+        endDateTime.setUTCDate(endDateTime.getUTCDate() + 1);
+      }
+
       events.push({
         title: 'Horario de Trabajo',
         start: startDateTime,
@@ -194,6 +242,7 @@ export const getCalendarEvents = async (userId: string, month: Date): Promise<Ca
       start: block.startTime,
       end: block.endTime,
       type: 'block',
+      reason: block.reason,
     });
   });
 

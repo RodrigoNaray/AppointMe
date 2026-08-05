@@ -270,20 +270,20 @@ export const createBooking = async (
                 price: true
               }
             },
-            client: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                phone: true
-              }
-            }
-          }
+          client: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
+        },
         });
       },
       {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable
-      }
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
     );
 
     logger.info({
@@ -885,4 +885,101 @@ export const getBookingMetrics = async (adminId: string): Promise<BookingMetrics
     upcomingBookings: upcomingCount,
     cancellationRate: totalCount > 0 ? Math.round((cancelledCount / totalCount) * 100) / 100 : 0
   };
+};
+
+export const createBookingByAdmin = async (
+  adminId: string,
+  data: { clientId: string; serviceId: string; bookingTime: Date }
+): Promise<BookingWithDetails> => {
+  const result = await prisma.$transaction(
+    async (tx) => {
+      const client = await tx.client.findUnique({
+        where: { id: data.clientId },
+        select: { id: true, email: true, name: true },
+      });
+
+      if (!client) {
+        throw buildBookingError(
+          'Client not found',
+          404,
+          BookingErrorCodes.BOOKING_NOT_FOUND
+        );
+      }
+
+      const service = await tx.service.findUnique({
+        where: { id: data.serviceId },
+        include: {
+          admin: {
+            select: { id: true, schedule: true },
+          },
+        },
+      });
+
+      if (!service || !service.isActive) {
+        throw buildBookingError(
+          'Service not found or inactive',
+          404,
+          BookingErrorCodes.SERVICE_NOT_FOUND
+        );
+      }
+
+      if (!service.admin || service.admin.id !== adminId) {
+        throw buildBookingError(
+          'Service does not belong to this admin',
+          403,
+          BookingErrorCodes.UNAUTHORIZED
+        );
+      }
+
+      const isAvailable = await validateTimeSlotAvailability(
+        tx,
+        data.bookingTime,
+        service.durationMinutes,
+        adminId,
+        data.serviceId
+      );
+
+      if (!isAvailable) {
+        throw buildBookingError(
+          'The requested time slot is not available',
+          409,
+          BookingErrorCodes.UNAVAILABLE_TIME
+        );
+      }
+
+      const booking = await tx.booking.create({
+        data: {
+          clientId: data.clientId,
+          serviceId: data.serviceId,
+          adminId,
+          bookingTime: data.bookingTime,
+          durationMinutes: service.durationMinutes,
+        },
+        include: {
+          service: {
+            select: {
+              id: true,
+              name: true,
+              durationMinutes: true,
+              price: true,
+            },
+          },
+          client: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      return booking;
+    },
+    {
+      isolationLevel: 'Serializable',
+    }
+  );
+
+  return result;
 };

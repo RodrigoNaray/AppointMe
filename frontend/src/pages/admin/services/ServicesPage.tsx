@@ -1,24 +1,29 @@
 "use client"
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import toast from 'react-hot-toast';
 import apiClient from '@/api/client';
+import { getServices } from '@/api/modules/services';
 import { Service, CreateServiceDto, UpdateServiceDto } from '@/types/service';
 import { Category } from '@/types/service';
 import { DataTable } from '@/components/shared/DataTable';
 import { createServiceColumns } from './columns';
-import Modal from '@/components/Modal';
 import ServiceForm from '@/components/ServiceForm';
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
+import { PageSkeleton } from '@/components/admin/PageSkeleton';
+import { EmptyState } from '@/components/admin/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { PlusCircle, Clock, DollarSign, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { PlusCircle, Clock, DollarSign, MoreVertical, Pencil, Trash2, Briefcase } from 'lucide-react';
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
@@ -27,15 +32,16 @@ export default function ServicesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
 
   const fetchServices = useCallback(async () => {
     setIsLoading(true);
     try {
       const [servicesRes, categoriesRes] = await Promise.all([
-        apiClient.get<Service[]>('services'),
+        getServices({ limit: 1000 }),
         apiClient.get<Category[]>('categories/admin'),
       ]);
-      setServices(servicesRes.data);
+      setServices(servicesRes.services);
       setCategories(categoriesRes.data);
     } catch (err) {
       console.error('No se pudieron cargar los datos.', err);
@@ -87,13 +93,22 @@ export default function ServicesPage() {
   };
 
   const handleDeleteService = async (serviceId: string) => {
-    if (window.confirm("¿Estás seguro de que quieres eliminar este servicio?")) {
-      try {
-        await apiClient.delete(`services/remove/${serviceId}`);
-        fetchServices();
-      } catch (err) {
-        console.error("Error al eliminar el servicio:", err);
-      }
+    const service = services.find((s) => s.id === serviceId);
+    if (!service) return;
+    setServiceToDelete(service);
+  };
+
+  const confirmDeleteService = async () => {
+    if (!serviceToDelete) return;
+    try {
+      await apiClient.delete(`services/remove/${serviceToDelete.id}`);
+      toast.success(`Servicio "${serviceToDelete.name}" eliminado correctamente.`);
+      fetchServices();
+    } catch (err) {
+      console.error("Error al eliminar el servicio:", err);
+      toast.error("Error al eliminar el servicio.");
+    } finally {
+      setServiceToDelete(null);
     }
   };
 
@@ -103,11 +118,7 @@ export default function ServicesPage() {
     onDelete: handleDeleteService
   });
 
-  if (isLoading) return (
-    <div className="flex items-center justify-center py-8">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-foreground/20 border-t-foreground" />
-    </div>
-  );
+  if (isLoading) return <PageSkeleton variant="list" />;
 
   return (
   <div className="w-full max-w-full space-y-4 sm:space-y-6">
@@ -150,7 +161,15 @@ export default function ServicesPage() {
 
     {/* Vista Mobile - Cards */}
     <div className="block sm:hidden space-y-2">
-      {filteredServices.length === 0 ? (
+      {services.length === 0 ? (
+        <EmptyState
+          icon={Briefcase}
+          title="No hay servicios"
+          description="Creá tu primer servicio para empezar a recibir reservas."
+          actionLabel="Crear servicio"
+          onAction={handleOpenCreateModal}
+        />
+      ) : filteredServices.length === 0 ? (
         <Card>
           <CardContent className="py-6 text-center text-xs text-muted-foreground">
             No hay servicios en esta categoría
@@ -203,7 +222,7 @@ export default function ServicesPage() {
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => handleDeleteService(service.id)}
-                      className="text-red-500 focus:bg-red-50 focus:text-red-600"
+                      className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Eliminar
@@ -222,17 +241,28 @@ export default function ServicesPage() {
       <DataTable columns={columns} data={filteredServices} />
     </div>
 
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title={editingService ? "Editar Servicio" : "Añadir Nuevo Servicio"}
-      >
-        <ServiceForm 
-          onCancel={() => setIsModalOpen(false)}
-          onSubmit={handleFormSubmit}
-          initialData={editingService}
-        />
-      </Modal>
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingService ? "Editar Servicio" : "Añadir Nuevo Servicio"}</DialogTitle>
+          </DialogHeader>
+          <ServiceForm
+            onCancel={() => setIsModalOpen(false)}
+            onSubmit={handleFormSubmit}
+            initialData={editingService}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={serviceToDelete !== null}
+        onOpenChange={(open) => { if (!open) setServiceToDelete(null); }}
+        title="Eliminar servicio"
+        description={`¿Seguro que querés eliminar "${serviceToDelete?.name ?? ''}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        onConfirm={confirmDeleteService}
+        destructive
+      />
     </div>
   );
 }

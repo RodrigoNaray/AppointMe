@@ -27,7 +27,7 @@ export default function AdminRoute() {
 
   // Verificación estricta: debe estar autenticado Y ser tipo admin
   if (!authState.isAuthenticated || authState.type !== 'admin') {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
 
   return <Outlet />;

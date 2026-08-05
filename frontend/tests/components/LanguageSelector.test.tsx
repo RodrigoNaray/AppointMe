@@ -15,7 +15,7 @@ import LanguageSelector from '@/components/LanguageSelector';
 describe('LanguageSelector', () => {
   it('renders the current language trigger', () => {
     render(<LanguageSelector />);
-    const trigger = screen.getByRole('combobox');
+    const trigger = screen.getByRole('button', { name: 'Switch to English' });
     expect(trigger).toBeTruthy();
   });
 });

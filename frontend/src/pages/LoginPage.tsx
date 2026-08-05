@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useTranslation } from 'react-i18next';
 import { PageContainer } from "@/components/layout/PageContainer";
+import { useScrollReveal } from '@/hooks/useScrollReveal';
 
 function GoogleIcon({ className }: { className?: string }) {
     return (
@@ -34,6 +35,7 @@ export default function LoginPage() {
     const saveReturnUrl = useOAuthStore(selectSaveReturnUrl);
 
     const returnUrl = searchParams.get('returnUrl');
+  const reveal = useScrollReveal(0.1);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -67,6 +69,7 @@ export default function LoginPage() {
 
     return (
         <PageContainer maxWidth="md" fullHeight centered padding="none">
+          <div ref={reveal.ref} className={`flex justify-center ${reveal.isVisible ? 'visible' : ''} animate-reveal`}>
             <Card className="w-full max-w-md shadow-lg">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-bold">{t('auth.loginTitle')}</CardTitle>
@@ -123,7 +126,7 @@ export default function LoginPage() {
                     </p>
                     <p className="mt-3 text-center text-xs">
                         <Link
-                            to="/Adminlogin"
+                            to="/admin/login"
                             className="text-muted-foreground hover:text-foreground hover:underline"
                         >
                             {t('auth.adminLoginLink')}
@@ -131,6 +134,7 @@ export default function LoginPage() {
                     </p>
                 </CardContent>
             </Card>
+          </div>
         </PageContainer>
     );
 }

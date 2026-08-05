@@ -16,6 +16,7 @@ import availabilityPublicRoutes from './modules/availability/public/availability
 import categoryRoutes from './modules/category/category.routes';
 import { settingsRoutes, adminSettingsRoutes } from './modules/settings/settings.routes';
 import sitemapRoutes from './modules/sitemap/sitemap.routes';
+import clientsAdminRouter from './modules/client/client.admin.routes';
 import compression from "compression";
 import helmet from "helmet";
 import logger from "./utils/logger";
@@ -64,6 +65,7 @@ passport.use('google', googleStrategy);
 app.use('/api/admin/availability', isAdminAuthenticated, availabilityRouter);
 app.use('/api/admin/bookings', isAdminAuthenticated, adminBookingRoutes);
 app.use('/api/admin/settings', adminSettingsRoutes); // Ya incluye isAdminAuthenticated en routes
+app.use('/api/admin/clients', isAdminAuthenticated, clientsAdminRouter);
 app.use('/api/availability', availabilityPublicRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/client', clientAuthRoutes);

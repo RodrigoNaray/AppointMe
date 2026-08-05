@@ -18,12 +18,12 @@ vi.mock('react-i18next', () => ({
       const map: Record<string, string> = {
         'onboarding.banner.title': 'Tu cuenta aún no está lista',
         'onboarding.banner.subtitle': 'Completá estos pasos.',
-        'onboarding.banner.dismissedHint': 'Podés retomar más tarde.',
         'onboarding.check.schedule': 'Horario semanal configurado',
         'onboarding.check.category': 'Categoría creada',
         'onboarding.check.service': 'Servicio activo',
         'onboarding.cta.start': 'Iniciar configuración guiada',
         'onboarding.cta.dismiss': 'Omitir por ahora',
+        'onboarding.cta.backToWizard': 'Volver al wizard',
       };
       return map[key] || key;
     },
@@ -44,7 +44,7 @@ const setNeedsOnboarding = (schedule: unknown, categoriesLen: number, servicesLe
   mockGet.mockImplementation((url: string) => {
     if (url.includes('schedule')) return Promise.resolve({ data: schedule });
     if (url.includes('categories/admin')) return Promise.resolve({ data: new Array(categoriesLen).fill({ id: 'x' }) });
-    if (url.includes('services')) return Promise.resolve({ data: new Array(servicesLen).fill({ id: 'x' }) });
+    if (url.includes('services')) return Promise.resolve({ data: { services: new Array(servicesLen).fill({ id: 'x', isActive: true }) } });
     return Promise.reject(new Error(`unexpected ${url}`));
   });
 };
@@ -85,15 +85,16 @@ describe('OnboardingBanner', () => {
     expect(screen.queryByText('Tu cuenta aún no está lista')).not.toBeInTheDocument();
   });
 
-  it('hides the dismiss button when already dismissed but keeps the banner visible', async () => {
+  it('renders the slim back-to-wizard link when dismissed instead of the full banner', async () => {
     setNeedsOnboarding({}, 0, 0);
     useOnboardingStore.setState({ dismissed: true });
 
     renderBanner();
 
     await waitFor(() => {
-      expect(screen.getByText('Tu cuenta aún no está lista')).toBeInTheDocument();
+      expect(screen.getByText('Volver al wizard', { exact: false })).toBeInTheDocument();
     });
+    expect(screen.queryByText('Tu cuenta aún no está lista')).not.toBeInTheDocument();
     expect(screen.queryByText('Omitir por ahora')).not.toBeInTheDocument();
   });
 });

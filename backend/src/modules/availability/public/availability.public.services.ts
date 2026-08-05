@@ -104,7 +104,11 @@ export const getAvailableSlots = async (date: Date, durationMinutes: number) => 
   
   const workingHoursEnd = new Date(date);
   workingHoursEnd.setUTCHours(endHours, endMinutes, 0, 0);
-  
+
+  if (workingHoursEnd <= workingHoursStart) {
+    workingHoursEnd.setUTCDate(workingHoursEnd.getUTCDate() + 1);
+  }
+
   let currentSlotStart = new Date(workingHoursStart);
 
   // Generar todos los slots candidatos primero usando la duración solicitada
@@ -218,7 +222,11 @@ export const getMonthAvailability = async (month: Date, totalDuration: number) =
     
     const workingHoursEnd = new Date(day);
     workingHoursEnd.setUTCHours(endHours, endMinutes, 0, 0);
-    
+
+    if (workingHoursEnd <= workingHoursStart) {
+      workingHoursEnd.setUTCDate(workingHoursEnd.getUTCDate() + 1);
+    }
+
     // Filtrar bookings y blocks de este día (usar UTC explícito)
     const { start: dayStartUTC, endExclusive: dayEndUTCExclusive } = getUtcDayRange(day);
     

@@ -11,6 +11,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import {
+  selectMarkCompleted,
+  useOnboardingStore,
+} from '@/stores/onboardingStore';
 
 export type WizardStepId =
   | 'welcome'
@@ -82,6 +86,7 @@ export default function OnboardingWizard({
 }: OnboardingWizardProps) {
   const { t } = useTranslation('admin');
   const navigate = useNavigate();
+  const markCompleted = useOnboardingStore(selectMarkCompleted);
   const [stepIndex, setStepIndex] = useState(-1);
 
   const handleOpenChange = (next: boolean) => {
@@ -127,6 +132,7 @@ export default function OnboardingWizard({
       <DialogFooter>
         <Button
           onClick={async () => {
+            markCompleted();
             await onStepFinished();
             handleOpenChange(false);
           }}
@@ -155,7 +161,7 @@ export default function OnboardingWizard({
         </Button>
         {step.path && (
           <Button
-            onClick={() => handleGoToStep(step.path as string)}
+            onClick={() => handleGoToStep(step.path)}
             className="w-full sm:w-auto"
           >
             {t(step.ctaKey)}
@@ -184,6 +190,7 @@ export default function OnboardingWizard({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
+        showCloseButton={false}
         className="max-w-md max-h-[90vh] overflow-y-auto"
         data-testid="onboarding-wizard"
       >

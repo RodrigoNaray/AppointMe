@@ -14,6 +14,7 @@ export interface RegisterDto {
 export interface AdminUser {
   id: string;
   email: string;
+  name?: string;
   type: 'admin';
 }
 

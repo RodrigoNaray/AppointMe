@@ -34,7 +34,7 @@ export const getPublicCategories = async () => {
     },
     include: {
       _count: {
-        select: { services: true },
+        select: { services: { where: { isActive: true } } },
       },
     },
     orderBy: { name: 'asc' },

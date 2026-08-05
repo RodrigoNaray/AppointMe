@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Circle, Sparkles, X } from 'lucide-react';
+import { Check, Circle, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
@@ -44,6 +44,24 @@ export default function OnboardingBanner() {
     await refetch();
   };
 
+  if (dismissed) {
+    return (
+      <>
+        <button
+          onClick={() => setWizardOpen(true)}
+          className="text-sm text-muted-foreground hover:text-primary underline transition-colors text-left"
+        >
+          {t('onboarding.cta.backToWizard')} →
+        </button>
+        <OnboardingWizard
+          open={wizardOpen}
+          onOpenChange={setWizardOpen}
+          onStepFinished={handleStepFinished}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <Card className="border-primary/30 bg-primary/5">
@@ -55,30 +73,11 @@ export default function OnboardingBanner() {
                 <h2 className="font-semibold text-base sm:text-lg">
                   {t('onboarding.banner.title')}
                 </h2>
-                {!dismissed && (
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {t('onboarding.banner.subtitle')}
-                  </p>
-                )}
-                {dismissed && (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {t('onboarding.banner.dismissedHint')}
-                  </p>
-                )}
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {t('onboarding.banner.subtitle')}
+                </p>
               </div>
             </div>
-            {dismissed && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={dismiss}
-                className="h-8 w-8 flex-shrink-0"
-                aria-label={t('onboarding.cta.dismiss')}
-                disabled
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
           </div>
 
           <ul className="space-y-1.5">
@@ -95,16 +94,14 @@ export default function OnboardingBanner() {
             >
               {t('onboarding.cta.start')}
             </Button>
-            {!dismissed && (
-              <Button
-                onClick={dismiss}
-                variant="ghost"
-                className="w-full sm:w-auto"
-                size="sm"
-              >
-                {t('onboarding.cta.dismiss')}
-              </Button>
-            )}
+            <Button
+              onClick={dismiss}
+              variant="ghost"
+              className="w-full sm:w-auto"
+              size="sm"
+            >
+              {t('onboarding.cta.dismiss')}
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -80,3 +80,10 @@ export const availabilityService = {
     }
 
 } as const
+
+export const updateBlock = async (
+  blockId: string,
+  data: { startTime: string; endTime: string; reason?: string }
+): Promise<void> => {
+  await apiClient.put(`/admin/availability/blocks/${blockId}`, data);
+};

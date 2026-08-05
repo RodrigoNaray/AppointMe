@@ -44,7 +44,8 @@ export function useOnboardingStatus(): OnboardingStatus {
 
       const hasSchedule = hasAnyActiveDay(scheduleRes.data);
       const hasCategories = categoriesRes.data.length > 0;
-      const hasServices = servicesRes.data.length > 0;
+      const allServices = (servicesRes.data as { services: Service[] }).services;
+      const hasServices = allServices.some((s) => s.isActive);
 
       setState({
         hasSchedule,
@@ -56,7 +57,7 @@ export function useOnboardingStatus(): OnboardingStatus {
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error desconocido';
-      setState((prev) => ({ ...prev, isLoading: false, error: message }));
+      setState((prev) => ({ ...prev, isLoading: false, error: message, needsOnboarding: false }));
     }
   }, []);
 

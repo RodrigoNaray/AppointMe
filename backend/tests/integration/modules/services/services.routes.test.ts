@@ -48,13 +48,14 @@ describe('services.routes', () => {
 
   it('returns all services in GET /services', async () => {
     mockedService.getAllServices.mockResolvedValue(
-      [{ id: 'service-1', name: 'Corte' }] as unknown as ServiceList
+      { services: [{ id: 'service-1', name: 'Corte' }], pagination: { current_page: 1, total_pages: 1, total_count: 1, per_page: 12 } } as unknown as ServiceList
     );
 
     const response = await request(app).get('/services');
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveLength(1);
+    expect(response.body.services).toHaveLength(1);
+    expect(response.body.pagination.current_page).toBe(1);
   });
 
   it('creates service in POST /services with admin user from middleware', async () => {
