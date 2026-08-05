@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { format, parse } from "date-fns";
 import { es } from "date-fns/locale";
 import toast from "react-hot-toast";
-import { useBookingStore, selectCart, selectClearCart, selectTotalPrice, selectTotalDuration } from "@/stores/bookingStore";
+import { useBookingStore, selectCart, selectClearCart, selectRemoveService, selectTotalPrice, selectTotalDuration } from "@/stores/bookingStore";
 import { useAuthStore, selectAuthState } from "@/stores/authStore";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ export default function BookingConfirmPage() {
   const [searchParams] = useSearchParams();
   const cart = useBookingStore(selectCart);
   const clearCart = useBookingStore(selectClearCart);
+  const removeService = useBookingStore(selectRemoveService);
   const totalPrice = useBookingStore(selectTotalPrice);
   const totalDuration = useBookingStore(selectTotalDuration);
   const authState = useAuthStore(selectAuthState);
@@ -165,7 +166,22 @@ export default function BookingConfirmPage() {
 
   const handleKeepPartial = () => {
     const successResults = bookingResults.filter((r) => r.success && !r.rolledBack);
+    successResults.forEach((r) => removeService(r.serviceId));
     navigate('/book/success', { state: { results: successResults } });
+  };
+
+  const rollbackCreatedBookings = async (results: BookingResult[]): Promise<boolean> => {
+    const createdIds = results
+      .filter((r) => r.success && r.bookingId)
+      .map((r) => r.bookingId as string);
+    if (createdIds.length === 0) return true;
+
+    const rollbackResults = await Promise.allSettled(createdIds.map((id) => cancelBooking(id)));
+    const allOk = rollbackResults.every((r) => r.status === 'fulfilled');
+    if (!allOk) {
+      toast.error('No se pudieron revertir todas las reservas previas. Revisá Mis Reservas para evitar duplicados.');
+    }
+    return allOk;
   };
 
   const handleConfirmBooking = async () => {
@@ -241,8 +257,12 @@ export default function BookingConfirmPage() {
     }
 
     if (emailNotVerified) {
+      const allRolledBack = await rollbackCreatedBookings(results);
+      setBookingResults([]);
       setShowEmailBanner(true);
-      setHasSubmitted(false);
+      if (allRolledBack) {
+        setHasSubmitted(false);
+      }
       setIsSubmitting(false);
       return;
     }
