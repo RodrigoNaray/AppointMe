@@ -30,7 +30,7 @@ vi.mock('axios', () => ({
 import '@/api/client';
 
 describe('apiClient 429 interceptor', () => {
-  it('calls toast.error when response status is 429', () => {
+  it('calls toast.error when response status is 429', async () => {
     const error = {
       response: {
         status: 429,
@@ -39,16 +39,14 @@ describe('apiClient 429 interceptor', () => {
       },
     };
 
-    if (typeof interceptorHandlers.onRejected === 'function') {
-      interceptorHandlers.onRejected(error);
-    }
+    await expect(interceptorHandlers.onRejected?.(error)).rejects.toEqual(error);
 
     expect(toastError).toHaveBeenCalledWith(
       'Demasiadas solicitudes. Por favor, intenta más tarde.'
     );
   });
 
-  it('uses fallback message when backend does not provide one', () => {
+  it('uses fallback message when backend does not provide one', async () => {
     const error = {
       response: {
         status: 429,
@@ -56,9 +54,7 @@ describe('apiClient 429 interceptor', () => {
       },
     };
 
-    if (typeof interceptorHandlers.onRejected === 'function') {
-      interceptorHandlers.onRejected(error);
-    }
+    await expect(interceptorHandlers.onRejected?.(error)).rejects.toEqual(error);
 
     expect(toastError).toHaveBeenCalledWith(
       'Demasiadas solicitudes. Por favor, intenta en unos minutos.'
