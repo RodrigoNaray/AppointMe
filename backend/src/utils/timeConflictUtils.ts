@@ -24,15 +24,29 @@ export const hasTimeConflictOptimized = (
 
   // 1. Ordenar períodos por tiempo de inicio - O(n log n) amortizado
   const sortedPeriods = [...busyPeriods].sort((a, b) => a.start.getTime() - b.start.getTime());
-  
+
+  // 1b. Fusionar períodos solapados: el early-break del paso 3 solo es correcto
+  // si los períodos ocupados no se solapan entre sí (inicio ordenado => fin ordenado).
+  const mergedPeriods: TimePeriod[] = [];
+  for (const period of sortedPeriods) {
+    const last = mergedPeriods[mergedPeriods.length - 1];
+    if (last && period.start <= last.end) {
+      if (period.end > last.end) {
+        last.end = period.end;
+      }
+    } else {
+      mergedPeriods.push({ start: period.start, end: period.end });
+    }
+  }
+
   // 2. Buscar el primer período que podría solaparse usando búsqueda binaria - O(log n)
   let left = 0;
-  let right = sortedPeriods.length - 1;
+  let right = mergedPeriods.length - 1;
   
   // Encontrar el último período cuyo inicio es <= requestedEnd
   while (left <= right) {
     const mid = Math.floor((left + right) / 2);
-    const midPeriod = sortedPeriods[mid];
+    const midPeriod = mergedPeriods[mid];
     
     if (midPeriod.start <= requestedEnd) {
       left = mid + 1;
@@ -44,7 +58,7 @@ export const hasTimeConflictOptimized = (
   // 3. Verificar conflictos desde la posición encontrada hacia atrás - O(log n) en promedio
   // Solo necesitamos verificar períodos que podrían solaparse
   for (let i = right; i >= 0; i--) {
-    const period = sortedPeriods[i];
+    const period = mergedPeriods[i];
     
     // Si el período termina antes de que empiece el solicitado, no hay más conflictos posibles
     // (porque están ordenados por inicio, los anteriores terminarán aún antes)

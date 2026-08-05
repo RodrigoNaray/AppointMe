@@ -11,8 +11,10 @@ const { mockPrisma } = vi.hoisted(() => ({
     },
     availabilityBlock: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
       create: vi.fn(),
-      deleteMany: vi.fn()
+      deleteMany: vi.fn(),
+      update: vi.fn()
     }
   }
 }));
@@ -26,6 +28,7 @@ import {
   updateSchedule,
   getBlocks,
   createBlock,
+  updateBlock,
   deleteBlock,
   getCalendarEvents
 } from '../../../../../src/modules/availability/admin/availability.admin.services';
@@ -65,6 +68,97 @@ describe('availability.admin.services', () => {
         endTime: new Date('2030-01-01T09:00:00.000Z')
       })
     ).rejects.toBeInstanceOf(AvailabilityValidationError);
+  });
+
+  it('rejects block creation that overlaps a confirmed booking', async () => {
+    mockPrisma.booking.findMany.mockResolvedValue([
+      {
+        bookingTime: new Date('2030-01-01T10:00:00.000Z'),
+        durationMinutes: 60
+      }
+    ]);
+    mockPrisma.availabilityBlock.findMany.mockResolvedValue([]);
+
+    await expect(
+      createBlock({
+        adminId: 'admin-1',
+        startTime: new Date('2030-01-01T10:30:00.000Z'),
+        endTime: new Date('2030-01-01T12:00:00.000Z')
+      })
+    ).rejects.toBeInstanceOf(AvailabilityValidationError);
+
+    expect(mockPrisma.availabilityBlock.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects block creation that overlaps an existing block', async () => {
+    mockPrisma.booking.findMany.mockResolvedValue([]);
+    mockPrisma.availabilityBlock.findMany.mockResolvedValue([
+      {
+        startTime: new Date('2030-01-01T09:00:00.000Z'),
+        endTime: new Date('2030-01-01T11:00:00.000Z')
+      }
+    ]);
+
+    await expect(
+      createBlock({
+        adminId: 'admin-1',
+        startTime: new Date('2030-01-01T10:00:00.000Z'),
+        endTime: new Date('2030-01-01T12:00:00.000Z')
+      })
+    ).rejects.toBeInstanceOf(AvailabilityValidationError);
+  });
+
+  it('creates a block when the range is free', async () => {
+    mockPrisma.booking.findMany.mockResolvedValue([]);
+    mockPrisma.availabilityBlock.findMany.mockResolvedValue([]);
+    mockPrisma.availabilityBlock.create.mockResolvedValue({
+      id: 'block-1',
+      startTime: new Date('2030-01-01T10:00:00.000Z'),
+      endTime: new Date('2030-01-01T12:00:00.000Z')
+    });
+
+    const block = await createBlock({
+      adminId: 'admin-1',
+      startTime: new Date('2030-01-01T10:00:00.000Z'),
+      endTime: new Date('2030-01-01T12:00:00.000Z')
+    });
+
+    expect(block.id).toBe('block-1');
+    expect(mockPrisma.availabilityBlock.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows updating a block over itself but not over a booking', async () => {
+    mockPrisma.availabilityBlock.findFirst.mockResolvedValue({
+      id: 'block-1',
+      startTime: new Date('2030-01-01T09:00:00.000Z'),
+      endTime: new Date('2030-01-01T11:00:00.000Z')
+    });
+    mockPrisma.booking.findMany.mockResolvedValue([
+      {
+        bookingTime: new Date('2030-01-01T10:00:00.000Z'),
+        durationMinutes: 60
+      }
+    ]);
+    mockPrisma.availabilityBlock.findMany.mockResolvedValue([
+      {
+        id: 'block-1',
+        startTime: new Date('2030-01-01T09:00:00.000Z'),
+        endTime: new Date('2030-01-01T11:00:00.000Z')
+      }
+    ]);
+
+    await expect(
+      updateBlock('block-1', 'admin-1', {
+        startTime: new Date('2030-01-01T10:30:00.000Z'),
+        endTime: new Date('2030-01-01T12:00:00.000Z')
+      })
+    ).rejects.toBeInstanceOf(AvailabilityValidationError);
+
+    expect(mockPrisma.availabilityBlock.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: { not: 'block-1' } })
+      })
+    );
   });
 
   it('throws not found style error when deleting unknown block', async () => {

@@ -363,6 +363,30 @@ describe('booking.services.createBooking', () => {
     });
   });
 
+  it('allows re-booking the same slot after a cancellation', async () => {
+    const tx = buildTransactionContext({
+      bookings: []
+    });
+
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => {
+      return callback(tx);
+    });
+
+    const booking = await createBooking('client-1', {
+      serviceId: 'service-1',
+      bookingTime: new Date('2030-01-02T10:00:00.000Z')
+    });
+
+    expect(booking.id).toBe('booking-1');
+    expect(tx.booking.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: 'CONFIRMED'
+        })
+      })
+    );
+  });
+
   it('allows only one success when two concurrent requests race for same slot', async () => {
     const tx = buildTransactionContext();
 
