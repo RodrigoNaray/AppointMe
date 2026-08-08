@@ -979,6 +979,7 @@ export const createBookingByAdmin = async (
               id: true,
               name: true,
               email: true,
+              emailLanguage: true,
             },
           },
         },

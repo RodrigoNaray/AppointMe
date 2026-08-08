@@ -71,6 +71,7 @@ export interface BookingWithDetails extends Booking {
     name: string;
     email: string;
     phone?: string;
+    emailLanguage: string;
   };
 }
 
