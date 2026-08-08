@@ -151,8 +151,7 @@ AppointMePro/
 │   ├── pages/                 # Route-based page components (public, client, admin)
 │   ├── stores/                # Zustand state management
 │   ├── api/                   # Axios client + API modules
-│   ├── lib/                   # Utility functions (timezone, calendar)
-│   └── locales/               # i18n (es, en: common, admin namespaces)
+│   └── lib/                   # Utility functions (timezone, calendar)
 ├── pnpm-workspace.yaml        # Monorepo configuration
 └── package.json               # Root scripts (dev, build, lint, test)
 ```

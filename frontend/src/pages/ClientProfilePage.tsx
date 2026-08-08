@@ -1,13 +1,9 @@
-import { useState } from 'react';
 import { useAuthStore, selectAuthState, selectIsLoading } from '@/stores/authStore';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import { Mail, User, Calendar, Lock, Globe, Loader2 } from 'lucide-react';
-import clientAuthService from '@/api/modules/clientAuth';
-import { API_BASE_URL } from '@/api/config';
+import { Mail, User, Calendar, Lock, Loader2 } from 'lucide-react';
 import { PageContainer } from "@/components/layout/PageContainer";
 
 /**
@@ -23,9 +19,6 @@ export default function ClientProfilePage() {
   const authState = useAuthStore(selectAuthState);
   const isCheckingAuth = useAuthStore(selectIsLoading);
   const navigate = useNavigate();
-  const setAuthState = useAuthStore((s) => s._setAuthState);
-
-  const [savingLanguage, setSavingLanguage] = useState(false);
 
   if (isCheckingAuth) {
     return (
@@ -40,24 +33,6 @@ export default function ClientProfilePage() {
   }
 
   const user = authState.user;
-
-  const handleLanguageChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const lang = e.target.value;
-    setSavingLanguage(true);
-    try {
-      const updated = await clientAuthService.updateProfile({ emailLanguage: lang });
-      setAuthState({
-        type: 'client',
-        user: updated,
-        isAuthenticated: true,
-      });
-      toast.success(lang === 'en' ? 'Language updated to English' : 'Idioma actualizado a Español');
-    } catch {
-      toast.error('Error al actualizar el idioma');
-    } finally {
-      setSavingLanguage(false);
-    }
-  };
 
   return (
     <PageContainer maxWidth="2xl">
@@ -94,23 +69,6 @@ export default function ClientProfilePage() {
             >
               Cambiar
             </Button>
-          </div>
-
-          {/* Idioma de Email */}
-          <div className="flex items-start gap-3 pb-4 border-b">
-            <Globe className="h-5 w-5 text-muted-foreground mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-muted-foreground">Idioma de notificaciones</p>
-              <select
-                value={user.emailLanguage ?? 'es'}
-                onChange={handleLanguageChange}
-                disabled={savingLanguage}
-                className="mt-1 block w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
-              >
-                <option value="es">Español</option>
-                <option value="en">English</option>
-              </select>
-            </div>
           </div>
 
           {/* ID de Usuario */}

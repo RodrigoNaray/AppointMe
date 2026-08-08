@@ -1,5 +1,4 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
-import { useTranslation } from 'react-i18next';
 import { MapPin } from 'lucide-react';
 import ContactInfoCard from '@/components/ContactInfoCard';
 import BusinessHoursCard from '@/components/BusinessHoursCard';
@@ -11,7 +10,6 @@ import { geocodeAddress, type GeocodingResult } from '@/lib/geocoding';
 const AppMap = lazy(() => import("@/components/ui/AppMap").then(module => ({ default: module.AppMap })));
 
 export default function ContactPage() {
-  const { t } = useTranslation();
   const [contactInfo, setContactInfo] = useState<ContactInfo | undefined>();
   const [loadingContact, setLoadingContact] = useState(true);
   const [businessHours, setBusinessHours] = useState<BusinessHours | undefined>();
@@ -112,7 +110,7 @@ export default function ContactPage() {
         <div ref={mapReveal.ref} className={`mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:py-10 ${mapReveal.isVisible ? 'visible' : ''} animate-reveal`}>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
-              {t('home.location')}
+              Ubicación
             </h2>
           </div>
           {mapCoordinates ? (

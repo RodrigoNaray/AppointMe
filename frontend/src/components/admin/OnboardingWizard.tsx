@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import {
@@ -28,46 +27,46 @@ export type WizardStepId =
 export interface OnboardingStep {
   id: WizardStepId;
   path?: string;
-  ctaKey: string;
-  titleKey: string;
-  descriptionKey: string;
+  cta: string;
+  title: string;
+  description: string;
 }
 
 const STEPS: OnboardingStep[] = [
   {
     id: 'availability',
     path: '/admin/availability',
-    ctaKey: 'onboarding.wizard.step.availability.cta',
-    titleKey: 'onboarding.wizard.step.availability.title',
-    descriptionKey: 'onboarding.wizard.step.availability.description',
+    cta: 'Configurar horario',
+    title: 'Paso 1: Horario semanal',
+    description: 'Definí qué días y horarios atendés. Los días no marcados se considerarán no laborables.',
   },
   {
     id: 'category',
     path: '/admin/categories',
-    ctaKey: 'onboarding.wizard.step.category.cta',
-    titleKey: 'onboarding.wizard.step.category.title',
-    descriptionKey: 'onboarding.wizard.step.category.description',
+    cta: 'Crear categoría',
+    title: 'Paso 2: Primera categoría',
+    description: 'Las categorías agrupan tus servicios (por ejemplo: "Cortes", "Coloración").',
   },
   {
     id: 'service',
     path: '/admin/services',
-    ctaKey: 'onboarding.wizard.step.service.cta',
-    titleKey: 'onboarding.wizard.step.service.title',
-    descriptionKey: 'onboarding.wizard.step.service.description',
+    cta: 'Crear servicio',
+    title: 'Paso 3: Primer servicio',
+    description: 'Los servicios son lo que reservan tus clientes (con duración y precio).',
   },
   {
     id: 'rules',
     path: '/admin/settings',
-    ctaKey: 'onboarding.wizard.step.rules.cta',
-    titleKey: 'onboarding.wizard.step.rules.title',
-    descriptionKey: 'onboarding.wizard.step.rules.description',
+    cta: 'Configurar reglas',
+    title: 'Paso 4: Reglas de reserva',
+    description: 'Configurá la anticipación mínima para reservar y para cancelar.',
   },
   {
     id: 'contact',
     path: '/admin/settings',
-    ctaKey: 'onboarding.wizard.step.contact.cta',
-    titleKey: 'onboarding.wizard.step.contact.title',
-    descriptionKey: 'onboarding.wizard.step.contact.description',
+    cta: 'Configurar contacto',
+    title: 'Paso 5: Información de contacto',
+    description: 'Teléfono, email, dirección y ubicación en el mapa para que los clientes te encuentren.',
   },
 ];
 
@@ -84,7 +83,6 @@ export default function OnboardingWizard({
   onOpenChange,
   onStepFinished,
 }: OnboardingWizardProps) {
-  const { t } = useTranslation('admin');
   const navigate = useNavigate();
   const markCompleted = useOnboardingStore(selectMarkCompleted);
   const [stepIndex, setStepIndex] = useState(-1);
@@ -108,12 +106,12 @@ export default function OnboardingWizard({
   const renderWelcome = () => (
     <>
       <DialogHeader>
-        <DialogTitle>{t('onboarding.wizard.welcome.title')}</DialogTitle>
-        <DialogDescription>{t('onboarding.wizard.welcome.body')}</DialogDescription>
+        <DialogTitle>Bienvenido a AppointMePro</DialogTitle>
+        <DialogDescription>Vamos a configurar tu cuenta en 5 pasos. Podés cerrar este wizard y retomar cuando quieras.</DialogDescription>
       </DialogHeader>
       <DialogFooter>
         <Button onClick={handleNext} className="w-full sm:w-auto">
-          {t('onboarding.cta.start')}
+          Iniciar configuración guiada
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </DialogFooter>
@@ -125,9 +123,9 @@ export default function OnboardingWizard({
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <Check className="h-5 w-5 text-primary" />
-          {t('onboarding.wizard.done.title')}
+          ¡Listo!
         </DialogTitle>
-        <DialogDescription>{t('onboarding.wizard.done.body')}</DialogDescription>
+        <DialogDescription>Tu cuenta ya está operativa. Podés seguir configurando desde el menú lateral.</DialogDescription>
       </DialogHeader>
       <DialogFooter>
         <Button
@@ -138,7 +136,7 @@ export default function OnboardingWizard({
           }}
           className="w-full sm:w-auto"
         >
-          {t('onboarding.wizard.continue')}
+          Continuar
         </Button>
       </DialogFooter>
     </>
@@ -147,8 +145,8 @@ export default function OnboardingWizard({
   const renderStep = (step: OnboardingStep) => (
     <>
       <DialogHeader>
-        <DialogTitle>{t(step.titleKey)}</DialogTitle>
-        <DialogDescription>{t(step.descriptionKey)}</DialogDescription>
+        <DialogTitle>{step.title}</DialogTitle>
+        <DialogDescription>{step.description}</DialogDescription>
       </DialogHeader>
       <DialogFooter className="flex-col sm:flex-row gap-2">
         <Button
@@ -157,14 +155,14 @@ export default function OnboardingWizard({
           className="w-full sm:w-auto sm:mr-auto"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          {t('onboarding.wizard.back')}
+          Atrás
         </Button>
         {step.path && (
           <Button
             onClick={() => handleGoToStep(step.path)}
             className="w-full sm:w-auto"
           >
-            {t(step.ctaKey)}
+            {step.cta}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         )}
@@ -173,7 +171,7 @@ export default function OnboardingWizard({
           onClick={handleNext}
           className="w-full sm:w-auto"
         >
-          {t('onboarding.wizard.skip')}
+          Saltar este paso
         </Button>
       </DialogFooter>
     </>
@@ -197,7 +195,7 @@ export default function OnboardingWizard({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              {t('onboarding.wizard.title')}
+              Configuración inicial
             </p>
             <p className="text-xs text-muted-foreground">
               {Math.min(stepIndex + 1, TOTAL_PROGRESS_STEPS)}/{TOTAL_PROGRESS_STEPS}

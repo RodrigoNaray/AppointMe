@@ -1,6 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Clock, Scissors } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useBookingStore, selectAddService } from "@/stores/bookingStore";
@@ -16,7 +15,6 @@ const GAP_PX = 16;
 const SPEED_PX_PER_SEC = 30;
 
 export function ServicesCarousel({ services }: ServicesCarouselProps) {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const addService = useBookingStore(selectAddService);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -136,7 +134,7 @@ export function ServicesCarousel({ services }: ServicesCarouselProps) {
                     navigate("/book");
                   }}
                 >
-                  {t("home.bookNow")}
+                  Reservar Ahora
                 </Button>
               </div>
             </div>

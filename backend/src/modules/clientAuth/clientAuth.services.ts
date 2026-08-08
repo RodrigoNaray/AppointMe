@@ -13,7 +13,6 @@ import {
 import { ConflictError } from '../../utils/error';
 import { JWT_SECRET, JWT_EXPIRATION } from '../../config/auth.config';
 import { sendVerificationEmail, sendEmailChangeVerification } from '../../services/emailService';
-import { getLanguageFromHeader } from '../../services/emailTranslations';
 import { generateTokenWithExpiration } from '../../utils/tokenUtils';
 import logger from '../../utils/logger';
 
@@ -50,7 +49,8 @@ export const registerClient = async (data: RegisterClientDto, acceptLanguage?: s
   const { token: verificationToken, expiration: verificationExpires } = generateTokenWithExpiration(24);
 
   // 4. Crear el nuevo cliente en la base de datos con datos de verificación
-  const emailLanguage = getLanguageFromHeader(acceptLanguage);
+  // El producto es solo en español: los emails se envían siempre en es
+  const emailLanguage = 'es';
 
   const newClient = await prisma.client.create({
     data: {

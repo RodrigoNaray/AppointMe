@@ -9,7 +9,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useTranslation } from 'react-i18next';
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 
@@ -25,7 +24,6 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export default function LoginPage() {
-    const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [email, setEmail] = useState('');
@@ -45,7 +43,7 @@ export default function LoginPage() {
             const loginData: LoginDto = { email, password };
             await loginClient(loginData);
 
-            toast.success(t('auth.loginSuccess'));
+            toast.success('¡Inicio de sesión exitoso!');
 
             if (returnUrl) {
                 navigate(returnUrl);
@@ -53,7 +51,7 @@ export default function LoginPage() {
                 navigate('/');
             }
         } catch (_error: unknown) {
-            toast.error(t('auth.loginError'));
+            toast.error('Usuario o contraseña incorrecta');
         } finally {
             setIsLoading(false);
         }
@@ -72,12 +70,12 @@ export default function LoginPage() {
           <div ref={reveal.ref} className={`flex justify-center ${reveal.isVisible ? 'visible' : ''} animate-reveal`}>
             <Card className="w-full max-w-md shadow-lg">
                 <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-bold">{t('auth.loginTitle')}</CardTitle>
+                    <CardTitle className="text-2xl font-bold">Iniciar Sesión</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium">{t('auth.email')}</label>
+                            <label htmlFor="email" className="block text-sm font-medium">Correo Electrónico</label>
                             <Input
                                 type="email"
                                 id="email"
@@ -88,7 +86,7 @@ export default function LoginPage() {
                             />
                         </div>
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium">{t('auth.password')}</label>
+                            <label htmlFor="password" className="block text-sm font-medium">Contraseña</label>
                             <Input
                                 type="password"
                                 id="password"
@@ -99,29 +97,29 @@ export default function LoginPage() {
                             />
                         </div>
                         <Button type="submit" className="w-full" disabled={isLoading} data-testid="login-button">
-                            {isLoading ? t('auth.loggingIn') : t('auth.loginButton')}
+                            {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                         </Button>
                         <div className="text-center mt-2">
                             <Link
                                 to="/forgot-password"
                                 className="text-sm text-muted-foreground hover:text-foreground hover:underline"
                             >
-                                {t('auth.forgotPassword')}
+                                ¿Olvidaste tu contraseña?
                             </Link>
                         </div>
                     </form>
                     <Separator className="my-4" />
                     <Button variant="outline" className="w-full flex items-center justify-center gap-2 border-2 hover:bg-muted/50" onClick={handleGoogleLogin}>
                         <GoogleIcon />
-                        <span>{t('auth.googleLogin')}</span>
+                        <span>Iniciar Sesión con Google</span>
                     </Button>
                     <p className="mt-4 text-center text-sm">
-                        {t('auth.noAccount')}{" "}
+                        ¿No tienes una cuenta?{" "}
                         <Link
                             to={returnUrl ? `/register?returnUrl=${encodeURIComponent(returnUrl)}` : "/register"}
                             className="text-primary hover:underline"
                         >
-                            {t('auth.registerHere')}
+                            Regístrate aquí
                         </Link>
                     </p>
                     <p className="mt-3 text-center text-xs">
@@ -129,7 +127,7 @@ export default function LoginPage() {
                             to="/admin/login"
                             className="text-muted-foreground hover:text-foreground hover:underline"
                         >
-                            {t('auth.adminLoginLink')}
+                            ¿Eres administrador? Inicia sesión aquí
                         </Link>
                     </p>
                 </CardContent>

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Check, Circle, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +29,6 @@ const ChecklistItem = ({ label, done }: ChecklistItemProps) => (
 );
 
 export default function OnboardingBanner() {
-  const { t } = useTranslation('admin');
   const { hasSchedule, hasCategories, hasServices, needsOnboarding, isLoading, refetch } =
     useOnboardingStatus();
   const dismissed = useOnboardingStore(selectDismissed);
@@ -51,7 +49,7 @@ export default function OnboardingBanner() {
           onClick={() => setWizardOpen(true)}
           className="text-sm text-muted-foreground hover:text-primary underline transition-colors text-left"
         >
-          {t('onboarding.cta.backToWizard')} →
+          Volver al wizard →
         </button>
         <OnboardingWizard
           open={wizardOpen}
@@ -71,19 +69,19 @@ export default function OnboardingBanner() {
               <Sparkles className="h-5 w-5 text-primary flex-shrink-0" />
               <div className="min-w-0">
                 <h2 className="font-semibold text-base sm:text-lg">
-                  {t('onboarding.banner.title')}
+                  Tu cuenta aún no está lista para recibir reservas
                 </h2>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  {t('onboarding.banner.subtitle')}
+                  Completá estos pasos para empezar a recibir clientes.
                 </p>
               </div>
             </div>
           </div>
 
           <ul className="space-y-1.5">
-            <ChecklistItem label={t('onboarding.check.schedule')} done={hasSchedule} />
-            <ChecklistItem label={t('onboarding.check.category')} done={hasCategories} />
-            <ChecklistItem label={t('onboarding.check.service')} done={hasServices} />
+            <ChecklistItem label="Horario semanal configurado" done={hasSchedule} />
+            <ChecklistItem label="Al menos una categoría creada" done={hasCategories} />
+            <ChecklistItem label="Al menos un servicio activo" done={hasServices} />
           </ul>
 
           <div className="flex flex-col sm:flex-row gap-2 pt-1">
@@ -92,7 +90,7 @@ export default function OnboardingBanner() {
               className="w-full sm:w-auto"
               size="sm"
             >
-              {t('onboarding.cta.start')}
+              Iniciar configuración guiada
             </Button>
             <Button
               onClick={dismiss}
@@ -100,7 +98,7 @@ export default function OnboardingBanner() {
               className="w-full sm:w-auto"
               size="sm"
             >
-              {t('onboarding.cta.dismiss')}
+              Omitir por ahora
             </Button>
           </div>
         </CardContent>

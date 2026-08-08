@@ -1,16 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
-import { t, testI18n, setTestLanguage } from '../i18n-test-utils';
-
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t,
-    i18n: testI18n,
-  }),
-  Trans: ({ children }: { children: React.ReactNode }) => children,
-  initReactI18next: { type: '3rdParty' as const, init: vi.fn() },
-}));
 
 vi.mock('@/api/modules/settings', () => ({
   getBusinessHours: () => Promise.resolve(undefined),
@@ -23,16 +13,15 @@ vi.mock('@/lib/geocoding', () => ({
 
 import HomePage from '@/pages/HomePage';
 
-describe('HomePage i18n', () => {
+describe('HomePage', () => {
   beforeEach(() => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve([]),
     });
-    setTestLanguage('es');
   });
 
-  it('renders Spanish text', async () => {
+  it('renders the demo content in Spanish', async () => {
     render(
       <BrowserRouter>
         <HomePage />
@@ -45,11 +34,11 @@ describe('HomePage i18n', () => {
 
     expect(screen.getByText('Barbería Profesional')).toBeTruthy();
     expect(screen.getByText('Reservar Ahora')).toBeTruthy();
+    expect(screen.getByText('Nuestros Servicios')).toBeTruthy();
+    expect(screen.getByText('Ubicación')).toBeTruthy();
   });
 
-  it('renders English text when language is set to English', async () => {
-    setTestLanguage('en');
-
+  it('shows the empty services message when the catalog has no services', async () => {
     render(
       <BrowserRouter>
         <HomePage />
@@ -57,10 +46,7 @@ describe('HomePage i18n', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Studio Carlos Méndez')).toBeTruthy();
+      expect(screen.getByText('No hay servicios disponibles aún.')).toBeTruthy();
     });
-
-    expect(screen.getByText('Professional Barber Shop')).toBeTruthy();
-    expect(screen.getByText('Book Now')).toBeTruthy();
   });
 });
