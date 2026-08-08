@@ -128,7 +128,7 @@ Frontend (Vite + React 19)          Backend (Express.js)              Database
 ### Testing
 
   - 23 test files in backend (unit + integration tests with Vitest + supertest, 166 tests)
-  - 25 test files in frontend (unit tests with Vitest + @testing-library/react, 109 tests)
+  - 24 test files in frontend (unit tests with Vitest + @testing-library/react, 116 tests)
   - Test coverage for auth flows, booking validation, availability conflict detection, timezone conversion utilities
 
 ---
