@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -24,6 +25,7 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export default function LoginPage() {
+    usePageTitle("Iniciar Sesión — AppointMePro");
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [email, setEmail] = useState('');

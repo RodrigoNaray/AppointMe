@@ -10,6 +10,7 @@ import { format, isBefore, startOfToday, parse, addMonths, subMonths, startOfMon
 import { es } from 'date-fns/locale';
 import { getBookingRules } from '@/api/modules/settings';
 import { availabilityService } from '@/api/modules/availability';
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { convertSlotUTCToLocal, convertSlotsUTCToLocal } from '@/lib/timezoneSlots';
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useScrollReveal } from '@/hooks/useScrollReveal';
@@ -33,6 +34,7 @@ export const parseFirstAvailableMonth = (month: string): Date | null => {
 };
 
 export default function BookingCalendarPage() {
+  usePageTitle("Elegí tu horario — AppointMePro");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   

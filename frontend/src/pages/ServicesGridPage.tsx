@@ -3,6 +3,7 @@ import CartSidebar from '@/components/CartSidebar';
 import { useBookingStore, selectCart } from '@/stores/bookingStore';
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 /**
  * ServicesGridPage - Página principal de reservas con categorías y carrito
@@ -31,6 +32,7 @@ import { useScrollReveal } from '@/hooks/useScrollReveal';
  */
 
 export default function ServicesGridPage() {
+  usePageTitle("Servicios — AppointMePro");
   const cart = useBookingStore(selectCart);
   const hasItems = cart.length > 0;
   const reveal = useScrollReveal(0.1);

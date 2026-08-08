@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CheckCircle, XCircle } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 interface PasswordFeedback {
     label: string;
@@ -28,6 +29,7 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export default function RegisterPage() {
+    usePageTitle("Registrarse — AppointMePro");
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const saveReturnUrl = useOAuthStore(selectSaveReturnUrl);

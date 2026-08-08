@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pagination, PaginationContent, PaginationItem } from '@/components/ui/pagination';
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CalendarX, Loader2, X, Calendar, Clock, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
@@ -32,6 +33,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
  * FASE 4: Funcionalidad de cancelación + Paginación + Responsive design
  */
 export default function MyBookingsPage() {
+  usePageTitle("Mis Reservas — AppointMePro");
   const authState = useAuthStore(selectAuthState);
   const isCheckingAuth = useAuthStore(selectIsLoading);
   const navigate = useNavigate();

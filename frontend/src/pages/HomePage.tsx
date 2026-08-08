@@ -4,12 +4,13 @@ import toast from "react-hot-toast";
 import { useAuthStore, selectCheckSession } from "@/stores/authStore";
 import { useOAuthStore, selectGetReturnUrl, selectClearReturnUrl } from "@/stores/oauthStore";
 import { Button } from "@/components/ui/button";
-import { Clock, ArrowRight, Star, MapPin } from "lucide-react";
+import { Clock, ArrowRight, MapPin } from "lucide-react";
 import type { Service } from "@/types/service";
 import type { BusinessHours, ContactInfo } from "@/api/modules/settings";
 import { getBusinessHours, getContactInfo } from "@/api/modules/settings";
 import { getServices } from "@/api/modules/services";
 import { geocodeAddress, type GeocodingResult } from "@/lib/geocoding";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { ServicesCarousel } from "@/components/home/ServicesCarousel";
 
@@ -60,6 +61,7 @@ export const parseActiveServicesPreview = (payload: unknown): Service[] => {
 };
 
 export default function HomePage() {
+  usePageTitle("AppointMePro — Reserva tu turno online");
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const checkSession = useAuthStore(selectCheckSession);
@@ -240,20 +242,11 @@ export default function HomePage() {
 
             <div className="flex-1 text-center lg:text-left">
               <h1 className="mb-2 text-3xl font-bold tracking-tighter text-foreground sm:text-4xl lg:text-5xl">
-                Studio Carlos Méndez
+                {contactInfo?.businessName || 'Tu negocio'}
               </h1>
               <p className="mb-3 text-lg text-muted-foreground sm:text-xl">
-                Barbería Profesional
+                {contactInfo?.businessDescription || 'Reservá tu turno online'}
               </p>
-
-              <div className="mb-3 flex items-center justify-center lg:justify-start gap-2">
-                <div className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="h-4 w-4 fill-accent text-accent" />
-                  ))}
-                </div>
-                <span className="text-sm font-medium text-muted-foreground">5.0 (248 reseñas)</span>
-              </div>
 
               {(hoursLabel || locationLabel) && (
                 <div className="mb-4 flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-1 text-xs text-muted-foreground">
@@ -272,9 +265,11 @@ export default function HomePage() {
                 </div>
               )}
 
-              <p className="mb-6 max-w-lg text-sm text-muted-foreground sm:text-base lg:max-w-none">
-                Más de 10 años de experiencia brindando servicios de barbería premium. Especializado en cortes modernos, afeitado clásico y cuidado de barba.
-              </p>
+              {contactInfo?.businessDescription && (
+                <p className="mb-6 max-w-lg text-sm text-muted-foreground sm:text-base lg:max-w-none">
+                  {contactInfo.businessDescription}
+                </p>
+              )}
 
               <Link to="/book">
                 <Button size="lg" className="h-12 px-8 text-base font-semibold shadow-sm hover:shadow-md transition-shadow">

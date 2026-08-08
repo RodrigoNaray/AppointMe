@@ -5,6 +5,7 @@ import { AdminNav } from '@/components/shared/AdminNav';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import ScrollToTopOnNavigate from '@/components/ScrollToTopOnNavigate';
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 type NavLinkConfig = {
   to: string;
@@ -20,6 +21,7 @@ function isAdminLinkActive(pathname: string, linkTo: string): boolean {
 }
 
 export default function AdminLayout() {
+  usePageTitle("Panel de Administración — AppointMePro");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
 

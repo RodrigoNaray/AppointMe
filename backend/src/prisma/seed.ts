@@ -19,6 +19,8 @@ async function main() {
   const admin = await prisma.adminUser.upsert({
     where: { email: process.env.ADMIN_EMAIL || '' },
     update: {
+      businessName: 'Studio Carlos Méndez',
+      businessDescription: 'Más de 10 años de experiencia brindando servicios de barbería premium. Especializado en cortes modernos, afeitado clásico y cuidado de barba.',
       businessLatitude: -34.9011,
       businessLongitude: -56.1645,
       businessAddress: 'Av. 18 de Julio 1234, Montevideo, Uruguay',
@@ -33,6 +35,8 @@ async function main() {
       // Miércoles: 09:00-13:00 local → 12:00-16:00 UTC
       // Viernes: 09:00-17:00 local → 12:00-20:00 UTC
       // Sábado: 10:00-14:00 local → 13:00-17:00 UTC (inactivo)
+      businessName: 'Studio Carlos Méndez',
+      businessDescription: 'Más de 10 años de experiencia brindando servicios de barbería premium. Especializado en cortes modernos, afeitado clásico y cuidado de barba.',
       businessLatitude: -34.9011,
       businessLongitude: -56.1645,
       businessAddress: 'Av. 18 de Julio 1234, Montevideo, Uruguay',

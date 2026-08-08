@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, CheckCircle2, AlertCircle, Phone, Mail, MapPin } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, Phone, Mail, MapPin, Store, FileText } from 'lucide-react';
 import { getBookingRules, updateBookingRules, getContactInfo, updateContactInfo, type ContactInfo, type UpdateContactInfoDTO } from '@/api/modules/settings';
 import { AdminMapPicker } from '@/components/AdminMapPicker';
 import { PageSkeleton } from '@/components/admin/PageSkeleton';
@@ -264,6 +264,8 @@ export default function SettingsPage() {
     setContactLoading(true);
     try {
       const updateData: UpdateContactInfoDTO = {
+        businessName: contactInfo.businessName || undefined,
+        businessDescription: contactInfo.businessDescription || undefined,
         businessPhone: contactInfo.phone || undefined,
         businessEmail: contactInfo.email || undefined,
         businessAddress: contactInfo.address || undefined,
@@ -625,6 +627,46 @@ export default function SettingsPage() {
             )}
 
             <div className="space-y-6">
+              {/* Nombre del negocio */}
+              <div className="space-y-2">
+                <Label htmlFor="businessName" className="flex items-center gap-2">
+                  <Store className="h-4 w-4" />
+                  Nombre del Negocio
+                </Label>
+                <Input
+                  id="businessName"
+                  type="text"
+                  value={contactInfo.businessName ?? ''}
+                  onChange={(e) => setContactInfo({ ...contactInfo, businessName: e.target.value })}
+                  placeholder="Ej: Studio Carlos Méndez"
+                  disabled={contactLoading}
+                  className="max-w-md"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Se muestra como el nombre principal de tu negocio en la página de inicio
+                </p>
+              </div>
+
+              {/* Descripción del negocio */}
+              <div className="space-y-2">
+                <Label htmlFor="businessDescription" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Descripción del Negocio
+                </Label>
+                <Textarea
+                  id="businessDescription"
+                  value={contactInfo.businessDescription ?? ''}
+                  onChange={(e) => setContactInfo({ ...contactInfo, businessDescription: e.target.value })}
+                  placeholder="Contale a tus clientes quién sos y qué ofreces..."
+                  disabled={contactLoading}
+                  rows={3}
+                  className="max-w-md resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Breve presentación que se muestra en la página de inicio (máximo 500 caracteres)
+                </p>
+              </div>
+
               {/* Teléfono */}
               <div className="space-y-2">
                 <Label htmlFor="businessPhone" className="flex items-center gap-2">

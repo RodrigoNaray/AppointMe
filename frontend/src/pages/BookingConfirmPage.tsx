@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Calendar, Clock, DollarSign, CheckCircle, AlertCircle, Loader2, Mail, ShieldAlert } from "lucide-react";
 import { createBooking, cancelBooking } from "@/api/modules/bookings";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { clientAuthService } from "@/api/modules/clientAuth";
 import { RollbackConfirmModal, type RollbackItem } from "@/components/booking/RollbackConfirmModal";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -25,6 +26,7 @@ interface BookingResult {
 }
 
 export default function BookingConfirmPage() {
+  usePageTitle("Confirmar reserva — AppointMePro");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const cart = useBookingStore(selectCart);

@@ -33,6 +33,8 @@ export interface BusinessHours {
  * Contact Info Types
  */
 export interface ContactInfo {
+  businessName: string | null;
+  businessDescription: string | null;
   phone: string;
   email: string;
   address: string;
@@ -41,6 +43,8 @@ export interface ContactInfo {
 }
 
 export interface UpdateContactInfoDTO {
+  businessName?: string;
+  businessDescription?: string;
   businessPhone?: string;
   businessEmail?: string;
   businessAddress?: string;

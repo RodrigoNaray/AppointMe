@@ -6,10 +6,12 @@ import type { ContactInfo, BusinessHours } from '@/api/modules/settings';
 import { getContactInfo, getBusinessHours } from '@/api/modules/settings';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { geocodeAddress, type GeocodingResult } from '@/lib/geocoding';
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 const AppMap = lazy(() => import("@/components/ui/AppMap").then(module => ({ default: module.AppMap })));
 
 export default function ContactPage() {
+  usePageTitle("Contacto — AppointMePro");
   const [contactInfo, setContactInfo] = useState<ContactInfo | undefined>();
   const [loadingContact, setLoadingContact] = useState(true);
   const [businessHours, setBusinessHours] = useState<BusinessHours | undefined>();

@@ -4,7 +4,16 @@ import { BrowserRouter } from 'react-router-dom';
 
 vi.mock('@/api/modules/settings', () => ({
   getBusinessHours: () => Promise.resolve(undefined),
-  getContactInfo: () => Promise.resolve(undefined),
+  getContactInfo: () =>
+    Promise.resolve({
+      businessName: 'Studio Carlos Méndez',
+      businessDescription: 'Barbería Profesional con más de 10 años de experiencia.',
+      phone: '+598 2900 0000',
+      email: 'info@example.com',
+      address: 'Av. 18 de Julio 1234, Montevideo, Uruguay',
+      latitude: -34.9011,
+      longitude: -56.1645,
+    }),
 }));
 
 vi.mock('@/lib/geocoding', () => ({
@@ -21,7 +30,7 @@ describe('HomePage', () => {
     });
   });
 
-  it('renders the demo content in Spanish', async () => {
+  it('renders the business identity from contact info', async () => {
     render(
       <BrowserRouter>
         <HomePage />
@@ -32,7 +41,7 @@ describe('HomePage', () => {
       expect(screen.getByText('Studio Carlos Méndez')).toBeTruthy();
     });
 
-    expect(screen.getByText('Barbería Profesional')).toBeTruthy();
+    expect(screen.getAllByText('Barbería Profesional con más de 10 años de experiencia.').length).toBeGreaterThan(0);
     expect(screen.getByText('Reservar Ahora')).toBeTruthy();
     expect(screen.getByText('Nuestros Servicios')).toBeTruthy();
     expect(screen.getByText('Ubicación')).toBeTruthy();

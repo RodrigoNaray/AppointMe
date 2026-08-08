@@ -258,6 +258,8 @@ export const getContactInfo = async (): Promise<ContactInfoDTO> => {
     // Single-tenant: obtener primer admin
     const admin = await prisma.adminUser.findFirst({
       select: {
+        businessName: true,
+        businessDescription: true,
         businessPhone: true,
         businessEmail: true,
         businessAddress: true,
@@ -275,6 +277,8 @@ export const getContactInfo = async (): Promise<ContactInfoDTO> => {
 
     // Valores por defecto con fallbacks
     return {
+      businessName: admin.businessName,
+      businessDescription: admin.businessDescription,
       phone: admin.businessPhone || '+598 XXX XXX XXX',
       email: admin.businessEmail || admin.email, // Fallback a email admin
       address: admin.businessAddress || 'Dirección no disponible',
@@ -377,10 +381,43 @@ export const updateContactInfo = async (
       }
     }
 
+    // Validación: businessName y businessDescription
+    if (data.businessName !== undefined && data.businessName !== null) {
+      const sanitizedName = data.businessName.trim();
+      if (sanitizedName.length === 0 || sanitizedName.length > 100) {
+        const error: SettingsError = new Error('El nombre del negocio debe tener entre 1 y 100 caracteres') as SettingsError;
+        error.statusCode = 400;
+        throw error;
+      }
+      if (/<[^>]*>/g.test(sanitizedName)) {
+        const error: SettingsError = new Error('El nombre del negocio no puede contener etiquetas HTML') as SettingsError;
+        error.statusCode = 400;
+        throw error;
+      }
+      data.businessName = sanitizedName;
+    }
+
+    if (data.businessDescription !== undefined && data.businessDescription !== null) {
+      const sanitizedDescription = data.businessDescription.trim();
+      if (sanitizedDescription.length > 500) {
+        const error: SettingsError = new Error('La descripción del negocio no puede superar los 500 caracteres') as SettingsError;
+        error.statusCode = 400;
+        throw error;
+      }
+      if (/<[^>]*>/g.test(sanitizedDescription)) {
+        const error: SettingsError = new Error('La descripción del negocio no puede contener etiquetas HTML') as SettingsError;
+        error.statusCode = 400;
+        throw error;
+      }
+      data.businessDescription = sanitizedDescription;
+    }
+
     // Actualizar en DB
     const admin = await prisma.adminUser.update({
       where: { id: adminId },
       data: {
+        businessName: data.businessName,
+        businessDescription: data.businessDescription,
         businessPhone: data.businessPhone,
         businessEmail: data.businessEmail,
         businessAddress: data.businessAddress,
@@ -388,6 +425,8 @@ export const updateContactInfo = async (
         businessLongitude: data.businessLongitude
       },
       select: {
+        businessName: true,
+        businessDescription: true,
         businessPhone: true,
         businessEmail: true,
         businessAddress: true,
@@ -399,6 +438,7 @@ export const updateContactInfo = async (
 
     logger.info({ 
       adminId, 
+      hasName: !!data.businessName,
       hasPhone: !!data.businessPhone,
       hasEmail: !!data.businessEmail,
       hasAddress: !!data.businessAddress,
@@ -406,6 +446,8 @@ export const updateContactInfo = async (
     }, 'Contact info updated');
 
     return {
+      businessName: admin.businessName,
+      businessDescription: admin.businessDescription,
       phone: admin.businessPhone || '+598 XXX XXX XXX',
       email: admin.businessEmail || admin.email,
       address: admin.businessAddress || 'Dirección no disponible',
