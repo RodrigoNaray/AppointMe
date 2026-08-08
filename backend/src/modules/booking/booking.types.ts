@@ -27,6 +27,9 @@ export interface CancelBookingRequest extends Request {
   params: {
     id: string;
   };
+  body: {
+    clientTimezone?: string;
+  };
 }
 
 export interface CancelBookingByAdminRequest extends Request {

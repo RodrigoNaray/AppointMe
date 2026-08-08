@@ -53,7 +53,7 @@ export default function BookingCalendarPage() {
   const [currentMonth, setCurrentMonth] = useState<Date | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const reveal = useScrollReveal(0.1);
-  const [minBookingAdvanceMinutes, setMinBookingAdvanceMinutes] = useState(15); // Default fallback
+  const [minBookingAdvanceMinutes, setMinBookingAdvanceMinutes] = useState(60); // Default 1 hora
 
   const totalServices = cart.reduce((sum, item) => sum + item.quantity, 0);
 

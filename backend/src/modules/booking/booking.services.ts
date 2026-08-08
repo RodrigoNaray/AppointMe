@@ -153,7 +153,7 @@ const validateTimeSlotAvailability = async (
 
   } catch (error) {
     logger.error({ error, serviceId, requestedTime, adminId }, 'Error validating time slot availability');
-    return false;
+    throw error;
   }
 };
 
@@ -440,107 +440,118 @@ export const cancelBooking = async (
   clientId: string
 ): Promise<BookingWithDetails> => {
   try {
-    // 1. Buscar la reserva con detalles del admin
-    const booking = await prisma.booking.findUnique({
-      where: { id: bookingId },
-      include: {
-        admin: {
-          select: {
-            minCancellationNoticeMinutes: true
+    const updatedBooking = await prisma.$transaction(
+      async (tx) => {
+        // 1. Buscar la reserva con detalles del admin
+        const booking = await tx.booking.findUnique({
+          where: { id: bookingId },
+          include: {
+            admin: {
+              select: {
+                minCancellationNoticeMinutes: true
+              }
+            },
+            service: {
+              select: {
+                id: true,
+                name: true,
+                durationMinutes: true,
+                price: true
+              }
+            },
+            client: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                emailLanguage: true
+              }
+            }
           }
-        },
-        service: {
-          select: {
-            id: true,
-            name: true,
-            durationMinutes: true,
-            price: true
-          }
-        },
-        client: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            emailLanguage: true
-          }
+        });
+
+        if (!booking) {
+          throw buildBookingError(
+            'Booking not found',
+            404,
+            BookingErrorCodes.BOOKING_NOT_FOUND
+          );
         }
-      }
-    });
 
-    if (!booking) {
-      const error: BookingError = new Error('Booking not found') as BookingError;
-      error.statusCode = 404;
-      error.code = BookingErrorCodes.BOOKING_NOT_FOUND;
-      throw error;
-    }
+        // 2. Verificar pertenencia
+        if (booking.clientId !== clientId) {
+          throw buildBookingError(
+            'Unauthorized to cancel this booking',
+            403,
+            BookingErrorCodes.UNAUTHORIZED
+          );
+        }
 
-    // 2. Verificar pertenencia
-    if (booking.clientId !== clientId) {
-      const error: BookingError = new Error('Unauthorized to cancel this booking') as BookingError;
-      error.statusCode = 403;
-      error.code = BookingErrorCodes.UNAUTHORIZED;
-      throw error;
-    }
+        // 3. Verificar que no esté ya cancelada
+        if (booking.status === 'CANCELLED') {
+          throw buildBookingError(
+            'Booking is already cancelled',
+            400,
+            BookingErrorCodes.CANNOT_CANCEL
+          );
+        }
 
-    // 3. Verificar que no esté ya cancelada
-    if (booking.status === 'CANCELLED') {
-      const error: BookingError = new Error('Booking is already cancelled') as BookingError;
-      error.statusCode = 400;
-      error.code = BookingErrorCodes.CANNOT_CANCEL;
-      throw error;
-    }
+        // 4. Verificar tiempo mínimo de cancelación
+        const now = new Date();
+        const minCancellationNoticeMinutes = booking.admin.minCancellationNoticeMinutes || 120;
+        const minCancellationTime = addMinutes(now, minCancellationNoticeMinutes);
 
-    // 4. Verificar tiempo mínimo de cancelación
-    const now = new Date();
-    const minCancellationNoticeMinutes = booking.admin.minCancellationNoticeMinutes || 120; // Default 2 horas
-    const minCancellationTime = addMinutes(now, minCancellationNoticeMinutes);
-    
-    if (booking.bookingTime <= minCancellationTime) {
-      const minutesRemaining = Math.floor((booking.bookingTime.getTime() - now.getTime()) / 60000);
-      const error: BookingError = new Error(
-        `Cannot cancel booking. Minimum cancellation notice is ${minCancellationNoticeMinutes} minutes. Time remaining: ${minutesRemaining} minutes.`
-      ) as BookingError;
-      error.statusCode = 400;
-      error.code = BookingErrorCodes.CANNOT_CANCEL;
-      throw error;
-    }
+        if (booking.bookingTime <= minCancellationTime) {
+          const minutesRemaining = Math.floor(
+            (booking.bookingTime.getTime() - now.getTime()) / 60000
+          );
+          throw buildBookingError(
+            `Cannot cancel booking. Minimum cancellation notice is ${minCancellationNoticeMinutes} minutes. Time remaining: ${minutesRemaining} minutes.`,
+            400,
+            BookingErrorCodes.CANNOT_CANCEL
+          );
+        }
 
-    // 5. Realizar soft delete actualizando el status
-    const updatedBooking = await prisma.booking.update({
-      where: { id: bookingId },
-      data: {
-        status: 'CANCELLED',
-        cancelledAt: new Date(),
-        cancellationReason: 'CANCELLED_BY_CLIENT'
+        // 5. Realizar soft delete actualizando el status
+        return tx.booking.update({
+          where: { id: bookingId },
+          data: {
+            status: 'CANCELLED',
+            cancelledAt: new Date(),
+            cancellationReason: 'CANCELLED_BY_CLIENT'
+          },
+          include: {
+            service: {
+              select: {
+                id: true,
+                name: true,
+                durationMinutes: true,
+                price: true
+              }
+            },
+            client: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                emailLanguage: true
+              }
+            }
+          }
+        });
       },
-      include: {
-        service: {
-          select: {
-            id: true,
-            name: true,
-            durationMinutes: true,
-            price: true
-          }
-        },
-        client: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            emailLanguage: true
-          }
-        }
-      }
-    });
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
+    );
 
     logger.info({
       bookingId,
       clientId,
-      bookingTime: booking.bookingTime,
-      minCancellationNoticeMinutes
+      bookingTime: updatedBooking.bookingTime,
+      status: updatedBooking.status
     }, 'Booking cancelled successfully');
 
     return updatedBooking as BookingWithDetails;
@@ -851,7 +862,6 @@ export const getBookingMetrics = async (adminId: string): Promise<BookingMetrics
   const yesterdayRange = { start: yesterdayStart, endExclusive: today.start };
   const thisMonth = getUtcMonthRange(now.getUTCFullYear(), now.getUTCMonth());
   const lastMonth = getUtcMonthRange(now.getUTCFullYear(), now.getUTCMonth() - 1);
-  const next7Start = new Date(today.start);
   const next7End = new Date(today.endExclusive);
   next7End.setUTCDate(next7End.getUTCDate() + 7);
 
@@ -895,7 +905,7 @@ export const createBookingByAdmin = async (
     async (tx) => {
       const client = await tx.client.findUnique({
         where: { id: data.clientId },
-        select: { id: true, email: true, name: true },
+        select: { id: true, email: true, name: true, emailLanguage: true },
       });
 
       if (!client) {

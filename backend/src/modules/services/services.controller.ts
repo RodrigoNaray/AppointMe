@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AdminUser } from '@prisma/client';
+import { AdminUser, Prisma } from '@prisma/client';
 import * as service from './services.services';
 import { CreateServiceDto, UpdateServiceDto } from './services.types';
 import { ConflictError, NotFoundError } from '../../utils/error';
@@ -78,6 +78,17 @@ export const remove = async (req: Request<{ id: string }>, res: Response) => {
       logger.warn(error.message);
       return res.status(404).json({ message: error.message });
     }
+
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2003'
+    ) {
+      logger.warn({ serviceId: req.params.id }, "Servicio con reservas asociadas");
+      return res.status(409).json({
+        message: 'El servicio tiene reservas asociadas y no puede eliminarse.'
+      });
+    }
+
     logger.error(error, "Error al eliminar el servicio");
     res.status(500).json({ message: 'Error interno del servidor' });
   }

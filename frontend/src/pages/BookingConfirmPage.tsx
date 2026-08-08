@@ -66,8 +66,8 @@ export default function BookingConfirmPage() {
       return;
     }
 
-    // Validar formato hora (HH:mm)
-    if (!/^\d{2}:\d{2}$/.test(timeParam)) {
+    // Validar formato hora (HH:mm válida)
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(timeParam)) {
       toast.error('Formato de hora inválido');
       navigate('/book');
       setHasValidated(true);
@@ -196,109 +196,114 @@ export default function BookingConfirmPage() {
     setHasSubmitted(true);
     setShowEmailBanner(false);
 
-    const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    try {
+      const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    const slots = cart.map((item, index) => {
-      const offset = cart
-        .slice(0, index)
-        .reduce((sum, i) => sum + i.service.durationMinutes * i.quantity, 0);
-      const slotTime = new Date(selectedDateTime);
-      slotTime.setUTCMinutes(slotTime.getUTCMinutes() + offset);
-      return {
-        item,
-        bookingTime: slotTime.toISOString(),
-      };
-    });
+      const slots = cart.map((item, index) => {
+        const offset = cart
+          .slice(0, index)
+          .reduce((sum, i) => sum + i.service.durationMinutes * i.quantity, 0);
+        const slotTime = new Date(selectedDateTime);
+        slotTime.setUTCMinutes(slotTime.getUTCMinutes() + offset);
+        return {
+          item,
+          bookingTime: slotTime.toISOString(),
+        };
+      });
 
-    const apiResults = await Promise.allSettled(
-      slots.map((slot) =>
-        createBooking({
-          serviceId: slot.item.service.id,
-          bookingTime: slot.bookingTime,
-          notes: '',
-          clientTimezone,
-        })
-      )
-    );
+      const apiResults = await Promise.allSettled(
+        slots.map((slot) =>
+          createBooking({
+            serviceId: slot.item.service.id,
+            bookingTime: slot.bookingTime,
+            notes: '',
+            clientTimezone,
+          })
+        )
+      );
 
-    const results: BookingResult[] = [];
-    let emailNotVerified = false;
+      const results: BookingResult[] = [];
+      let emailNotVerified = false;
 
-    for (let i = 0; i < apiResults.length; i++) {
-      const slot = slots[i];
-      const r = apiResults[i];
+      for (let i = 0; i < apiResults.length; i++) {
+        const slot = slots[i];
+        const r = apiResults[i];
 
-      if (r.status === 'fulfilled') {
-        results.push({
-          serviceId: slot.item.service.id,
-          serviceName: slot.item.service.name,
-          bookingTime: slot.bookingTime,
-          success: true,
-          bookingId: r.value.booking?.id,
-        });
-      } else if (
-        r.reason?.response?.status === 403 &&
-        r.reason?.response?.data?.code === 'EMAIL_NOT_VERIFIED'
-      ) {
-        emailNotVerified = true;
-        break;
-      } else {
-        const errorMessage = r.reason
-          ? getAxiosErrorMessage(r.reason)
-          : 'Error desconocido';
-        results.push({
-          serviceId: slot.item.service.id,
-          serviceName: slot.item.service.name,
-          bookingTime: slot.bookingTime,
-          success: false,
-          error: errorMessage,
-        });
+        if (r.status === 'fulfilled') {
+          results.push({
+            serviceId: slot.item.service.id,
+            serviceName: slot.item.service.name,
+            bookingTime: slot.bookingTime,
+            success: true,
+            bookingId: r.value.booking?.id,
+          });
+        } else if (
+          r.reason?.response?.status === 403 &&
+          r.reason?.response?.data?.code === 'EMAIL_NOT_VERIFIED'
+        ) {
+          emailNotVerified = true;
+          break;
+        } else {
+          const errorMessage = r.reason
+            ? getAxiosErrorMessage(r.reason)
+            : 'Error desconocido';
+          results.push({
+            serviceId: slot.item.service.id,
+            serviceName: slot.item.service.name,
+            bookingTime: slot.bookingTime,
+            success: false,
+            error: errorMessage,
+          });
+        }
       }
-    }
 
-    if (emailNotVerified) {
-      const allRolledBack = await rollbackCreatedBookings(results);
-      setBookingResults([]);
-      setShowEmailBanner(true);
-      if (allRolledBack) {
+      if (emailNotVerified) {
+        const allRolledBack = await rollbackCreatedBookings(results);
+        setBookingResults([]);
+        setShowEmailBanner(true);
+        if (allRolledBack) {
+          setHasSubmitted(false);
+        }
+        setIsSubmitting(false);
+        return;
+      }
+
+      setBookingResults(results);
+
+      const successCount = results.filter((r) => r.success).length;
+      const allSuccess = successCount === cart.length;
+
+      if (allSuccess) {
+        clearCart();
+        navigate('/book/success', { state: { results } });
+      } else if (successCount > 0) {
+        setSuccessfulItems(
+          results.filter((r) => r.success).map((r) => ({
+            serviceId: r.serviceId,
+            serviceName: r.serviceName,
+            success: true,
+            bookingId: r.bookingId,
+          }))
+        );
+        setFailedItems(
+          results.filter((r) => !r.success).map((r) => ({
+            serviceId: r.serviceId,
+            serviceName: r.serviceName,
+            success: false,
+            error: r.error,
+          }))
+        );
+        setShowRollbackModal(true);
+      } else {
+        toast.error('No se pudo crear ninguna reserva.');
         setHasSubmitted(false);
       }
-      setIsSubmitting(false);
-      return;
-    }
-
-    setBookingResults(results);
-
-    const successCount = results.filter((r) => r.success).length;
-    const allSuccess = successCount === cart.length;
-
-    if (allSuccess) {
-      clearCart();
-      navigate('/book/success', { state: { results } });
-    } else if (successCount > 0) {
-      setSuccessfulItems(
-        results.filter((r) => r.success).map((r) => ({
-          serviceId: r.serviceId,
-          serviceName: r.serviceName,
-          success: true,
-          bookingId: r.bookingId,
-        }))
-      );
-      setFailedItems(
-        results.filter((r) => !r.success).map((r) => ({
-          serviceId: r.serviceId,
-          serviceName: r.serviceName,
-          success: false,
-          error: r.error,
-        }))
-      );
-      setShowRollbackModal(true);
-    } else {
-      toast.error('No se pudo crear ninguna reserva.');
+    } catch (error) {
+      toast.error(getAxiosErrorMessage(error));
       setHasSubmitted(false);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
   // Loading state

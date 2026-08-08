@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
-import { AdminUser } from '@prisma/client';
+import { AdminUser, Prisma } from '@prisma/client';
 import * as service from './availability.admin.services';
 import { UpdateScheduleDto } from './availability.admin.types';
 import logger from '../../../utils/logger';
+
+const isPrismaConflict = (error: unknown): error is Prisma.PrismaClientKnownRequestError =>
+  error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
 
 const MONTH_REGEX = /^\d{4}-\d{2}$/;
 
@@ -79,6 +82,10 @@ export const createBlockController = async (req: Request, res: Response) => {
       return res.status(400).json({ message: error.message });
     }
 
+    if (isPrismaConflict(error)) {
+      return res.status(409).json({ message: 'Ya existe un bloqueo idéntico para ese horario.' });
+    }
+
     logger.error(error, "Error al crear el bloqueo de tiempo");
     res.status(500).json({ message: 'Error interno del servidor' });
   }
@@ -126,6 +133,10 @@ export const updateBlockController = async (req: Request, res: Response) => {
   } catch (error) {
     if (error instanceof service.AvailabilityValidationError) {
       return res.status(400).json({ message: error.message });
+    }
+
+    if (isPrismaConflict(error)) {
+      return res.status(409).json({ message: 'Ya existe un bloqueo idéntico para ese horario.' });
     }
 
     logger.error(error, "Error al actualizar el bloqueo de tiempo");

@@ -459,6 +459,17 @@ describe('booking.services.createBooking', () => {
 });
 
 describe('booking.services.cancelBooking', () => {
+  const buildCancelTransaction = (bookingRecord: unknown, updateResult?: unknown) => {
+    const tx = {
+      booking: {
+        findUnique: vi.fn().mockResolvedValue(bookingRecord),
+        update: vi.fn().mockResolvedValue(updateResult ?? bookingRecord),
+      },
+    };
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+    return tx;
+  };
+
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2030-01-01T00:00:00.000Z'));
@@ -470,17 +481,17 @@ describe('booking.services.cancelBooking', () => {
   });
 
   it('returns 404 when booking does not exist', async () => {
-    mockPrisma.booking.findUnique.mockResolvedValue(null);
+    const tx = buildCancelTransaction(null);
 
     await expect(cancelBooking('booking-missing', 'client-1')).rejects.toMatchObject({
       code: BookingErrorCodes.BOOKING_NOT_FOUND,
       statusCode: 404
     });
-    expect(mockPrisma.booking.update).not.toHaveBeenCalled();
+    expect(tx.booking.update).not.toHaveBeenCalled();
   });
 
   it('returns 403 when booking belongs to a different client', async () => {
-    mockPrisma.booking.findUnique.mockResolvedValue({
+    const tx = buildCancelTransaction({
       id: 'booking-1',
       clientId: 'other-client',
       adminId: 'admin-1',
@@ -495,11 +506,11 @@ describe('booking.services.cancelBooking', () => {
       code: BookingErrorCodes.UNAUTHORIZED,
       statusCode: 403
     });
-    expect(mockPrisma.booking.update).not.toHaveBeenCalled();
+    expect(tx.booking.update).not.toHaveBeenCalled();
   });
 
   it('returns 400 when booking is already cancelled', async () => {
-    mockPrisma.booking.findUnique.mockResolvedValue({
+    const tx = buildCancelTransaction({
       id: 'booking-1',
       clientId: 'client-1',
       adminId: 'admin-1',
@@ -514,11 +525,11 @@ describe('booking.services.cancelBooking', () => {
       code: BookingErrorCodes.CANNOT_CANCEL,
       statusCode: 400
     });
-    expect(mockPrisma.booking.update).not.toHaveBeenCalled();
+    expect(tx.booking.update).not.toHaveBeenCalled();
   });
 
   it('returns 400 when cancellation notice is not respected', async () => {
-    mockPrisma.booking.findUnique.mockResolvedValue({
+    const tx = buildCancelTransaction({
       id: 'booking-1',
       clientId: 'client-1',
       adminId: 'admin-1',
@@ -533,37 +544,39 @@ describe('booking.services.cancelBooking', () => {
       code: BookingErrorCodes.CANNOT_CANCEL,
       statusCode: 400
     });
-    expect(mockPrisma.booking.update).not.toHaveBeenCalled();
+    expect(tx.booking.update).not.toHaveBeenCalled();
   });
 
   it('sets status CANCELLED, cancelledAt and cancellationReason on success', async () => {
-    mockPrisma.booking.findUnique.mockResolvedValue({
-      id: 'booking-1',
-      clientId: 'client-1',
-      adminId: 'admin-1',
-      status: 'CONFIRMED',
-      bookingTime: new Date('2030-02-01T10:00:00.000Z'),
-      admin: { minCancellationNoticeMinutes: 120 },
-      service: { id: 'service-1', name: 'Corte', durationMinutes: 45, price: 500 },
-      client: { id: 'client-1', name: 'Ana', email: 'ana@example.com', phone: '099' }
-    });
-    mockPrisma.booking.update.mockResolvedValue({
-      id: 'booking-1',
-      clientId: 'client-1',
-      adminId: 'admin-1',
-      serviceId: 'service-1',
-      bookingTime: new Date('2030-02-01T10:00:00.000Z'),
-      durationMinutes: 45,
-      status: 'CANCELLED',
-      cancelledAt: new Date('2030-01-01T00:00:00.000Z'),
-      cancellationReason: 'CANCELLED_BY_CLIENT',
-      service: { id: 'service-1', name: 'Corte', durationMinutes: 45, price: 500 },
-      client: { id: 'client-1', name: 'Ana', email: 'ana@example.com', phone: '099' }
-    });
+    const tx = buildCancelTransaction(
+      {
+        id: 'booking-1',
+        clientId: 'client-1',
+        adminId: 'admin-1',
+        status: 'CONFIRMED',
+        bookingTime: new Date('2030-02-01T10:00:00.000Z'),
+        admin: { minCancellationNoticeMinutes: 120 },
+        service: { id: 'service-1', name: 'Corte', durationMinutes: 45, price: 500 },
+        client: { id: 'client-1', name: 'Ana', email: 'ana@example.com', phone: '099' }
+      },
+      {
+        id: 'booking-1',
+        clientId: 'client-1',
+        adminId: 'admin-1',
+        serviceId: 'service-1',
+        bookingTime: new Date('2030-02-01T10:00:00.000Z'),
+        durationMinutes: 45,
+        status: 'CANCELLED',
+        cancelledAt: new Date('2030-01-01T00:00:00.000Z'),
+        cancellationReason: 'CANCELLED_BY_CLIENT',
+        service: { id: 'service-1', name: 'Corte', durationMinutes: 45, price: 500 },
+        client: { id: 'client-1', name: 'Ana', email: 'ana@example.com', phone: '099' }
+      }
+    );
 
     await cancelBooking('booking-1', 'client-1');
 
-    expect(mockPrisma.booking.update).toHaveBeenCalledWith(
+    expect(tx.booking.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'booking-1' },
         data: expect.objectContaining({

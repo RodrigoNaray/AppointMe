@@ -123,6 +123,12 @@ export default function MyBookingsPage() {
       
       // Refrescar datos del servidor
       await fetchBookings();
+
+      // Si la página actual quedó vacía tras cancelar, volver a la última con datos
+      setCurrentPageUpcoming(prev => {
+        const maxPage = Math.max(1, Math.ceil((upcomingBookings.length - 1) / itemsPerPage));
+        return Math.min(prev, maxPage);
+      });
     } catch (error: unknown) {
       console.error('Error cancelling booking:', error);
       const errorMessage = axios.isAxiosError<{ message?: string }>(error)

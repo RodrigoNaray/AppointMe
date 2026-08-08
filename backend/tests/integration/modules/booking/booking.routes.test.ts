@@ -289,6 +289,9 @@ describe('booking.routes (semi-real)', () => {
         phone: '099000000'
       }
     });
+    mockPrisma.$transaction.mockImplementation(
+      async (callback: (tx: typeof mockPrisma) => unknown) => callback(mockPrisma)
+    );
 
     const response = await request(clientApp).put('/bookings/booking-foreign/cancel');
 

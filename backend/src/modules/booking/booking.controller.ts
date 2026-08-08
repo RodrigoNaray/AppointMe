@@ -18,6 +18,31 @@ import * as service from './booking.services'
 import logger from '../../utils/logger';
 import { sendBookingConfirmationEmail, sendAdminCancellationEmail, sendBookingRescheduledEmail, sendClientCancellationEmail } from '../../services/emailService';
 
+const DEFAULT_CLIENT_TIMEZONE = 'America/Montevideo';
+
+const isValidTimeZone = (timezone: string): boolean => {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: timezone });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const resolveClientTimezone = (timezone?: string): string =>
+  timezone && isValidTimeZone(timezone) ? timezone : DEFAULT_CLIENT_TIMEZONE;
+
+const MAX_PAGE_SIZE = 100;
+
+const parsePagination = (page?: string, limit?: string): { page: number; limit: number } => {
+  const parsedPage = Number(page);
+  const parsedLimit = Number(limit);
+  const validPage = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const validLimit =
+    Number.isInteger(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, MAX_PAGE_SIZE) : 10;
+  return { page: validPage, limit: validLimit };
+};
+
 /**
  * Crear una nueva reserva (Cliente)
  * POST /api/bookings
@@ -129,8 +154,7 @@ export const getMyBookings = async (
       });
     }
 
-    const page = parseInt(req.query.page || '1');
-    const limit = parseInt(req.query.limit || '10');
+    const { page, limit } = parsePagination(req.query.page, req.query.limit);
     const from = req.query.from ? new Date(req.query.from) : undefined;
     const to = req.query.to ? new Date(req.query.to) : undefined;
 
@@ -195,7 +219,7 @@ export const cancelBooking = async (
     sendClientCancellationEmail({
       to: client.email,
       clientName: client.name,
-      clientTimezone: 'America/Montevideo',
+      clientTimezone: resolveClientTimezone(req.body?.clientTimezone),
       clientLanguage: client.emailLanguage,
       serviceName: updatedBooking.service?.name || 'Servicio',
       bookingTime: updatedBooking.bookingTime,
@@ -267,7 +291,7 @@ export const cancelBookingByAdminController = async (
       hasReason: Boolean(reason)
     }, 'Booking cancelled by admin via API');
 
-    const clientTimezone = 'America/Montevideo';
+    const clientTimezone = DEFAULT_CLIENT_TIMEZONE;
 
     sendAdminCancellationEmail({
       to: result.clientEmail,
@@ -357,7 +381,7 @@ export const rescheduleBookingByAdminController = async (
       newBookingTime: result.newBookingTime.toISOString()
     }, 'Booking rescheduled by admin via API');
 
-    const clientTimezone = 'America/Montevideo';
+    const clientTimezone = DEFAULT_CLIENT_TIMEZONE;
 
     sendBookingRescheduledEmail({
       to: result.clientEmail,
@@ -418,8 +442,7 @@ export const getAllBookings = async (
       });
     }
 
-    const page = parseInt(req.query.page || '1');
-    const limit = parseInt(req.query.limit || '10');
+    const { page, limit } = parsePagination(req.query.page, req.query.limit);
     const from = req.query.from ? new Date(req.query.from) : undefined;
     const to = req.query.to ? new Date(req.query.to) : undefined;
 
@@ -555,8 +578,8 @@ export const createBookingByAdminController = async (
     sendBookingConfirmationEmail({
       to: booking.client.email,
       clientName: booking.client.name,
-      clientTimezone: 'America/Montevideo',
-      clientLanguage: 'es',
+      clientTimezone: DEFAULT_CLIENT_TIMEZONE,
+      clientLanguage: booking.client.emailLanguage,
       bookings: [{
         serviceName: booking.service.name,
         bookingTime: booking.bookingTime,
