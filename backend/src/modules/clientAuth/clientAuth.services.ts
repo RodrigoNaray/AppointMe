@@ -627,6 +627,7 @@ export const updateClientProfile = async (
       emailLanguage: updatedClient.emailLanguage,
       emailVerified: updatedClient.emailVerified,
       googleId: updatedClient.googleId,
+      tokenVersion: updatedClient.tokenVersion,
       createdAt: updatedClient.createdAt,
       updatedAt: updatedClient.updatedAt,
     };

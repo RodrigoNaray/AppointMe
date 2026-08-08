@@ -32,12 +32,17 @@ model AdminUser {
   name          String?
   passwordHash  String?
   googleId      String?   @unique
+  tokenVersion  Int       @default(0) // Se incrementa al logout/cambio de password para invalidar sesiones
 
   // Configuraciones específicas del administrador
   schedule      Json?     // Horario base semanal, almacenado como JSON. Ejemplo:
                           // { "monday": { "start": "09:00", "end": "18:00", "isActive": true }, ... }
   minBookingAdvanceMinutes Int? @default(60)   // Antelación mínima para reservas, en minutos. Por defecto 1 hora.
   minCancellationNoticeMinutes Int? @default(120) // Tiempo mínimo antes de cita para permitir cancelación (2 horas)
+
+  // Identidad pública del negocio (HomePage)
+  businessName        String?
+  businessDescription String?
 
   // Información de contacto pública del negocio
   businessPhone   String?   // Teléfono de contacto del negocio (público en HomePage/ContactPage)
@@ -63,6 +68,7 @@ model Client {
   emailLanguage String @default("es")
   passwordHash String?   // Opcional para el login con Google
   googleId     String?   @unique
+  tokenVersion Int       @default(0) // Se incrementa al logout/cambio de password para invalidar sesiones
 
   // Campos de verificación de email
   emailVerified Boolean @default(false)
@@ -133,6 +139,7 @@ model Booking {
   durationMinutes   Int                 // Duración snapshot del servicio al momento de reservar
   status            BookingStatus       @default(CONFIRMED) // Estado de la reserva (CONFIRMED | CANCELLED)
   notes             String?             // Notas opcionales del cliente al reservar
+  clientTimezone    String?             // Zona horaria del cliente (emails con hora local real)
   cancelledAt       DateTime?           // Timestamp del soft delete
   cancellationReason CancellationReason? // Origen de la cancelación (analytics/audit)
 
