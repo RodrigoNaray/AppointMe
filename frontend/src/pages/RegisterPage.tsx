@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CheckCircle, XCircle } from "lucide-react";
-import { useTranslation } from 'react-i18next';
 import { PageContainer } from "@/components/layout/PageContainer";
 
 interface PasswordFeedback {
@@ -29,7 +28,6 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export default function RegisterPage() {
-    const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const saveReturnUrl = useOAuthStore(selectSaveReturnUrl);
@@ -46,11 +44,11 @@ export default function RegisterPage() {
     const returnUrl = searchParams.get('returnUrl');
 
     const passwordCriteria = [
-        { label: t('auth.passwordCriteria.minLength'), test: (pw: string) => pw.length >= 8 },
-        { label: t('auth.passwordCriteria.hasNumber'), test: (pw: string) => /\d/.test(pw) },
-        { label: t('auth.passwordCriteria.hasUppercase'), test: (pw: string) => /[A-Z]/.test(pw) },
-        { label: t('auth.passwordCriteria.hasLowercase'), test: (pw: string) => /[a-z]/.test(pw) },
-        { label: t('auth.passwordCriteria.hasSpecial'), test: (pw: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pw) },
+        { label: 'Al menos 8 caracteres', test: (pw: string) => pw.length >= 8 },
+        { label: 'Al menos un número', test: (pw: string) => /\d/.test(pw) },
+        { label: 'Al menos una letra mayúscula', test: (pw: string) => /[A-Z]/.test(pw) },
+        { label: 'Al menos una letra minúscula', test: (pw: string) => /[a-z]/.test(pw) },
+        { label: 'Al menos un carácter especial', test: (pw: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pw) },
     ];
 
     useEffect(() => {
@@ -71,15 +69,15 @@ export default function RegisterPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email.includes('@')) {
-            setErrorMessage(t('auth.emailMustContainAt'));
+            setErrorMessage('El correo electrónico debe contener un \'@\'');
             return;
         }
         if (password !== confirmPassword) {
-            setErrorMessage(t('auth.passwordsDoNotMatch'));
+            setErrorMessage('Las contraseñas deben coincidir');
             return;
         }
         if (!passwordCriteria.every((criterion) => criterion.test(password))) {
-            setErrorMessage(t('auth.passwordRequirementsNotMet'));
+            setErrorMessage('La contraseña no cumple con todos los requisitos');
             return;
         }
 
@@ -91,7 +89,7 @@ export default function RegisterPage() {
             const result = await clientAuthService.register(registerData);
 
             if (result.success) {
-                toast.success(t('auth.registerSuccess'), {
+                toast.success('¡Registro exitoso! Revisa tu email para verificar tu cuenta.', {
                     duration: 5000,
                 });
 
@@ -101,12 +99,12 @@ export default function RegisterPage() {
                     navigate('/login');
                 }
             } else {
-                toast.error(result.message || t('auth.registerError'));
-                setErrorMessage(result.message || t('auth.registerError'));
+                toast.error(result.message || 'Error en el registro');
+                setErrorMessage(result.message || 'Error en el registro');
             }
         } catch (error) {
-            toast.error(t('auth.internalError'));
-            setErrorMessage(t('auth.internalError'));
+            toast.error('Error interno del servidor');
+            setErrorMessage('Error interno del servidor');
         } finally {
             setIsLoading(false);
         }
@@ -130,7 +128,7 @@ export default function RegisterPage() {
         <PageContainer maxWidth="md" fullHeight centered padding="none">
             <Card className="w-full max-w-md shadow-lg">
                 <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-bold">{t('auth.registerTitle')}</CardTitle>
+                    <CardTitle className="text-2xl font-bold">Registrarse</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -138,7 +136,7 @@ export default function RegisterPage() {
                             <div className="text-destructive text-sm">{errorMessage}</div>
                         )}
                         <div>
-                            <label htmlFor="name" className="block text-sm font-medium">{t('auth.name')}</label>
+                            <label htmlFor="name" className="block text-sm font-medium">Nombre</label>
                             <Input
                                 type="text"
                                 id="name"
@@ -149,7 +147,7 @@ export default function RegisterPage() {
                             />
                         </div>
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium">{t('auth.email')}</label>
+                            <label htmlFor="email" className="block text-sm font-medium">Correo Electrónico</label>
                             <Input
                                 type="email"
                                 id="email"
@@ -160,7 +158,7 @@ export default function RegisterPage() {
                             />
                         </div>
                         <div>
-                            <label htmlFor="phone" className="block text-sm font-medium">{t('auth.phone')}</label>
+                            <label htmlFor="phone" className="block text-sm font-medium">Teléfono</label>
                             <Input
                                 type="tel"
                                 id="phone"
@@ -170,7 +168,7 @@ export default function RegisterPage() {
                             />
                         </div>
                         <div className="relative">
-                            <label htmlFor="password" className={`block text-sm font-medium cursor-pointer w-full ${!passwordValid && password.length > 0 ? 'text-red-600' : ''}`}>{t('auth.password')}</label>
+                            <label htmlFor="password" className={`block text-sm font-medium cursor-pointer w-full ${!passwordValid && password.length > 0 ? 'text-red-600' : ''}`}>Contraseña</label>
                             <Input
                                 type="password"
                                 id="password"
@@ -186,7 +184,7 @@ export default function RegisterPage() {
                             />
 
                             {!passwordValid && password.length > 0 && (
-                                <p id="password-error" className="text-red-600 text-sm mt-1">{t('auth.passwordCriteria.invalid')}</p>
+                                <p id="password-error" className="text-red-600 text-sm mt-1">La contraseña debe cumplir con los requerimientos</p>
                             )}
 
                             <div
@@ -196,7 +194,7 @@ export default function RegisterPage() {
                                 className={`${showBalloon ? 'pointer-events-auto' : 'pointer-events-none'} absolute z-20 bottom-full mb-2 right-0 w-72 sm:w-80 transform transition duration-150 ease-out ${showBalloon ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}
                             >
                                 <div className={`bg-card border rounded-lg shadow-md p-3 text-sm`}>
-                                    <p className="font-semibold mb-2">{t('auth.passwordCriteria.title')}</p>
+                                    <p className="font-semibold mb-2">Requisitos de la contraseña</p>
                                     <ul className="space-y-2">
                                         {passwordFeedback.map((fb, idx) => (
                                             <li key={idx} className="flex items-center gap-3">
@@ -211,7 +209,7 @@ export default function RegisterPage() {
                             </div>
                         </div>
                         <div>
-                            <label htmlFor="confirmPassword" className={`block text-sm font-medium ${!passwordsMatch && confirmPassword.length > 0 ? 'text-red-600' : ''}`}>{t('auth.confirmPassword')}</label>
+                            <label htmlFor="confirmPassword" className={`block text-sm font-medium ${!passwordsMatch && confirmPassword.length > 0 ? 'text-red-600' : ''}`}>Confirmar Contraseña</label>
                             <Input
                                 type="password"
                                 id="confirmPassword"
@@ -224,11 +222,11 @@ export default function RegisterPage() {
                             />
 
                             {!passwordsMatch && confirmPassword.length > 0 && (
-                                <p id="confirm-error" className="text-red-600 text-sm mt-1">{t('auth.passwordsDoNotMatch')}</p>
+                                <p id="confirm-error" className="text-red-600 text-sm mt-1">Las contraseñas deben coincidir</p>
                             )}
                         </div>
                         <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? t('auth.registering') : t('auth.registerButton')}
+                            {isLoading ? 'Registrando...' : 'Registrarse'}
                         </Button>
                     </form>
 
@@ -241,16 +239,16 @@ export default function RegisterPage() {
                         type="button"
                     >
                         <GoogleIcon />
-                        <span>{t('auth.continueWithGoogle')}</span>
+                        <span>Continuar con Google</span>
                     </Button>
 
                     <p className="mt-4 text-center text-sm">
-                        {t('auth.hasAccount')}{" "}
+                        ¿Ya tienes una cuenta?{" "}
                         <Link
                             to={returnUrl ? `/login?returnUrl=${encodeURIComponent(returnUrl)}` : "/login"}
                             className="text-blue-500 hover:underline"
                         >
-                            {t('auth.loginHere')}
+                            Inicia sesión aquí
                         </Link>
                     </p>
                 </CardContent>

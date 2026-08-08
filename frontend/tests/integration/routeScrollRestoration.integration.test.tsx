@@ -5,15 +5,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PublicLayout from '../../src/layouts/PublicLayout';
 import AdminLayout from '../../src/layouts/AdminLayout';
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: { language: 'es', resolvedLanguage: 'es', changeLanguage: vi.fn() },
-  }),
-  Trans: ({ children }: { children: React.ReactNode }) => children,
-  initReactI18next: { type: '3rdParty' as const, init: vi.fn() },
-}));
-
 function HomePageWithContactLink() {
   return <Link to="/contact">Ir a contacto</Link>;
 }

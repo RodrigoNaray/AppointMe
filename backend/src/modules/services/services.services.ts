@@ -30,7 +30,10 @@ const validateServicePayload = (data: CreateServiceDto | UpdateServiceDto): void
  */
 export const getAllServices = async (query?: { page?: number; limit?: number; categoryId?: string }) => {
   const page = Number.isFinite(query?.page) && (query?.page ?? 1) > 0 ? query!.page! : 1;
-  const limit = Number.isFinite(query?.limit) && (query?.limit ?? 8) > 0 ? query!.limit! : 8;
+  const limit = Math.min(
+    Number.isFinite(query?.limit) && (query?.limit ?? 8) > 0 ? query!.limit! : 8,
+    100
+  );
   const skip = (page - 1) * limit;
 
   const where: Record<string, unknown> = { isActive: true };

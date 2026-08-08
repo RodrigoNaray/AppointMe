@@ -23,19 +23,6 @@ export const generateTokenExpiration = (hoursFromNow: number = 24): Date => {
 };
 
 /**
- * Verifica si un token ha expirado
- * @param expirationDate Fecha de expiración del token
- * @returns boolean true si el token ha expirado
- */
-export const isTokenExpired = (expirationDate: Date | null): boolean => {
-  if (!expirationDate) {
-    return true; // Si no hay fecha de expiración, considerar expirado
-  }
-  
-  return new Date() > expirationDate;
-};
-
-/**
  * Genera un token seguro y su fecha de expiración
  * @param hoursFromNow Número de horas de validez (por defecto 24)
  * @returns {token: string, expiration: Date}

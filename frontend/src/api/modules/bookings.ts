@@ -11,7 +11,6 @@ export interface Booking {
   bookingTime: string; // ISO 8601
   status: 'CONFIRMED' | 'CANCELLED';
   durationMinutes: number; // Snapshot de duración al momento de reservar
-  reminderSent: boolean; // Para sistema de notificaciones
   createdAt: string;
   updatedAt: string;
   // Relaciones incluidas por el backend
@@ -108,7 +107,8 @@ export const createBooking = async (payload: CreateBookingPayload): Promise<Crea
 
 
 export const cancelBooking = async (bookingId: string): Promise<{ success: boolean; message: string }> => {
-  const response = await apiClient.put(`/bookings/${bookingId}/cancel`);
+  const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const response = await apiClient.put(`/bookings/${bookingId}/cancel`, { clientTimezone });
   return response.data;
 };
 

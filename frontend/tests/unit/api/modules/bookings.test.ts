@@ -48,7 +48,9 @@ describe('bookings API module', () => {
     const result = await cancelBooking('b-1');
 
     expect(result.success).toBe(true);
-    expect(mockPut).toHaveBeenCalledWith('/bookings/b-1/cancel');
+    expect(mockPut).toHaveBeenCalledWith('/bookings/b-1/cancel', {
+      clientTimezone: expect.any(String),
+    });
   });
 
   it('createBooking propagates errors from API', async () => {

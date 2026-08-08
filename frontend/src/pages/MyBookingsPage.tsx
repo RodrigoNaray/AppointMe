@@ -71,10 +71,10 @@ export default function MyBookingsPage() {
       const upcoming: Booking[] = [];
       const past: Booking[] = [];
 
-      // Separar reservas en próximas y pasadas
+      // Separar reservas en próximas (futuras y confirmadas) y pasadas (resto)
       response.bookings.forEach(booking => {
         const bookingDate = new Date(booking.bookingTime);
-        if (bookingDate >= now) {
+        if (bookingDate >= now && booking.status === 'CONFIRMED') {
           upcoming.push(booking);
         } else {
           past.push(booking);
@@ -123,6 +123,12 @@ export default function MyBookingsPage() {
       
       // Refrescar datos del servidor
       await fetchBookings();
+
+      // Si la página actual quedó vacía tras cancelar, volver a la última con datos
+      setCurrentPageUpcoming(prev => {
+        const maxPage = Math.max(1, Math.ceil((upcomingBookings.length - 1) / itemsPerPage));
+        return Math.min(prev, maxPage);
+      });
     } catch (error: unknown) {
       console.error('Error cancelling booking:', error);
       const errorMessage = axios.isAxiosError<{ message?: string }>(error)

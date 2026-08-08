@@ -3,18 +3,15 @@
   "private": true,
   "scripts": {
     "dev": "pnpm -r --parallel dev",
-    "devTest": "node scripts/devTest.mjs",
     "build": "pnpm -r build",
     "clean": "pnpm -r clean",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "test:backend": "pnpm --filter backend test",
     "test:frontend": "pnpm --filter frontend test",
-    "test:e2e": "pnpm --filter frontend exec playwright test",
     "test:coverage": "pnpm --filter backend test:coverage && pnpm --filter frontend test:coverage"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
     "prettier": "^3.6.2"
   }
 }

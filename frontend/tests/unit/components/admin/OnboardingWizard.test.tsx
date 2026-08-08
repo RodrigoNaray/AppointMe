@@ -14,21 +14,6 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const map: Record<string, string> = {
-        'onboarding.wizard.title': 'Configuración inicial',
-        'onboarding.wizard.welcome.title': 'Bienvenido a AppointMePro',
-        'onboarding.wizard.welcome.body': 'Vamos a configurar tu cuenta en 5 pasos.',
-        'onboarding.cta.start': 'Iniciar configuración guiada',
-      };
-      return map[key] || key;
-    },
-    i18n: { language: 'es' },
-  }),
-}));
-
 import OnboardingWizard from '@/components/admin/OnboardingWizard';
 
 const renderWithRouter = (ui: React.ReactNode) =>

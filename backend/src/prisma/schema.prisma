@@ -151,7 +151,6 @@ model Booking {
   @@index([status])
   @@index([adminId, status])
   @@index([clientId, bookingTime])
-  @@unique([bookingTime, serviceId, clientId, adminId]) 
 }
 
 // Modelo para los Bloqueos de Disponibilidad definidos por el administrador

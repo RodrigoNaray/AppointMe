@@ -127,9 +127,9 @@ Frontend (Vite + React 19)          Backend (Express.js)              Database
 
 ### Testing
 
-- 21 test files in backend (unit + integration tests with Vitest + supertest)
-- 10 test files in frontend (unit tests with Vitest + @testing-library/react)
-- Test coverage for auth flows, booking validation, availability conflict detection, timezone conversion utilities
+  - 23 test files in backend (unit + integration tests with Vitest + supertest, 166 tests)
+  - 24 test files in frontend (unit tests with Vitest + @testing-library/react, 116 tests)
+  - Test coverage for auth flows, booking validation, availability conflict detection, timezone conversion utilities
 
 ---
 
@@ -138,21 +138,22 @@ Frontend (Vite + React 19)          Backend (Express.js)              Database
 ```
 AppointMePro/
 ├── backend/src/
-│   ├── controllers/          # Request/response handling
-│   ├── routes/               # Route definitions with middleware
-│   ├── services/             # Business logic layer
+│   ├── modules/               # Feature-modular architecture (auth, booking, availability, services, categories, settings, client, health, sitemap)
+│   ├── services/              # Shared services (email, logger, token utils)
+│   ├── config/                # Prisma client, Passport strategies, auth config
+│   ├── middlewares/           # Auth guards, rate limiting
 │   ├── prisma/
-│   │   ├── schema.prisma     # Database schema (7 models)
-│   │   └── seed.js           # Sample data seeding
-│   └── tests/                # Unit + integration tests
+│   │   ├── schema.prisma      # Database schema (7 models)
+│   │   └── migrations/        # Migration history
+│   └── tests/                 # Unit + integration tests
 ├── frontend/src/
-│   ├── components/           # shadcn-ui and custom UI components
-│   ├── pages/                # Route-based page components
-│   ├── stores/               # Zustand state management
-│   ├── lib/                  # Utility functions (timezone, calendar)
-│   └── tests/                # Unit tests with testing-library
-├── pnpm-workspace.yaml       # Monorepo configuration
-└── package.json              # Root scripts (dev, build, lint, test)
+│   ├── components/            # shadcn-ui and custom UI components
+│   ├── pages/                 # Route-based page components (public, client, admin)
+│   ├── stores/                # Zustand state management
+│   ├── api/                   # Axios client + API modules
+│   └── lib/                   # Utility functions (timezone, calendar)
+├── pnpm-workspace.yaml        # Monorepo configuration
+└── package.json               # Root scripts (dev, build, lint, test)
 ```
 
 ---
@@ -174,7 +175,7 @@ cd AppointMe
 pnpm install
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
-cd backend && npx prisma migrate dev && npx prisma db seed && pnpm create:admin
+cd backend && pnpm build && npx prisma migrate dev && npx prisma db seed && pnpm create:admin
 cd .. && npm run dev
 ```
 
@@ -182,7 +183,7 @@ cd .. && npm run dev
 
 ## Challenges Faced
 
-- **Cross-Session Authentication:** RBAC route guards (`AdminRoute`, `ClientRoute`) plus backend cookie invalidation on role switch to prevent privilege escalation after logout
+- **Cross-Session Authentication:** Cookie invalidation on role switch to prevent privilege escalation after logout
 - **Safari iOS Cookies:** Migrated from `sameSite: 'strict'` to `'lax'` to resolve cross-site cookie blocking on Safari mobile
 - **Booking Conflicts:** Atomic Prisma transaction with `findFirst()` + `create()` and database-level unique constraints to prevent double-booking
 

@@ -3,6 +3,7 @@ import prisma from '../../../config/prisma';
 import { UpdateScheduleDto, WeeklySchedule, CalendarEvent } from './availability.admin.types';
 import { addMinutes } from 'date-fns';
 import logger from '../../../utils/logger';
+import { hasTimeConflictOptimized, TimePeriod } from '../../../utils/timeConflictUtils';
 
 const dayMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -94,6 +95,54 @@ export const getBlocks = async (adminId: string) => {
   });
 };
 
+const assertBlockTimeFree = async (
+  adminId: string,
+  startTime: Date,
+  endTime: Date,
+  excludeBlockId?: string
+): Promise<void> => {
+  const blockWhere: Record<string, unknown> = {
+    adminId,
+    startTime: { lt: endTime },
+    endTime: { gt: startTime }
+  };
+  if (excludeBlockId) {
+    blockWhere.id = { not: excludeBlockId };
+  }
+
+  const [bookings, blocks] = await Promise.all([
+    prisma.booking.findMany({
+      where: {
+        adminId,
+        status: 'CONFIRMED',
+        bookingTime: { lt: endTime }
+      },
+      select: {
+        bookingTime: true,
+        durationMinutes: true
+      }
+    }),
+    prisma.availabilityBlock.findMany({
+      where: blockWhere
+    })
+  ]);
+
+  const busyPeriods: TimePeriod[] = [
+    ...bookings.map(b => ({
+      start: b.bookingTime,
+      end: addMinutes(b.bookingTime, b.durationMinutes)
+    })),
+    ...blocks.map(b => ({
+      start: b.startTime,
+      end: b.endTime
+    }))
+  ];
+
+  if (hasTimeConflictOptimized(startTime, endTime, busyPeriods)) {
+    throw new AvailabilityValidationError('El rango elegido se superpone con una reserva o bloqueo existente.');
+  }
+};
+
 export const createBlock = async (data: { startTime: Date; endTime: Date; reason?: string; adminId: string }) => {
   if (isNaN(data.startTime.getTime()) || isNaN(data.endTime.getTime())) {
     throw new AvailabilityValidationError('Las fechas de bloqueo son inválidas.');
@@ -102,6 +151,8 @@ export const createBlock = async (data: { startTime: Date; endTime: Date; reason
   if (data.startTime >= data.endTime) {
     throw new AvailabilityValidationError('El bloqueo debe cumplir startTime < endTime.');
   }
+
+  await assertBlockTimeFree(data.adminId, data.startTime, data.endTime);
 
   const newBlock = await prisma.availabilityBlock.create({
     data: {
@@ -143,6 +194,8 @@ export const updateBlock = async (blockId: string, adminId: string, data: { star
   if (!existing) {
     throw new AvailabilityValidationError('Bloqueo no encontrado.');
   }
+
+  await assertBlockTimeFree(adminId, data.startTime, data.endTime, blockId);
 
   const updated = await prisma.availabilityBlock.update({
     where: { id: blockId },

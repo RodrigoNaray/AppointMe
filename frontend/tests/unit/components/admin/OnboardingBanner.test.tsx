@@ -12,25 +12,6 @@ vi.mock('@/api/client', () => ({
   },
 }));
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const map: Record<string, string> = {
-        'onboarding.banner.title': 'Tu cuenta aún no está lista',
-        'onboarding.banner.subtitle': 'Completá estos pasos.',
-        'onboarding.check.schedule': 'Horario semanal configurado',
-        'onboarding.check.category': 'Categoría creada',
-        'onboarding.check.service': 'Servicio activo',
-        'onboarding.cta.start': 'Iniciar configuración guiada',
-        'onboarding.cta.dismiss': 'Omitir por ahora',
-        'onboarding.cta.backToWizard': 'Volver al wizard',
-      };
-      return map[key] || key;
-    },
-    i18n: { language: 'es' },
-  }),
-}));
-
 vi.mock('@/components/admin/OnboardingWizard', () => ({
   default: () => <div data-testid="onboarding-wizard" />,
 }));
@@ -62,11 +43,11 @@ describe('OnboardingBanner', () => {
     renderBanner();
 
     await waitFor(() => {
-      expect(screen.getByText('Tu cuenta aún no está lista')).toBeInTheDocument();
+      expect(screen.getByText('Tu cuenta aún no está lista', { exact: false })).toBeInTheDocument();
     });
     expect(screen.getByText('Horario semanal configurado')).toBeInTheDocument();
-    expect(screen.getByText('Categoría creada')).toBeInTheDocument();
-    expect(screen.getByText('Servicio activo')).toBeInTheDocument();
+    expect(screen.getByText('Al menos una categoría creada')).toBeInTheDocument();
+    expect(screen.getByText('Al menos un servicio activo')).toBeInTheDocument();
     expect(screen.getByText('Iniciar configuración guiada')).toBeInTheDocument();
   });
 

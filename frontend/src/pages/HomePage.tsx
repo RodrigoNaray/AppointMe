@@ -5,7 +5,6 @@ import { useAuthStore, selectCheckSession } from "@/stores/authStore";
 import { useOAuthStore, selectGetReturnUrl, selectClearReturnUrl } from "@/stores/oauthStore";
 import { Button } from "@/components/ui/button";
 import { Clock, ArrowRight, Star, MapPin } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import type { Service } from "@/types/service";
 import type { BusinessHours, ContactInfo } from "@/api/modules/settings";
 import { getBusinessHours, getContactInfo } from "@/api/modules/settings";
@@ -61,7 +60,6 @@ export const parseActiveServicesPreview = (payload: unknown): Service[] => {
 };
 
 export default function HomePage() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const checkSession = useAuthStore(selectCheckSession);
@@ -195,23 +193,23 @@ export default function HomePage() {
       if (savedReturnUrl) {
         clearReturnUrl();
         setSearchParams({});
-        toast.success(t('auth.googleLoginSuccess'));
+        toast.success('¡Bienvenido! Has iniciado sesión con Google');
         navigate(savedReturnUrl);
       } else {
-        toast.success(t('auth.googleLoginSuccess'));
+        toast.success('¡Bienvenido! Has iniciado sesión con Google');
         setSearchParams({});
       }
     } else if (errorParam) {
       hasProcessedCallback.current = true;
 
-      let errorMessage = t('auth.googleLoginError');
+      let errorMessage = 'Error al iniciar sesión con Google';
 
       if (errorParam === 'google_auth_failed') {
-        errorMessage = t('auth.googleAuthFailed');
+        errorMessage = 'No se pudo autenticar con Google. Intenta nuevamente.';
       } else if (errorParam === 'authentication_failed') {
-        errorMessage = t('auth.authenticationFailed');
+        errorMessage = 'Error en la autenticación. Por favor intenta de nuevo.';
       } else if (errorParam === 'server_error') {
-        errorMessage = t('auth.authServerError');
+        errorMessage = 'Error del servidor. Por favor intenta más tarde.';
       }
 
       toast.error(errorMessage);
@@ -235,17 +233,17 @@ export default function HomePage() {
               </div>
               {isOpenToday && (
                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-success px-3 py-1 text-xs font-semibold text-success-foreground shadow-sm">
-                  {t('home.availableToday')}
+                  Disponible Hoy
                 </div>
               )}
             </div>
 
             <div className="flex-1 text-center lg:text-left">
               <h1 className="mb-2 text-3xl font-bold tracking-tighter text-foreground sm:text-4xl lg:text-5xl">
-                {t('home.professionalName')}
+                Studio Carlos Méndez
               </h1>
               <p className="mb-3 text-lg text-muted-foreground sm:text-xl">
-                {t('home.professionalTitle')}
+                Barbería Profesional
               </p>
 
               <div className="mb-3 flex items-center justify-center lg:justify-start gap-2">
@@ -254,7 +252,7 @@ export default function HomePage() {
                     <Star key={star} className="h-4 w-4 fill-accent text-accent" />
                   ))}
                 </div>
-                <span className="text-sm font-medium text-muted-foreground">{t('home.rating')}</span>
+                <span className="text-sm font-medium text-muted-foreground">5.0 (248 reseñas)</span>
               </div>
 
               {(hoursLabel || locationLabel) && (
@@ -275,12 +273,12 @@ export default function HomePage() {
               )}
 
               <p className="mb-6 max-w-lg text-sm text-muted-foreground sm:text-base lg:max-w-none">
-                {t('home.professionalBio')}
+                Más de 10 años de experiencia brindando servicios de barbería premium. Especializado en cortes modernos, afeitado clásico y cuidado de barba.
               </p>
 
               <Link to="/book">
                 <Button size="lg" className="h-12 px-8 text-base font-semibold shadow-sm hover:shadow-md transition-shadow">
-                  {t('home.bookNow')}
+                  Reservar Ahora
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -293,7 +291,7 @@ export default function HomePage() {
         <div ref={servicesReveal.ref} className={`mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:py-10 ${servicesReveal.isVisible ? 'visible' : ''} animate-reveal`}>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
-              {t('home.ourServices')}
+              Nuestros Servicios
             </h2>
           </div>
 
@@ -308,7 +306,7 @@ export default function HomePage() {
               ))}
             </div>
           ) : services.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8">{t('home.noServicesAvailable')}</p>
+            <p className="text-sm text-muted-foreground py-8">No hay servicios disponibles aún.</p>
           ) : (
             <>
               <ServicesCarousel services={services} />
@@ -316,7 +314,7 @@ export default function HomePage() {
               <div className="mt-8 flex justify-center lg:justify-start">
                 <Link to="/book">
                   <Button variant="outline" size="lg" className="h-12 px-6 text-base font-semibold border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 group">
-                    {t('home.viewAllServices')}
+                    Ver todos los servicios
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-200 group-hover:translate-x-1" />
                   </Button>
                 </Link>
@@ -329,7 +327,7 @@ export default function HomePage() {
       <section className="w-full border-t border-border bg-background">
         <div ref={mapReveal.ref} className={`mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:py-10 ${mapReveal.isVisible ? 'visible' : ''} animate-reveal`}>
           <h2 className="mb-6 text-2xl font-bold text-foreground sm:text-3xl">
-            {t('home.location')}
+            Ubicación
           </h2>
           {mapCoordinates ? (
             <div className="rounded-2xl overflow-hidden border border-border shadow-sm">

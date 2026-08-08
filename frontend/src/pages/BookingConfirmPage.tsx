@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { format, parse } from "date-fns";
 import { es } from "date-fns/locale";
 import toast from "react-hot-toast";
-import { useBookingStore, selectCart, selectClearCart, selectTotalPrice, selectTotalDuration } from "@/stores/bookingStore";
+import { useBookingStore, selectCart, selectClearCart, selectRemoveService, selectTotalPrice, selectTotalDuration } from "@/stores/bookingStore";
 import { useAuthStore, selectAuthState } from "@/stores/authStore";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ export default function BookingConfirmPage() {
   const [searchParams] = useSearchParams();
   const cart = useBookingStore(selectCart);
   const clearCart = useBookingStore(selectClearCart);
+  const removeService = useBookingStore(selectRemoveService);
   const totalPrice = useBookingStore(selectTotalPrice);
   const totalDuration = useBookingStore(selectTotalDuration);
   const authState = useAuthStore(selectAuthState);
@@ -65,8 +66,8 @@ export default function BookingConfirmPage() {
       return;
     }
 
-    // Validar formato hora (HH:mm)
-    if (!/^\d{2}:\d{2}$/.test(timeParam)) {
+    // Validar formato hora (HH:mm válida)
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(timeParam)) {
       toast.error('Formato de hora inválido');
       navigate('/book');
       setHasValidated(true);
@@ -165,7 +166,22 @@ export default function BookingConfirmPage() {
 
   const handleKeepPartial = () => {
     const successResults = bookingResults.filter((r) => r.success && !r.rolledBack);
+    successResults.forEach((r) => removeService(r.serviceId));
     navigate('/book/success', { state: { results: successResults } });
+  };
+
+  const rollbackCreatedBookings = async (results: BookingResult[]): Promise<boolean> => {
+    const createdIds = results
+      .filter((r) => r.success && r.bookingId)
+      .map((r) => r.bookingId as string);
+    if (createdIds.length === 0) return true;
+
+    const rollbackResults = await Promise.allSettled(createdIds.map((id) => cancelBooking(id)));
+    const allOk = rollbackResults.every((r) => r.status === 'fulfilled');
+    if (!allOk) {
+      toast.error('No se pudieron revertir todas las reservas previas. Revisá Mis Reservas para evitar duplicados.');
+    }
+    return allOk;
   };
 
   const handleConfirmBooking = async () => {
@@ -180,105 +196,114 @@ export default function BookingConfirmPage() {
     setHasSubmitted(true);
     setShowEmailBanner(false);
 
-    const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    try {
+      const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    const slots = cart.map((item, index) => {
-      const offset = cart
-        .slice(0, index)
-        .reduce((sum, i) => sum + i.service.durationMinutes * i.quantity, 0);
-      const slotTime = new Date(selectedDateTime);
-      slotTime.setUTCMinutes(slotTime.getUTCMinutes() + offset);
-      return {
-        item,
-        bookingTime: slotTime.toISOString(),
-      };
-    });
+      const slots = cart.map((item, index) => {
+        const offset = cart
+          .slice(0, index)
+          .reduce((sum, i) => sum + i.service.durationMinutes * i.quantity, 0);
+        const slotTime = new Date(selectedDateTime);
+        slotTime.setUTCMinutes(slotTime.getUTCMinutes() + offset);
+        return {
+          item,
+          bookingTime: slotTime.toISOString(),
+        };
+      });
 
-    const apiResults = await Promise.allSettled(
-      slots.map((slot) =>
-        createBooking({
-          serviceId: slot.item.service.id,
-          bookingTime: slot.bookingTime,
-          notes: '',
-          clientTimezone,
-        })
-      )
-    );
+      const apiResults = await Promise.allSettled(
+        slots.map((slot) =>
+          createBooking({
+            serviceId: slot.item.service.id,
+            bookingTime: slot.bookingTime,
+            notes: '',
+            clientTimezone,
+          })
+        )
+      );
 
-    const results: BookingResult[] = [];
-    let emailNotVerified = false;
+      const results: BookingResult[] = [];
+      let emailNotVerified = false;
 
-    for (let i = 0; i < apiResults.length; i++) {
-      const slot = slots[i];
-      const r = apiResults[i];
+      for (let i = 0; i < apiResults.length; i++) {
+        const slot = slots[i];
+        const r = apiResults[i];
 
-      if (r.status === 'fulfilled') {
-        results.push({
-          serviceId: slot.item.service.id,
-          serviceName: slot.item.service.name,
-          bookingTime: slot.bookingTime,
-          success: true,
-          bookingId: r.value.booking?.id,
-        });
-      } else if (
-        r.reason?.response?.status === 403 &&
-        r.reason?.response?.data?.code === 'EMAIL_NOT_VERIFIED'
-      ) {
-        emailNotVerified = true;
-        break;
-      } else {
-        const errorMessage = r.reason
-          ? getAxiosErrorMessage(r.reason)
-          : 'Error desconocido';
-        results.push({
-          serviceId: slot.item.service.id,
-          serviceName: slot.item.service.name,
-          bookingTime: slot.bookingTime,
-          success: false,
-          error: errorMessage,
-        });
+        if (r.status === 'fulfilled') {
+          results.push({
+            serviceId: slot.item.service.id,
+            serviceName: slot.item.service.name,
+            bookingTime: slot.bookingTime,
+            success: true,
+            bookingId: r.value.booking?.id,
+          });
+        } else if (
+          r.reason?.response?.status === 403 &&
+          r.reason?.response?.data?.code === 'EMAIL_NOT_VERIFIED'
+        ) {
+          emailNotVerified = true;
+          break;
+        } else {
+          const errorMessage = r.reason
+            ? getAxiosErrorMessage(r.reason)
+            : 'Error desconocido';
+          results.push({
+            serviceId: slot.item.service.id,
+            serviceName: slot.item.service.name,
+            bookingTime: slot.bookingTime,
+            success: false,
+            error: errorMessage,
+          });
+        }
       }
-    }
 
-    if (emailNotVerified) {
-      setShowEmailBanner(true);
+      if (emailNotVerified) {
+        const allRolledBack = await rollbackCreatedBookings(results);
+        setBookingResults([]);
+        setShowEmailBanner(true);
+        if (allRolledBack) {
+          setHasSubmitted(false);
+        }
+        setIsSubmitting(false);
+        return;
+      }
+
+      setBookingResults(results);
+
+      const successCount = results.filter((r) => r.success).length;
+      const allSuccess = successCount === cart.length;
+
+      if (allSuccess) {
+        clearCart();
+        navigate('/book/success', { state: { results } });
+      } else if (successCount > 0) {
+        setSuccessfulItems(
+          results.filter((r) => r.success).map((r) => ({
+            serviceId: r.serviceId,
+            serviceName: r.serviceName,
+            success: true,
+            bookingId: r.bookingId,
+          }))
+        );
+        setFailedItems(
+          results.filter((r) => !r.success).map((r) => ({
+            serviceId: r.serviceId,
+            serviceName: r.serviceName,
+            success: false,
+            error: r.error,
+          }))
+        );
+        setShowRollbackModal(true);
+      } else {
+        toast.error('No se pudo crear ninguna reserva.');
+        setHasSubmitted(false);
+      }
+    } catch (error) {
+      toast.error(getAxiosErrorMessage(error));
       setHasSubmitted(false);
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    setBookingResults(results);
-
-    const successCount = results.filter((r) => r.success).length;
-    const allSuccess = successCount === cart.length;
-
-    if (allSuccess) {
-      clearCart();
-      navigate('/book/success', { state: { results } });
-    } else if (successCount > 0) {
-      setSuccessfulItems(
-        results.filter((r) => r.success).map((r) => ({
-          serviceId: r.serviceId,
-          serviceName: r.serviceName,
-          success: true,
-          bookingId: r.bookingId,
-        }))
-      );
-      setFailedItems(
-        results.filter((r) => !r.success).map((r) => ({
-          serviceId: r.serviceId,
-          serviceName: r.serviceName,
-          success: false,
-          error: r.error,
-        }))
-      );
-      setShowRollbackModal(true);
-    } else {
-      toast.error('No se pudo crear ninguna reserva.');
-      setHasSubmitted(false);
-    }
-
-    setIsSubmitting(false);
   };
 
   // Loading state

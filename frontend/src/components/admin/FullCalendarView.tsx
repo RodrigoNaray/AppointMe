@@ -14,6 +14,7 @@ import type { CalendarEvent, WeeklySchedule, DaySchedule } from "@/types/availab
 import { rescheduleBookingByAdmin } from "@/api/modules/bookings";
 import { updateBlock } from "@/api/modules/availability";
 import type { EventContentArg, DayCellContentArg } from "@fullcalendar/core";
+import { computeSlotBounds } from "@/lib/calendarBounds";
 
 interface FullCalendarViewProps {
   onBlockSlot?: (startTime: Date, endTime: Date) => void;
@@ -162,31 +163,7 @@ export default function FullCalendarView({
       });
   }, [schedule]);
 
-  const slotMinMax = useMemo(() => {
-    if (!schedule) return { min: "07:00:00", max: "22:00:00" };
-    let earliest = 24 * 60;
-    let latest = 0;
-    let hasActive = false;
-    for (const day of Object.values(schedule)) {
-      if (!day.isActive) continue;
-      hasActive = true;
-      const [sh, sm] = day.start.split(":").map(Number);
-      const [eh, em] = day.end.split(":").map(Number);
-      const startMins = sh * 60 + sm;
-      let endMins = eh * 60 + em;
-      if (endMins <= startMins) {
-        endMins += 1440;
-      }
-      if (startMins < earliest) earliest = startMins;
-      if (endMins > latest) latest = endMins;
-    }
-    if (!hasActive) return { min: "07:00:00", max: "22:00:00" };
-    const padMin = Math.max(0, Math.floor((earliest - 30) / 60) * 60);
-    const padMax = Math.ceil((latest + 30) / 60) * 60;
-    const fmt = (m: number) =>
-      `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}:00`;
-    return { min: fmt(padMin), max: fmt(padMax) };
-  }, [schedule]);
+  const slotMinMax = useMemo(() => computeSlotBounds(schedule), [schedule]);
 
   useEffect(() => {
     if (refreshKey > 0) {

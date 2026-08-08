@@ -9,7 +9,7 @@ export type Booking = {
   clientName: string
   serviceName: string
   bookingTime: string
-  status: "Confirmada" | "Completada" | "Cancelada"
+  status: "Confirmada" | "Cancelada"
 }
 
 export type BookingActions = {

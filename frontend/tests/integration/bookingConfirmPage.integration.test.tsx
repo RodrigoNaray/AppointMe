@@ -158,4 +158,69 @@ describe('BookingConfirmPage integration — CU-36 multi-servicio', () => {
       expect(screen.getByText('Verificá tu email antes de reservar')).toBeTruthy();
     });
   });
+
+  it('rolls back created bookings when EMAIL_NOT_VERIFIED occurs mid-cart', async () => {
+    mockCreateBooking
+      .mockResolvedValueOnce({ success: true, booking: { id: 'b-1' }, message: 'ok' })
+      .mockRejectedValueOnce({ response: { status: 403, data: { code: 'EMAIL_NOT_VERIFIED' } } });
+    mockCancelBooking.mockResolvedValue({ success: true });
+
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/book/confirm?date=2030-01-02&time=10:00']}>
+        <BookingConfirmPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Confirmar Reserva' })).toBeTruthy();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Confirmar Reserva' }));
+
+    await waitFor(() => {
+      expect(mockCancelBooking).toHaveBeenCalledWith('b-1');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Verificá tu email antes de reservar')).toBeTruthy();
+    });
+
+    expect(screen.getByRole('button', { name: 'Confirmar Reserva' })).toBeEnabled();
+  });
+
+  it('removes successful items from cart when keeping partial results', async () => {
+    mockCreateBooking
+      .mockResolvedValueOnce({ success: true, booking: { id: 'b-1' }, message: 'ok' })
+      .mockRejectedValueOnce({
+        response: { status: 409, data: { message: 'Conflicto de horario' } },
+      });
+
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/book/confirm?date=2030-01-02&time=10:00']}>
+        <BookingConfirmPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Confirmar Reserva' })).toBeTruthy();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Confirmar Reserva' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Reserva parcial')).toBeTruthy();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Cerrar' }));
+
+    await waitFor(() => {
+      const cart = useBookingStore.getState().cart;
+      expect(cart).toHaveLength(1);
+      expect(cart[0].service.id).toBe('svc-2');
+    });
+  });
 });

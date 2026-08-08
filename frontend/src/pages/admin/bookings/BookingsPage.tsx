@@ -96,13 +96,10 @@ export default function BookingsPage() {
     }
   };
 
-  const mapBackendStatus = (status: string): "Confirmada" | "Completada" | "Cancelada" => {
+  const mapBackendStatus = (status: string): 'Confirmada' | 'Cancelada' => {
     switch (status) {
       case 'CONFIRMED':
-      case 'PENDING':
         return 'Confirmada';
-      case 'COMPLETED':
-        return 'Completada';
       case 'CANCELLED':
         return 'Cancelada';
       default:
@@ -223,7 +220,6 @@ export default function BookingsPage() {
                 <SelectContent>
                   <SelectItem value="all">Todos los estados</SelectItem>
                   <SelectItem value="Confirmada">Confirmada</SelectItem>
-                  <SelectItem value="Completada">Completada</SelectItem>
                   <SelectItem value="Cancelada">Cancelada</SelectItem>
                 </SelectContent>
               </Select>

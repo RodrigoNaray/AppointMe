@@ -4,6 +4,11 @@ import toast from 'react-hot-toast';
 
 const apiClient = axios.create(API_CONFIG);
 
+const isAuthFlowRequest = (url?: string): boolean =>
+  /^\/?auth\/(client\/)?(login|register|verify-email|resend-verification|forgot-password|reset-password|request-email-change|verify-email-change|change-password|google)/.test(
+    url ?? ''
+  );
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
@@ -15,6 +20,16 @@ apiClient.interceptors.response.use(
       console.warn('[apiClient] Rate limit exceeded', { retryAfter, message });
       toast.error(message);
     }
+
+    if (error.response?.status === 401 && !isAuthFlowRequest(error.config?.url)) {
+      sessionStorage.removeItem('appointmepro-auth-storage');
+      sessionStorage.removeItem('appointmepro-booking-storage');
+      const currentPath = window.location.pathname + window.location.search;
+      if (!currentPath.startsWith('/login')) {
+        window.location.href = `/login?returnUrl=${encodeURIComponent(currentPath)}`;
+      }
+    }
+
     return Promise.reject(error);
   }
 );
