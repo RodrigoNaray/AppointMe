@@ -57,7 +57,7 @@ export function RollbackConfirmModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-amber-600">
+          <DialogTitle className="flex items-center gap-2 text-warning">
             <AlertCircle className="w-5 h-5" />
             Reserva parcial
           </DialogTitle>

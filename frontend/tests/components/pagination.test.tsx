@@ -30,8 +30,8 @@ describe('Pagination components', () => {
     );
 
     const nav = screen.getByRole('navigation', { name: 'pagination' });
-    const previous = screen.getByRole('link', { name: 'Go to previous page' });
-    const next = screen.getByRole('link', { name: 'Go to next page' });
+    const previous = screen.getByRole('link', { name: 'Ir a la página anterior' });
+    const next = screen.getByRole('link', { name: 'Ir a la página siguiente' });
     const active = screen.getByRole('link', { current: 'page' });
 
     expect(nav).toBeTruthy();

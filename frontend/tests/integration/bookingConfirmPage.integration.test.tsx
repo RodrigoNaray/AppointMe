@@ -215,7 +215,7 @@ describe('BookingConfirmPage integration — CU-36 multi-servicio', () => {
       expect(screen.getByText('Reserva parcial')).toBeTruthy();
     });
 
-    await user.click(screen.getByRole('button', { name: 'Cerrar' }));
+    await user.click(screen.getAllByRole('button', { name: 'Cerrar' })[1]);
 
     await waitFor(() => {
       const cart = useBookingStore.getState().cart;

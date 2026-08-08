@@ -23,7 +23,7 @@ export default function ClientProfilePage() {
   if (isCheckingAuth) {
     return (
       <div className="flex justify-center items-center h-[50vh]">
-        <Loader2 className="h-10 w-10 animate-spin text-purple-600" />
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
@@ -89,7 +89,7 @@ export default function ClientProfilePage() {
           <Card className="cursor-pointer hover:bg-accent transition-colors border-2 hover:border-primary" onClick={() => navigate('/change-email')}>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Mail className="h-5 w-5 text-blue-600" />
+                <Mail className="h-5 w-5 text-primary" />
                 Cambiar Email
               </CardTitle>
               <CardDescription>

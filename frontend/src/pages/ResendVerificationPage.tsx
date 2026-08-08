@@ -134,7 +134,7 @@ export default function ResendVerificationPage() {
           <div className="text-center mt-6">
             <Link 
               to="/login" 
-              className="block text-sm text-blue-500 hover:underline"
+              className="block text-sm text-primary hover:underline"
             >
               Volver al Login
             </Link>

@@ -45,6 +45,13 @@ export default function LoginPage() {
             const loginData: LoginDto = { email, password };
             await loginClient(loginData);
 
+            const currentUser = useAuthStore.getState().authState.user;
+            if (currentUser?.type === 'client' && currentUser.emailVerified === false) {
+                toast.error('Tu email aún no está verificado. Revisá tu bandeja o reenviá la verificación.');
+                navigate('/resend-verification');
+                return;
+            }
+
             toast.success('¡Inicio de sesión exitoso!');
 
             if (returnUrl) {

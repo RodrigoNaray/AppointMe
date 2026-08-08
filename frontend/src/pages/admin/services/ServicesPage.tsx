@@ -23,19 +23,21 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { PlusCircle, Clock, DollarSign, MoreVertical, Pencil, Trash2, Briefcase } from 'lucide-react';
+import { PlusCircle, Clock, DollarSign, MoreVertical, Pencil, Trash2, Briefcase, AlertCircle } from 'lucide-react';
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
 
   const fetchServices = useCallback(async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const [servicesRes, categoriesRes] = await Promise.all([
         getServices({ limit: 1000 }),
@@ -45,6 +47,7 @@ export default function ServicesPage() {
       setCategories(categoriesRes.data);
     } catch (err) {
       console.error('No se pudieron cargar los datos.', err);
+      setLoadError('No se pudieron cargar los servicios. Verificá tu conexión e intentá de nuevo.');
     } finally {
       setIsLoading(false);
     }
@@ -82,13 +85,20 @@ export default function ServicesPage() {
     try {
       if (editingService) {
         await apiClient.put(`services/update/${editingService.id}`, data);
+        toast.success(`Servicio "${editingService.name}" actualizado correctamente.`);
       } else {
         await apiClient.post('services', data);
+        toast.success('Servicio creado correctamente.');
       }
       setIsModalOpen(false);
       fetchServices();
     } catch (err) {
       console.error("Error al guardar el servicio:", err);
+      const message =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined;
+      toast.error(message || 'No se pudo guardar el servicio. Intentá de nuevo.');
     }
   };
 
@@ -119,6 +129,18 @@ export default function ServicesPage() {
   });
 
   if (isLoading) return <PageSkeleton variant="list" />;
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+        <AlertCircle className="h-10 w-10 text-destructive" />
+        <p className="text-sm text-muted-foreground max-w-md">{loadError}</p>
+        <Button variant="outline" size="sm" onClick={fetchServices}>
+          Reintentar
+        </Button>
+      </div>
+    );
+  }
 
   return (
   <div className="w-full max-w-full space-y-4 sm:space-y-6">

@@ -101,14 +101,14 @@ export default function ChangeEmailPage() {
           {/* Bloquear cambio de email para usuarios de Google */}
           {isGoogleUser ? (
             <div className="space-y-4">
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
                 <div className="flex items-start gap-3">
-                  <Mail className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <Mail className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-blue-900 mb-2">
+                    <h3 className="font-semibold text-primary mb-2">
                       Cuenta vinculada con Google
                     </h3>
-                    <p className="text-sm text-blue-800 leading-relaxed">
+                    <p className="text-sm text-primary leading-relaxed">
                       Tu cuenta está autenticada con Google. El email de tu cuenta está vinculado 
                       directamente a tu cuenta de Google y no puede ser modificado desde aquí.
                     </p>
@@ -224,7 +224,7 @@ export default function ChangeEmailPage() {
           <div className="text-center mt-6">
             <Link
               to="/profile"
-              className="block text-sm text-blue-500 hover:underline"
+              className="block text-sm text-primary hover:underline"
             >
               Volver al Perfil
             </Link>

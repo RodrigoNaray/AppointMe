@@ -170,7 +170,7 @@ export default function RegisterPage() {
                             />
                         </div>
                         <div className="relative">
-                            <label htmlFor="password" className={`block text-sm font-medium cursor-pointer w-full ${!passwordValid && password.length > 0 ? 'text-red-600' : ''}`}>Contraseña</label>
+                            <label htmlFor="password" className={`block text-sm font-medium cursor-pointer w-full ${!passwordValid && password.length > 0 ? 'text-destructive' : ''}`}>Contraseña</label>
                             <Input
                                 type="password"
                                 id="password"
@@ -186,7 +186,7 @@ export default function RegisterPage() {
                             />
 
                             {!passwordValid && password.length > 0 && (
-                                <p id="password-error" className="text-red-600 text-sm mt-1">La contraseña debe cumplir con los requerimientos</p>
+                                <p id="password-error" className="text-destructive text-sm mt-1">La contraseña debe cumplir con los requerimientos</p>
                             )}
 
                             <div
@@ -211,7 +211,7 @@ export default function RegisterPage() {
                             </div>
                         </div>
                         <div>
-                            <label htmlFor="confirmPassword" className={`block text-sm font-medium ${!passwordsMatch && confirmPassword.length > 0 ? 'text-red-600' : ''}`}>Confirmar Contraseña</label>
+                            <label htmlFor="confirmPassword" className={`block text-sm font-medium ${!passwordsMatch && confirmPassword.length > 0 ? 'text-destructive' : ''}`}>Confirmar Contraseña</label>
                             <Input
                                 type="password"
                                 id="confirmPassword"
@@ -224,7 +224,7 @@ export default function RegisterPage() {
                             />
 
                             {!passwordsMatch && confirmPassword.length > 0 && (
-                                <p id="confirm-error" className="text-red-600 text-sm mt-1">Las contraseñas deben coincidir</p>
+                                <p id="confirm-error" className="text-destructive text-sm mt-1">Las contraseñas deben coincidir</p>
                             )}
                         </div>
                         <Button type="submit" className="w-full" disabled={isLoading}>
@@ -248,7 +248,7 @@ export default function RegisterPage() {
                         ¿Ya tienes una cuenta?{" "}
                         <Link
                             to={returnUrl ? `/login?returnUrl=${encodeURIComponent(returnUrl)}` : "/login"}
-                            className="text-blue-500 hover:underline"
+                            className="text-primary hover:underline"
                         >
                             Inicia sesión aquí
                         </Link>

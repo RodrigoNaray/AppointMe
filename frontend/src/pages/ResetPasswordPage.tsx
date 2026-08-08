@@ -183,14 +183,14 @@ export default function ResetPasswordPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {errorMessage && (
-              <div className="text-red-600 text-sm">{errorMessage}</div>
+              <div className="text-destructive text-sm">{errorMessage}</div>
             )}
 
             {/* Nueva contraseña con balloon (idéntico a RegisterPage) */}
             <div className="relative">
               <label 
                 htmlFor="newPassword" 
-                className={`block text-sm font-medium cursor-pointer w-full ${!passwordValid && newPassword.length > 0 ? 'text-red-600' : ''}`}
+                className={`block text-sm font-medium cursor-pointer w-full ${!passwordValid && newPassword.length > 0 ? 'text-destructive' : ''}`}
               >
                 Nueva contraseña
               </label>
@@ -212,7 +212,7 @@ export default function ResetPasswordPage() {
 
               {/* Mensaje de error inline */}
               {!passwordValid && newPassword.length > 0 && (
-                <p id="password-error" className="text-red-600 text-sm mt-1">
+                <p id="password-error" className="text-destructive text-sm mt-1">
                   La contraseña debe cumplir con los requerimientos
                 </p>
               )}
@@ -224,7 +224,7 @@ export default function ResetPasswordPage() {
                 id="password-balloon"
                 className={`${showBalloon ? 'pointer-events-auto' : 'pointer-events-none'} absolute z-20 bottom-full mb-2 right-0 w-72 sm:w-80 transform transition duration-150 ease-out ${showBalloon ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}
               >
-                <div className="bg-white border rounded-lg shadow-md p-3 text-sm">
+                <div className="bg-background border rounded-lg shadow-md p-3 text-sm">
                   <p className="font-semibold mb-2">Requisitos de la contraseña</p>
                   <ul className="space-y-2">
                     {passwordFeedback.map((fb, idx) => (
@@ -244,7 +244,7 @@ export default function ResetPasswordPage() {
             <div>
               <label 
                 htmlFor="confirmPassword" 
-                className={`block text-sm font-medium ${!passwordsMatch && confirmPassword.length > 0 ? 'text-red-600' : ''}`}
+                className={`block text-sm font-medium ${!passwordsMatch && confirmPassword.length > 0 ? 'text-destructive' : ''}`}
               >
                 Confirmar contraseña
               </label>
@@ -261,7 +261,7 @@ export default function ResetPasswordPage() {
               />
 
               {!passwordsMatch && confirmPassword.length > 0 && (
-                <p id="confirm-error" className="text-red-600 text-sm mt-1">
+                <p id="confirm-error" className="text-destructive text-sm mt-1">
                   Las contraseñas deben coincidir
                 </p>
               )}
@@ -279,8 +279,8 @@ export default function ResetPasswordPage() {
             </Button>
 
             <div className="text-center space-y-2">
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                <p className="text-xs text-amber-800 dark:text-amber-200">
+              <div className="bg-warning/10 dark:bg-warning/20 border border-warning/30 rounded-lg p-3">
+                <p className="text-xs text-warning">
                   El enlace de recuperación expira en 24 horas
                 </p>
               </div>

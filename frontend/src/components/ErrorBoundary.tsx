@@ -37,10 +37,10 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
+        <div className="flex items-center justify-center min-h-screen bg-muted p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle className="text-red-600">Oops! Algo salió mal</CardTitle>
+              <CardTitle className="text-destructive">Ups! Algo salió mal</CardTitle>
               <CardDescription>
                 Se produjo un error inesperado. Esto puede ocurrir si cancelaste el inicio de sesión con Google.
               </CardDescription>

@@ -233,7 +233,7 @@ export default function ChangePasswordPage() {
             </Button>
 
             <div className="text-center">
-              <Link to="/profile" className="text-sm text-blue-600 hover:underline">
+              <Link to="/profile" className="text-sm text-primary hover:underline">
                 Volver al perfil
               </Link>
             </div>

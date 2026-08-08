@@ -86,7 +86,7 @@ describe('RollbackConfirmModal', () => {
       />
     );
 
-    await user.click(screen.getByText('Cerrar'));
+      await user.click(screen.getAllByRole('button', { name: 'Cerrar' })[1]);
     expect(onKeepPartial).toHaveBeenCalledTimes(1);
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });

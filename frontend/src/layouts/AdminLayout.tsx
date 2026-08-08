@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Package2, ChevronLeft, ChevronRight, LayoutDashboard, Tags, Calendar, BookOpen, Briefcase, ExternalLink } from "lucide-react"
+import { Package2, ChevronLeft, ChevronRight, LayoutDashboard, Tags, Calendar, BookOpen, Briefcase, ExternalLink, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AdminNav } from '@/components/shared/AdminNav';
 import { useState } from 'react';
@@ -31,6 +31,7 @@ export default function AdminLayout() {
     { to: "/admin/categories", label: "Categorías", icon: Tags },
     { to: "/admin/availability", label: "Disponibilidad", icon: Calendar },
     { to: "/admin/bookings", label: "Reservas", icon: BookOpen },
+    { to: "/admin/settings", label: "Ajustes", icon: Settings },
   ];
 
   return (
@@ -152,7 +153,7 @@ export default function AdminLayout() {
         className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="grid grid-cols-5 h-16">
+        <div className="grid grid-cols-6 h-16">
           {navLinks.map(link => {
             const Icon = link.icon;
             const isActive = isAdminLinkActive(location.pathname, link.to);

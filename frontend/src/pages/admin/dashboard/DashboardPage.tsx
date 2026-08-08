@@ -29,7 +29,7 @@ export default function DashboardPage() {
   }, []);
 
   const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
+    new Intl.NumberFormat('es-UY', { style: 'currency', currency: 'UYU', maximumFractionDigits: 0 }).format(value);
 
   const todayDiff = metrics ? metrics.todayBookings - metrics.yesterdayBookings : null;
 
