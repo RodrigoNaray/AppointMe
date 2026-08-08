@@ -20,6 +20,7 @@ export interface ClientJwtPayload {
   email: string;
   name: string;
   role: "client"; // Añadimos el rol explícitamente
+  tokenVersion?: number; // Permite invalidar sesiones al logout/cambio de password
 }
 
 // El tipo de objeto de cliente que devolveremos (sin campos sensibles)

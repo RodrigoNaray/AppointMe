@@ -14,7 +14,8 @@ export const generateToken = (user: userWithoutPassword) => {
   const payload: JwtPayload = {
     sub: user.id,
     email: user.email,
-    role: 'admin'
+    role: 'admin',
+    tokenVersion: user.tokenVersion ?? 0
   };
 
   if(!process.env.JWT_SECRET) {
@@ -100,7 +101,7 @@ export const changeAdminPassword = async (adminId: string, data: ChangePasswordD
   const hashedPassword = await bcrypt.hash(data.newPassword, 10);
   await prisma.adminUser.update({
     where: { id: adminId },
-    data: { passwordHash: hashedPassword },
+    data: { passwordHash: hashedPassword, tokenVersion: { increment: 1 } },
   });
 
   logger.info({ adminId }, 'Admin password changed successfully');

@@ -85,7 +85,8 @@ export const createBooking = async (
     const booking = await service.createBooking(client.id, {
       serviceId,
       bookingTime: bookingTimeDate,
-      notes
+      notes,
+      clientTimezone
     });
 
     logger.info({
@@ -219,7 +220,7 @@ export const cancelBooking = async (
     sendClientCancellationEmail({
       to: client.email,
       clientName: client.name,
-      clientTimezone: resolveClientTimezone(req.body?.clientTimezone),
+      clientTimezone: resolveClientTimezone(updatedBooking.clientTimezone ?? req.body?.clientTimezone),
       clientLanguage: client.emailLanguage,
       serviceName: updatedBooking.service?.name || 'Servicio',
       bookingTime: updatedBooking.bookingTime,
@@ -291,7 +292,7 @@ export const cancelBookingByAdminController = async (
       hasReason: Boolean(reason)
     }, 'Booking cancelled by admin via API');
 
-    const clientTimezone = DEFAULT_CLIENT_TIMEZONE;
+    const clientTimezone = result.booking.clientTimezone ?? DEFAULT_CLIENT_TIMEZONE;
 
     sendAdminCancellationEmail({
       to: result.clientEmail,
@@ -381,7 +382,7 @@ export const rescheduleBookingByAdminController = async (
       newBookingTime: result.newBookingTime.toISOString()
     }, 'Booking rescheduled by admin via API');
 
-    const clientTimezone = DEFAULT_CLIENT_TIMEZONE;
+    const clientTimezone = result.booking.clientTimezone ?? DEFAULT_CLIENT_TIMEZONE;
 
     sendBookingRescheduledEmail({
       to: result.clientEmail,

@@ -1,6 +1,11 @@
 import prisma from '../../config/prisma';
 
-export const getClientsForAdmin = async (adminId: string, searchQuery?: string) => {
+export const getClientsForAdmin = async (
+  adminId: string,
+  searchQuery?: string,
+  page = 1,
+  limit = 20
+) => {
   const searchCondition = searchQuery
     ? {
         OR: [
@@ -10,24 +15,38 @@ export const getClientsForAdmin = async (adminId: string, searchQuery?: string) 
       }
     : {};
 
-  const clients = await prisma.client.findMany({
-    where: {
-      bookings: {
-        some: {
-          adminId,
-        },
+  const where = {
+    bookings: {
+      some: {
+        adminId,
       },
-      ...searchCondition,
     },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-    },
-    orderBy: { name: 'asc' },
-    take: 20,
-  });
+    ...searchCondition,
+  };
 
-  return clients;
+  const [clients, total] = await Promise.all([
+    prisma.client.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+      },
+      orderBy: { name: 'asc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.client.count({ where }),
+  ]);
+
+  return {
+    clients,
+    pagination: {
+      current_page: page,
+      total_pages: Math.ceil(total / limit),
+      total_count: total,
+      per_page: limit,
+    },
+  };
 };

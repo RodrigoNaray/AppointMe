@@ -12,8 +12,11 @@ export const getClientsController = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'La búsqueda debe tener al menos 2 caracteres.' });
     }
 
-    const clients = await service.getClientsForAdmin(admin.id, searchQuery || undefined);
-    res.status(200).json(clients);
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+
+    const result = await service.getClientsForAdmin(admin.id, searchQuery || undefined, page, limit);
+    res.status(200).json(result);
   } catch (error) {
     logger.error(error, 'Error al obtener clientes del admin');
     res.status(500).json({ message: 'Error interno del servidor' });

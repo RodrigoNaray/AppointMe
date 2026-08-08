@@ -45,7 +45,7 @@ export const clientJwtStrategy = new JwtStrategy(opts, async (payload: ClientJwt
       where: { id: payload.sub },
     });
 
-    if (client) {
+    if (client && payload.tokenVersion === client.tokenVersion) {
       // Si encontramos el cliente, lo adjuntamos a req.user
       return done(null, client);
     } else {

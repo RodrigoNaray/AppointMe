@@ -98,6 +98,7 @@ export interface CreateBookingDTO {
   serviceId: string;
   bookingTime: Date;
   notes?: string;
+  clientTimezone?: string;
 }
 
 export type BookingSortOrder = 'asc' | 'desc';

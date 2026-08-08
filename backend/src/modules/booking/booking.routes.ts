@@ -16,8 +16,8 @@ router.put('/:id/cancel', isClientAuthenticated, bookingController.cancelBooking
 export const adminBookingRoutes = Router();
 adminBookingRoutes.get('/', isAdminAuthenticated, bookingController.getAllBookings);
 adminBookingRoutes.get('/metrics', isAdminAuthenticated, bookingController.getBookingMetricsController);
-adminBookingRoutes.post('/', isAdminAuthenticated, bookingController.createBookingByAdminController);
-adminBookingRoutes.put('/:id/cancel', isAdminAuthenticated, bookingController.cancelBookingByAdminController);
-adminBookingRoutes.put('/:id/reschedule', isAdminAuthenticated, bookingController.rescheduleBookingByAdminController);
+adminBookingRoutes.post('/', isAdminAuthenticated, rateLimit('lax'), bookingController.createBookingByAdminController);
+adminBookingRoutes.put('/:id/cancel', isAdminAuthenticated, rateLimit('lax'), bookingController.cancelBookingByAdminController);
+adminBookingRoutes.put('/:id/reschedule', isAdminAuthenticated, rateLimit('lax'), bookingController.rescheduleBookingByAdminController);
 
 export default router;

@@ -408,7 +408,7 @@ export default function AvailabilityPage() {
     setSearchingClients(true);
     try {
       const results = await getAdminClients(query);
-      setClients(results);
+      setClients(results.clients);
     } catch {
       toast.error("Error al buscar clientes");
     } finally {

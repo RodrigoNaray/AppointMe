@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+import prisma from '../../config/prisma';
 import { RegisterAdminDto, LoginAdminDto, ChangePasswordDto, UpdateAdminProfileDto } from './auth.types';
 import * as authServices from './auth.services';
 import logger from '../../utils/logger';
-import { cookieOptions, clearCookieOptions, ACCESS_ADMIN_TOKEN_COOKIE_NAME, ACCESS_CLIENT_TOKEN_COOKIE_NAME } from '../../config/auth.config';
+import { cookieOptions, clearCookieOptions, ACCESS_ADMIN_TOKEN_COOKIE_NAME, ACCESS_CLIENT_TOKEN_COOKIE_NAME, JWT_SECRET } from '../../config/auth.config';
 
 
 export const loginController = async ( req: Request<{},{},LoginAdminDto>, res: Response) => {
@@ -43,6 +45,21 @@ export const loginController = async ( req: Request<{},{},LoginAdminDto>, res: R
 
 export const logoutController = async ( req: Request, res: Response) => {
   // OWASP Best Practice: clearCookie debe usar las mismas opciones que se usaron al crear la cookie (sin maxAge)
+  // Invalidar la sesión server-side incrementando tokenVersion (el JWT queda sin efecto aunque se haya filtrado)
+  const token = (req as Request & { signedCookies?: Record<string, string> }).signedCookies?.[ACCESS_ADMIN_TOKEN_COOKIE_NAME];
+  if (token) {
+    try {
+      const payload = jwt.verify(token, JWT_SECRET) as { sub?: string };
+      if (payload.sub) {
+        await prisma.adminUser.update({
+          where: { id: payload.sub },
+          data: { tokenVersion: { increment: 1 } },
+        });
+      }
+    } catch {
+      // Token inválido o expirado: no hay sesión que invalidar
+    }
+  }
   res.clearCookie(ACCESS_ADMIN_TOKEN_COOKIE_NAME, clearCookieOptions);
   logger.info("Sesión de administrador cerrada");
   res.status(200).json({ message: 'Sesión cerrada exitosamente' });

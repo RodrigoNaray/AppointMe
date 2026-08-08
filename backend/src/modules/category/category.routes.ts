@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as controller from './category.controller';
 import { isAdminAuthenticated } from '../../middlewares/isAdminAuthenticated';
+import { rateLimit } from '../../middlewares/rateLimit';
 
 const router = Router();
 
@@ -13,9 +14,9 @@ const router = Router();
  */
 router.get('/admin', isAdminAuthenticated, controller.findAll);
 router.get('/admin/:id', isAdminAuthenticated, controller.findOne);
-router.post('/admin', isAdminAuthenticated, controller.create);
-router.put('/admin/:id', isAdminAuthenticated, controller.update);
-router.delete('/admin/:id', isAdminAuthenticated, controller.remove);
+router.post('/admin', isAdminAuthenticated, rateLimit('lax'), controller.create);
+router.put('/admin/:id', isAdminAuthenticated, rateLimit('lax'), controller.update);
+router.delete('/admin/:id', isAdminAuthenticated, rateLimit('lax'), controller.remove);
 
 /**
  * Rutas públicas (sin autenticación)

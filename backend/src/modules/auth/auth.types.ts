@@ -24,4 +24,5 @@ export interface JwtPayload {
   sub: string; // "Subject", comúnmente el ID del usuario.
   email: string;
   role: 'admin'; // Nos preparamos para una futura gestión de roles.
+  tokenVersion?: number; // Permite invalidar sesiones al logout/cambio de password
 }

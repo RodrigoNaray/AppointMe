@@ -36,6 +36,7 @@ const adminJwtStrategy = new JwtStrategy(opts, async (payload, done) => {
         email: true,
         name: true,
         googleId: true,
+        tokenVersion: true,
         schedule: true,
         minBookingAdvanceMinutes: true,
         minCancellationNoticeMinutes: true,
@@ -49,7 +50,7 @@ const adminJwtStrategy = new JwtStrategy(opts, async (payload, done) => {
       },
     });
 
-    if (user) {
+    if (user && payload.tokenVersion === user.tokenVersion) {
       return done(null, user);
     } else {
       return done(null, false);

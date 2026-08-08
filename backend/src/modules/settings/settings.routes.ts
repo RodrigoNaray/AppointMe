@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as settingsController from './settings.controller';
 import { isAdminAuthenticated } from '../../middlewares/isAdminAuthenticated';
+import { rateLimit } from '../../middlewares/rateLimit';
 
 /**
  * Settings Routes
@@ -40,6 +41,7 @@ export const adminSettingsRoutes = Router();
 adminSettingsRoutes.put(
   '/booking-rules',
   isAdminAuthenticated,
+  rateLimit('lax'),
   settingsController.updateBookingRules
 );
 
@@ -47,5 +49,6 @@ adminSettingsRoutes.put(
 adminSettingsRoutes.put(
   '/contact-info',
   isAdminAuthenticated,
+  rateLimit('lax'),
   settingsController.updateContactInfo
 );

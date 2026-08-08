@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+import prisma from '../../config/prisma';
 import * as service from './clientAuth.services';
 import { RegisterClientDto, LoginClientDto, PublicClient } from './clientAuth.types';
-import {ACCESS_CLIENT_TOKEN_COOKIE_NAME, ACCESS_ADMIN_TOKEN_COOKIE_NAME, cookieOptions, clearCookieOptions} from '../../config/auth.config'
+import {ACCESS_CLIENT_TOKEN_COOKIE_NAME, ACCESS_ADMIN_TOKEN_COOKIE_NAME, cookieOptions, clearCookieOptions, JWT_SECRET} from '../../config/auth.config'
 import logger from '../../utils/logger';
 
 const getErrorMessage = (error: unknown): string => {
@@ -59,8 +61,23 @@ export const loginClientController = async (req: Request, res: Response) => {
   }
 };
 
-export const logoutClientController = (req: Request, res: Response) => {
+export const logoutClientController = async (req: Request, res: Response) => {
   try{
+    // Invalidar la sesión server-side incrementando tokenVersion (el JWT queda sin efecto aunque se haya filtrado)
+    const token = (req as Request & { signedCookies?: Record<string, string> }).signedCookies?.[ACCESS_CLIENT_TOKEN_COOKIE_NAME];
+    if (token) {
+      try {
+        const payload = jwt.verify(token, JWT_SECRET) as { sub?: string };
+        if (payload.sub) {
+          await prisma.client.update({
+            where: { id: payload.sub },
+            data: { tokenVersion: { increment: 1 } },
+          });
+        }
+      } catch {
+        // Token inválido o expirado: no hay sesión que invalidar
+      }
+    }
     // OWASP Best Practice: clearCookie debe usar las mismas opciones que se usaron al crear la cookie (sin maxAge)
     res.clearCookie(ACCESS_CLIENT_TOKEN_COOKIE_NAME, clearCookieOptions);
     logger.info("Sesión de cliente cerrada");

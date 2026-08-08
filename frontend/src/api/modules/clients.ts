@@ -7,8 +7,23 @@ export interface AdminClient {
   phone: string | null;
 }
 
-export const getAdminClients = async (searchQuery?: string): Promise<AdminClient[]> => {
-  const params = searchQuery ? { q: searchQuery } : {};
-  const response = await apiClient.get<AdminClient[]>('/admin/clients', { params });
+export interface AdminClientsResponse {
+  clients: AdminClient[];
+  pagination: {
+    current_page: number;
+    total_pages: number;
+    total_count: number;
+    per_page: number;
+  };
+}
+
+export const getAdminClients = async (
+  searchQuery?: string,
+  page = 1,
+  limit = 20
+): Promise<AdminClientsResponse> => {
+  const params: Record<string, string | number> = { page, limit };
+  if (searchQuery) params.q = searchQuery;
+  const response = await apiClient.get<AdminClientsResponse>('/admin/clients', { params });
   return response.data;
 };

@@ -148,6 +148,7 @@ export const generateClientToken = (client: PublicClient): string => {
     email: client.email,
     name: client.name,
     role: 'client', // Asignamos el rol explícitamente
+    tokenVersion: client.tokenVersion ?? 0,
   };
 
   if (!JWT_SECRET) {
@@ -539,7 +540,7 @@ export const changePassword = async (
       // Establecer contraseña en la base de datos
       await prisma.client.update({
         where: { id: clientId },
-        data: { passwordHash: newPasswordHash },
+        data: { passwordHash: newPasswordHash, tokenVersion: { increment: 1 } },
       });
 
       logger.info({ clientId, email: client.email }, 'Password set successfully for Google user');
@@ -575,10 +576,10 @@ export const changePassword = async (
     // 4. Hashear la nueva contraseña (OWASP A07:2021)
     const newPasswordHash = await bcrypt.hash(data.newPassword, 10);
 
-    // 5. Actualizar contraseña en la base de datos
+    // 5. Actualizar contraseña en la base de datos (tokenVersion invalida las demás sesiones)
     await prisma.client.update({
       where: { id: clientId },
-      data: { passwordHash: newPasswordHash },
+      data: { passwordHash: newPasswordHash, tokenVersion: { increment: 1 } },
     });
 
     logger.info({ clientId, email: client.email }, 'Password changed successfully');
@@ -762,13 +763,14 @@ export const resetPassword = async (token: string, newPassword: string): Promise
   // 4. Hashear la nueva contraseña
   const passwordHash = await bcrypt.hash(newPassword, 10);
 
-  // 5. Actualizar contraseña y limpiar token de reset
+  // 5. Actualizar contraseña y limpiar token de reset (tokenVersion invalida las demás sesiones)
   await prisma.client.update({
     where: { id: client.id },
     data: {
       passwordHash,
       passwordResetToken: null,
       passwordResetExpires: null,
+      tokenVersion: { increment: 1 },
     },
   });
 

@@ -256,10 +256,11 @@ export const createBooking = async (
           data: {
             clientId,
             serviceId: data.serviceId,
-            adminId: service.adminId,
+            adminId: service.admin.id,
             bookingTime: data.bookingTime,
             durationMinutes: service.durationMinutes,
             notes: data.notes ?? null,
+            clientTimezone: data.clientTimezone,
           },
           include: {
             service: {
@@ -752,7 +753,9 @@ export const rescheduleBookingByAdmin = async (
     throw error;
   }
 
-  return prisma.$transaction(async (tx) => {
+  let result;
+  try {
+  result = await prisma.$transaction(async (tx) => {
     const booking = await tx.booking.findFirst({
       where: { id: bookingId, adminId },
       include: {
@@ -860,7 +863,24 @@ export const rescheduleBookingByAdmin = async (
       serviceName: booking.service.name,
       durationMinutes: booking.durationMinutes
     };
+  }, {
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
   });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === 'P2002' || error.code === 'P2034')
+    ) {
+      throw buildBookingError(
+        'El nuevo horario no está disponible',
+        409,
+        BookingErrorCodes.UNAVAILABLE_TIME
+      );
+    }
+    throw error;
+  }
+
+  return result;
 };
 
 const getUtcMonthRange = (year: number, month: number): { start: Date; endExclusive: Date } => {
@@ -919,7 +939,9 @@ export const createBookingByAdmin = async (
   adminId: string,
   data: { clientId: string; serviceId: string; bookingTime: Date }
 ): Promise<BookingWithDetails> => {
-  const result = await prisma.$transaction(
+  let result;
+  try {
+  result = await prisma.$transaction(
     async (tx) => {
       const client = await tx.client.findUnique({
         where: { id: data.clientId },
@@ -1017,6 +1039,19 @@ export const createBookingByAdmin = async (
       isolationLevel: 'Serializable',
     }
   );
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === 'P2002' || error.code === 'P2034')
+    ) {
+      throw buildBookingError(
+        'El horario solicitado no está disponible',
+        409,
+        BookingErrorCodes.UNAVAILABLE_TIME
+      );
+    }
+    throw error;
+  }
 
   return result;
 };
