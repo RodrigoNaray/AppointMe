@@ -15,6 +15,7 @@ import { rescheduleBookingByAdmin } from "@/api/modules/bookings";
 import { updateBlock } from "@/api/modules/availability";
 import type { EventContentArg, DayCellContentArg } from "@fullcalendar/core";
 import { computeSlotBounds } from "@/lib/calendarBounds";
+import { isBookingPast } from "@/lib/bookingStatus";
 
 interface FullCalendarViewProps {
   onBlockSlot?: (startTime: Date, endTime: Date) => void;
@@ -108,12 +109,15 @@ function mapEvent(event: CalendarEvent): FullCalendarEventInput {
   const serviceName = event.serviceName || "";
   const shortTitle = clientName || serviceName;
 
+  const isPastBooking = isBookingPast(startStr);
+
   return {
     id: event.id || `evt-${startStr}`,
     title: shortTitle,
     start: startStr,
     end: endStr,
     classNames: [EVENT_CLASSES.booking],
+    editable: !isPastBooking,
     durationEditable: false,
     extendedProps: { ...event, start: startStr, end: endStr },
   };
@@ -412,6 +416,12 @@ export default function FullCalendarView({
           const type = extendedProps.type as CalendarEvent["type"];
 
           if (type === "booking") {
+            const droppedStart = info.event.start;
+            if (droppedStart && isBookingPast(droppedStart.toISOString())) {
+              info.revert();
+              toast.error("La reserva ya comenzó o finalizó y no puede reprogramarse");
+              return;
+            }
             try {
               await rescheduleBookingByAdmin(
                 info.event.id,

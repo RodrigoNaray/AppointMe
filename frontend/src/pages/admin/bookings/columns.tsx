@@ -2,6 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { XCircle, CalendarClock } from "lucide-react"
 
 export type Booking = {
@@ -9,7 +10,7 @@ export type Booking = {
   clientName: string
   serviceName: string
   bookingTime: string
-  status: "Confirmada" | "Cancelada"
+  status: "Confirmada" | "Cancelada" | "Finalizada"
 }
 
 export type BookingActions = {
@@ -33,6 +34,16 @@ export const getColumns = (actions: BookingActions): ColumnDef<Booking>[] => [
   {
     accessorKey: "status",
     header: "Estado",
+    cell: ({ row }) => {
+      const status = row.original.status;
+      const variant =
+        status === "Cancelada"
+          ? "destructive"
+          : status === "Finalizada"
+            ? "secondary"
+            : "default";
+      return <Badge variant={variant}>{status}</Badge>;
+    },
   },
   {
     id: "actions",

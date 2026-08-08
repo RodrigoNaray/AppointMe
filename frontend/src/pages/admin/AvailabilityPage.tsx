@@ -49,6 +49,7 @@ import BlockForm from "@/components/BlockForm";
 import { cancelBookingByAdmin, rescheduleBookingByAdmin, createBookingByAdmin } from "@/api/modules/bookings";
 import { updateBlock } from "@/api/modules/availability";
 import { getAdminClients, type AdminClient } from "@/api/modules/clients";
+import { deriveBookingDisplayStatus, isBookingPast } from "@/lib/bookingStatus";
 
 const defaultDaySchedule: DaySchedule = {
   start: "09:00",
@@ -659,14 +660,18 @@ export default function AvailabilityPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Estado</p>
                 <p className="font-medium">
-                  {bookingInfo.status === "CONFIRMED"
-                    ? "Confirmada"
-                    : bookingInfo.status || "—"}
+                  {bookingInfo.status
+                    ? deriveBookingDisplayStatus(
+                        bookingInfo.status,
+                        new Date(bookingInfo.start).toISOString()
+                      )
+                    : "—"}
                 </p>
               </div>
             </div>
           )}
-          {bookingInfo?.status === "CONFIRMED" && (
+          {bookingInfo?.status === "CONFIRMED" &&
+            !isBookingPast(new Date(bookingInfo.start).toISOString()) && (
             <DialogFooter className="flex-col gap-2 sm:flex-row">
               <Button
                 variant="outline"

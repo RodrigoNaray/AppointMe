@@ -655,7 +655,28 @@ describe('booking.services.cancelBookingByAdmin', () => {
     expect(tx.booking.update).not.toHaveBeenCalled();
   });
 
-  it('cancels the booking with CANCELLED_BY_ADMIN reason and no time-of-day check', async () => {
+  it('returns 400 when the booking has already started', async () => {
+    const tx = {
+      booking: {
+        findFirst: vi.fn().mockResolvedValue({
+          ...adminBookingRecord,
+          bookingTime: new Date('2029-12-31T23:00:00.000Z')
+        }),
+        update: vi.fn()
+      }
+    };
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+
+    await expect(
+      cancelBookingByAdmin({ bookingId: 'booking-1', adminId: 'admin-1' })
+    ).rejects.toMatchObject({
+      code: BookingErrorCodes.BOOKING_ALREADY_PASSED,
+      statusCode: 400
+    });
+    expect(tx.booking.update).not.toHaveBeenCalled();
+  });
+
+  it('cancels a future booking with CANCELLED_BY_ADMIN reason', async () => {
     const tx = {
       booking: {
         findFirst: vi.fn().mockResolvedValue({ ...adminBookingRecord }),
@@ -777,6 +798,33 @@ describe('booking.services.rescheduleBookingByAdmin', () => {
       code: BookingErrorCodes.CANNOT_CANCEL,
       statusCode: 400
     });
+  });
+
+  it('returns 400 when the booking has already started', async () => {
+    const tx = {
+      booking: {
+        findFirst: vi.fn().mockResolvedValue({
+          ...baseBooking,
+          bookingTime: new Date('2020-01-05T10:00:00.000Z')
+        }),
+        update: vi.fn()
+      },
+      adminUser: { findUnique: vi.fn() },
+      availabilityBlock: { findMany: vi.fn() }
+    };
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+
+    await expect(
+      rescheduleBookingByAdmin({
+        bookingId: 'booking-1',
+        adminId: 'admin-1',
+        newBookingTime: new Date('2030-01-06T10:00:00.000Z')
+      })
+    ).rejects.toMatchObject({
+      code: BookingErrorCodes.BOOKING_ALREADY_PASSED,
+      statusCode: 400
+    });
+    expect(tx.booking.update).not.toHaveBeenCalled();
   });
 
   it('returns 409 when the new slot conflicts with another confirmed booking', async () => {

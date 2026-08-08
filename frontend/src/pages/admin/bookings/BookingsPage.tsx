@@ -41,6 +41,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cancelBookingByAdmin, rescheduleBookingByAdmin } from "@/api/modules/bookings";
+import { deriveBookingDisplayStatus } from "@/lib/bookingStatus";
 
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -82,7 +83,7 @@ export default function BookingsPage() {
           clientName: booking.client.name,
           serviceName: booking.service.name,
           bookingTime: format(new Date(booking.bookingTime), "dd/MM/yyyy HH:mm", { locale: es }),
-          status: mapBackendStatus(booking.status),
+          status: deriveBookingDisplayStatus(booking.status, booking.bookingTime),
         }));
         
         setBookings(mappedBookings);
@@ -93,17 +94,6 @@ export default function BookingsPage() {
       toast.error('Error al cargar las reservas');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const mapBackendStatus = (status: string): 'Confirmada' | 'Cancelada' => {
-    switch (status) {
-      case 'CONFIRMED':
-        return 'Confirmada';
-      case 'CANCELLED':
-        return 'Cancelada';
-      default:
-        return 'Confirmada';
     }
   };
 
@@ -220,6 +210,7 @@ export default function BookingsPage() {
                 <SelectContent>
                   <SelectItem value="all">Todos los estados</SelectItem>
                   <SelectItem value="Confirmada">Confirmada</SelectItem>
+                  <SelectItem value="Finalizada">Finalizada</SelectItem>
                   <SelectItem value="Cancelada">Cancelada</SelectItem>
                 </SelectContent>
               </Select>

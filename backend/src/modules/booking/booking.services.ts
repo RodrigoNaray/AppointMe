@@ -668,6 +668,15 @@ export const cancelBookingByAdmin = async (
       throw error;
     }
 
+    if (booking.bookingTime <= new Date()) {
+      const error: BookingError = new Error(
+        'La reserva ya comenzó o finalizó y no puede cancelarse'
+      ) as BookingError;
+      error.statusCode = 400;
+      error.code = BookingErrorCodes.BOOKING_ALREADY_PASSED;
+      throw error;
+    }
+
     const updatedBooking = await tx.booking.update({
       where: { id: bookingId },
       data: {
@@ -778,6 +787,15 @@ export const rescheduleBookingByAdmin = async (
       const error: BookingError = new Error('Only confirmed bookings can be rescheduled') as BookingError;
       error.statusCode = 400;
       error.code = BookingErrorCodes.CANNOT_CANCEL;
+      throw error;
+    }
+
+    if (booking.bookingTime <= new Date()) {
+      const error: BookingError = new Error(
+        'La reserva ya comenzó o finalizó y no puede reprogramarse'
+      ) as BookingError;
+      error.statusCode = 400;
+      error.code = BookingErrorCodes.BOOKING_ALREADY_PASSED;
       throw error;
     }
 
