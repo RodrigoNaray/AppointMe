@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   hasTimeConflictOptimized,
   hasTimeConflictSimple,
-  filterAvailableSlots,
   TimePeriod
 } from '../../../src/utils/timeConflictUtils';
 
@@ -83,37 +82,5 @@ describe('timeConflictUtils', () => {
       );
       expect(optimized).toBe(simple);
     });
-  });
-
-  it('filters only non-conflicting candidate slots', () => {
-    const candidateSlots: TimePeriod[] = [
-      {
-        start: new Date('2030-01-01T09:00:00.000Z'),
-        end: new Date('2030-01-01T09:30:00.000Z')
-      },
-      {
-        start: new Date('2030-01-01T10:00:00.000Z'),
-        end: new Date('2030-01-01T10:30:00.000Z')
-      },
-      {
-        start: new Date('2030-01-01T11:30:00.000Z'),
-        end: new Date('2030-01-01T12:00:00.000Z')
-      }
-    ];
-
-    const busyPeriods: TimePeriod[] = [
-      {
-        start: new Date('2030-01-01T10:00:00.000Z'),
-        end: new Date('2030-01-01T11:00:00.000Z')
-      }
-    ];
-
-    const optimized = filterAvailableSlots(candidateSlots, busyPeriods);
-    const simple = candidateSlots.filter(
-      (slot) => !hasTimeConflictSimple(slot.start, slot.end, busyPeriods)
-    );
-
-    expect(optimized).toEqual(simple);
-    expect(optimized).toHaveLength(2);
   });
 });

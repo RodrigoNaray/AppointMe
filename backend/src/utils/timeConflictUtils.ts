@@ -74,29 +74,6 @@ export const hasTimeConflictOptimized = (
 };
 
 /**
- * Función optimizada para verificar múltiples slots contra un conjunto de períodos ocupados
- * Útil para generar slots disponibles de manera eficiente
- * @param candidateSlots Array de períodos candidatos a verificar
- * @param busyPeriods Array de períodos ocupados
- * @returns Array de slots disponibles (sin conflictos)
- */
-export const filterAvailableSlots = (
-  candidateSlots: TimePeriod[],
-  busyPeriods: TimePeriod[]
-): TimePeriod[] => {
-  if (busyPeriods.length === 0) return candidateSlots;
-  if (candidateSlots.length === 0) return [];
-
-  // Ordenar períodos ocupados una sola vez - O(n log n)
-  const sortedBusyPeriods = [...busyPeriods].sort((a, b) => a.start.getTime() - b.start.getTime());
-  
-  // Filtrar slots usando búsqueda optimizada - O(m log n) donde m = slots candidatos, n = períodos ocupados
-  return candidateSlots.filter(slot => 
-    !hasTimeConflictOptimized(slot.start, slot.end, sortedBusyPeriods)
-  );
-};
-
-/**
  * Versión no optimizada para comparación y fallback
  * Complejidad: O(n*m) donde n = busyPeriods, m = candidateSlots
  */

@@ -1,6 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import { Prisma } from '@prisma/client';
 import catalogRoutes from './modules/services/services.routes';
 import authRoutes from './modules/auth/auth.routes';
 import cookieParser from 'cookie-parser';
@@ -76,8 +77,20 @@ app.use('/api/settings', settingsRoutes); // Rutas públicas de settings
 app.use('/api/health', healthRoutes);
 app.use('/', sitemapRoutes); // Sitemap en raíz (público)
 
+// Handler para rutas no encontradas
+app.use((_req: Request, res: Response) => {
+  res.status(404).json({ message: 'Ruta no encontrada.' });
+});
 
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    if (err.code === 'P2002') {
+      return res.status(409).json({ message: 'El recurso ya existe.' });
+    }
+    if (err.code === 'P2003') {
+      return res.status(409).json({ message: 'El recurso está referenciado por otros datos y no puede eliminarse.' });
+    }
+  }
   logger.error(err.stack);
   res.status(500).json({ message: 'Algo salió mal en el servidor.' });
 });
