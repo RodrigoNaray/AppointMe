@@ -187,9 +187,11 @@ async function main() {
   console.log(`💄 Servicios creados/actualizados con categorías asignadas`);
 
   // --- 5. Crear Bloqueos de Disponibilidad (asociados al admin) ---
-  // CORRECCIÓN: Usamos una fecha fija y métodos UTC para consistencia
-  const blockDate = new Date('2025-09-22T00:00:00.000Z');
-  
+  // Fechas dinámicas en el pasado para mantener datos de ejemplo sin interferir
+  // con disponibilidad futura ni con los flujos E2E.
+  const blockDate = new Date();
+  blockDate.setUTCDate(blockDate.getUTCDate() - 7);
+
   const blockStart = new Date(blockDate.getTime());
   blockStart.setUTCHours(14, 0, 0, 0); // 14:00 UTC
 
@@ -197,41 +199,39 @@ async function main() {
   blockEnd.setUTCHours(16, 0, 0, 0); // 16:00 UTC
 
   await prisma.availabilityBlock.upsert({
-    where: {
-      startTime_endTime_adminId: {
-        startTime: blockStart,
-        endTime: blockEnd,
-        adminId: admin.id,
-      },
+    where: { id: 'seed-block-1' },
+    update: {
+      startTime: blockStart,
+      endTime: blockEnd,
     },
-    update: {},
     create: {
+      id: 'seed-block-1',
       startTime: blockStart,
       endTime: blockEnd,
       reason: 'Cita médica',
       adminId: admin.id,
     },
   });
-  console.log('🚫 Bloqueo de tiempo creado para el 22/09/2025 de 14:00 a 16:00 UTC.');
+  console.log('🚫 Bloqueo de tiempo de ejemplo creado.');
 
   // --- 5. Crear Reservas de Prueba (asociando clientes, servicios y admin) ---
-  const bookingDate = new Date('2025-09-22T00:00:00.000Z');
+  // Ids determinísticos: el unique compuesto anterior (bookingTime_serviceId_
+  // clientId_adminId) fue reemplazado por un índice parcial en CONFIRMED, por lo
+  // que el upsert debe anclarse por id.
+  const bookingDate1 = new Date();
+  bookingDate1.setUTCDate(bookingDate1.getUTCDate() - 7);
 
-  // Usamos los métodos nativos del objeto Date
-  const booking1Time = new Date(bookingDate.getTime());
+  const booking1Time = new Date(bookingDate1.getTime());
   booking1Time.setUTCHours(9, 0, 0, 0);
 
   await prisma.booking.upsert({
-    where: {
-      bookingTime_serviceId_clientId_adminId: {
-        bookingTime: booking1Time,
-        serviceId: service1.id,
-        clientId: client1.id,
-        adminId: admin.id,
-      },
+    where: { id: 'seed-booking-1' },
+    update: {
+      bookingTime: booking1Time,
+      durationMinutes: 60,
     },
-    update: {},
     create: {
+      id: 'seed-booking-1',
       bookingTime: booking1Time,
       clientId: client1.id,
       serviceId: service1.id,
@@ -240,20 +240,20 @@ async function main() {
     },
   });
 
-  const booking2Time = new Date(bookingDate.getTime());
+  const bookingDate2 = new Date();
+  bookingDate2.setUTCDate(bookingDate2.getUTCDate() - 5);
+
+  const booking2Time = new Date(bookingDate2.getTime());
   booking2Time.setUTCHours(17, 0, 0, 0);
 
   await prisma.booking.upsert({
-    where: {
-      bookingTime_serviceId_clientId_adminId: {
-        bookingTime: booking2Time,
-        serviceId: service1.id,
-        clientId: client2.id,
-        adminId: admin.id,
-      },
+    where: { id: 'seed-booking-2' },
+    update: {
+      bookingTime: booking2Time,
+      durationMinutes: 60,
     },
-    update: {},
     create: {
+      id: 'seed-booking-2',
       bookingTime: booking2Time,
       clientId: client2.id,
       serviceId: service1.id,
@@ -261,7 +261,7 @@ async function main() {
       durationMinutes: 60, // Snapshot de duración de service1
     },
   });
-  console.log('✅ Reservas de prueba creadas para el 22/09/2025.');
+  console.log('✅ Reservas de prueba creadas con fechas relativas.');
 
   console.log('🎉 ¡Siembra completada exitosamente!');
 }

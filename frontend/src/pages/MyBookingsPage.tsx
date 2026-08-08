@@ -71,10 +71,10 @@ export default function MyBookingsPage() {
       const upcoming: Booking[] = [];
       const past: Booking[] = [];
 
-      // Separar reservas en próximas y pasadas
+      // Separar reservas en próximas (futuras y confirmadas) y pasadas (resto)
       response.bookings.forEach(booking => {
         const bookingDate = new Date(booking.bookingTime);
-        if (bookingDate >= now) {
+        if (bookingDate >= now && booking.status === 'CONFIRMED') {
           upcoming.push(booking);
         } else {
           past.push(booking);
