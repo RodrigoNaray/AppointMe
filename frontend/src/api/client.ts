@@ -1,8 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import { API_CONFIG } from './config';
 import toast from 'react-hot-toast';
-import { useAuthStore } from '@/stores/authStore';
-import { useBookingStore } from '@/stores/bookingStore';
 
 const apiClient = axios.create(API_CONFIG);
 
@@ -24,8 +22,8 @@ apiClient.interceptors.response.use(
     }
 
     if (error.response?.status === 401 && !isAuthFlowRequest(error.config?.url)) {
-      useAuthStore.setState({ authState: { type: null, user: null, isAuthenticated: false } });
-      useBookingStore.getState().clearCart();
+      sessionStorage.removeItem('appointmepro-auth-storage');
+      sessionStorage.removeItem('appointmepro-booking-storage');
       const currentPath = window.location.pathname + window.location.search;
       if (!currentPath.startsWith('/login')) {
         window.location.href = `/login?returnUrl=${encodeURIComponent(currentPath)}`;
