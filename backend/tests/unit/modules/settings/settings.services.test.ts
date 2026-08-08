@@ -115,6 +115,22 @@ describe('settings.services', () => {
     expect(mockPrisma.adminUser.update).not.toHaveBeenCalled();
   });
 
+  it('rejects updateBookingRules when values are not integers', async () => {
+    await expect(
+      updateBookingRules('admin-1', {
+        minBookingAdvanceMinutes: 'abc' as unknown as number
+      })
+    ).rejects.toMatchObject({ statusCode: 400 });
+
+    await expect(
+      updateBookingRules('admin-1', {
+        minCancellationNoticeMinutes: 60.5
+      })
+    ).rejects.toMatchObject({ statusCode: 400 });
+
+    expect(mockPrisma.adminUser.update).not.toHaveBeenCalled();
+  });
+
   it('rejects updateContactInfo when latitude is invalid', async () => {
     await expect(
       updateContactInfo('admin-1', { businessLatitude: 190 })

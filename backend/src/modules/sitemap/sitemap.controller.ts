@@ -33,6 +33,6 @@ export async function getSitemap(req: Request, res: Response): Promise<void> {
     logger.error({ error }, 'Error generando sitemap');
     
     // No exponer detalles del error al cliente (OWASP)
-    res.status(500).header('Content-Type', 'text/plain').send('Error generating sitemap');
+    res.status(500).header('Content-Type', 'text/plain').send('Error al generar el sitemap');
   }
 }

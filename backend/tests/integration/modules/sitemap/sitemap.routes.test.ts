@@ -35,6 +35,6 @@ describe('sitemap.routes', () => {
 
     expect(response.status).toBe(500);
     expect(response.headers['content-type']).toContain('text/plain');
-    expect(response.text).toContain('Error generating sitemap');
+    expect(response.text).toContain('Error al generar el sitemap');
   });
 });

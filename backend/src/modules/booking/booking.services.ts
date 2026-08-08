@@ -177,7 +177,7 @@ export const createBooking = async (
 
         if (!client) {
           throw buildBookingError(
-            'Client not found',
+            'Cliente no encontrado',
             404,
             BookingErrorCodes.BOOKING_NOT_FOUND
           );
@@ -185,7 +185,7 @@ export const createBooking = async (
 
         if (!client.emailVerified && !client.googleId) {
           throw buildBookingError(
-            'Email not verified. Please verify your email before booking.',
+            'Email no verificado. Verificá tu email antes de reservar.',
             403,
             BookingErrorCodes.EMAIL_NOT_VERIFIED
           );
@@ -207,7 +207,7 @@ export const createBooking = async (
 
         if (!service || !service.isActive) {
           throw buildBookingError(
-            'Service not found or inactive',
+            'Servicio no encontrado o inactivo',
             404,
             BookingErrorCodes.SERVICE_NOT_FOUND
           );
@@ -215,7 +215,7 @@ export const createBooking = async (
 
         if (!service.admin) {
           throw buildBookingError(
-            'Admin not found for this service',
+            'Administrador no encontrado para este servicio',
             404,
             BookingErrorCodes.ADMIN_NOT_FOUND
           );
@@ -228,7 +228,7 @@ export const createBooking = async (
 
         if (data.bookingTime < minBookingTime) {
           throw buildBookingError(
-            `Booking must be made at least ${minNoticeMinutes} minutes in advance`,
+            `La reserva debe hacerse con al menos ${minNoticeMinutes} minutos de antelación`,
             400,
             BookingErrorCodes.INSUFFICIENT_NOTICE
           );
@@ -245,7 +245,7 @@ export const createBooking = async (
 
         if (!isAvailable) {
           throw buildBookingError(
-            'The requested time slot is not available',
+            'El horario solicitado no está disponible',
             409,
             BookingErrorCodes.UNAVAILABLE_TIME
           );
@@ -302,7 +302,7 @@ export const createBooking = async (
       (error.code === 'P2002' || error.code === 'P2034')
     ) {
       throw buildBookingError(
-        'The requested time slot is not available',
+        'El horario solicitado no está disponible',
         409,
         BookingErrorCodes.UNAVAILABLE_TIME
       );
@@ -473,7 +473,7 @@ export const cancelBooking = async (
 
         if (!booking) {
           throw buildBookingError(
-            'Booking not found',
+            'Reserva no encontrada',
             404,
             BookingErrorCodes.BOOKING_NOT_FOUND
           );
@@ -482,7 +482,7 @@ export const cancelBooking = async (
         // 2. Verificar pertenencia
         if (booking.clientId !== clientId) {
           throw buildBookingError(
-            'Unauthorized to cancel this booking',
+            'No autorizado para cancelar esta reserva',
             403,
             BookingErrorCodes.UNAUTHORIZED
           );
@@ -491,7 +491,7 @@ export const cancelBooking = async (
         // 3. Verificar que no esté ya cancelada
         if (booking.status === 'CANCELLED') {
           throw buildBookingError(
-            'Booking is already cancelled',
+            'La reserva ya está cancelada',
             400,
             BookingErrorCodes.CANNOT_CANCEL
           );
@@ -507,7 +507,7 @@ export const cancelBooking = async (
             (booking.bookingTime.getTime() - now.getTime()) / 60000
           );
           throw buildBookingError(
-            `Cannot cancel booking. Minimum cancellation notice is ${minCancellationNoticeMinutes} minutes. Time remaining: ${minutesRemaining} minutes.`,
+            `No se puede cancelar: el aviso mínimo es de ${minCancellationNoticeMinutes} minutos. Tiempo restante: ${minutesRemaining} minutos.`,
             400,
             BookingErrorCodes.CANNOT_CANCEL
           );
@@ -599,7 +599,7 @@ export const getBookingById = async (
     });
 
     if (!booking) {
-      const error: BookingError = new Error('Booking not found') as BookingError;
+      const error: BookingError = new Error('Reserva no encontrada') as BookingError;
       error.statusCode = 404;
       error.code = BookingErrorCodes.BOOKING_NOT_FOUND;
       throw error;
@@ -655,14 +655,14 @@ export const cancelBookingByAdmin = async (
     });
 
     if (!booking) {
-      const error: BookingError = new Error('Booking not found or not owned by this admin') as BookingError;
+      const error: BookingError = new Error('Reserva no encontrada o no pertenece a este administrador') as BookingError;
       error.statusCode = 404;
       error.code = BookingErrorCodes.BOOKING_NOT_FOUND;
       throw error;
     }
 
     if (booking.status === 'CANCELLED') {
-      const error: BookingError = new Error('Booking is already cancelled') as BookingError;
+      const error: BookingError = new Error('La reserva ya está cancelada') as BookingError;
       error.statusCode = 400;
       error.code = BookingErrorCodes.CANNOT_CANCEL;
       throw error;
@@ -746,7 +746,7 @@ export const rescheduleBookingByAdmin = async (
   const { bookingId, adminId, newBookingTime } = params;
 
   if (isNaN(newBookingTime.getTime())) {
-    const error: BookingError = new Error('Invalid new booking time') as BookingError;
+    const error: BookingError = new Error('Fecha y hora de reserva inválidas') as BookingError;
     error.statusCode = 400;
     error.code = BookingErrorCodes.INVALID_INPUT;
     throw error;
@@ -777,14 +777,14 @@ export const rescheduleBookingByAdmin = async (
     });
 
     if (!booking) {
-      const error: BookingError = new Error('Booking not found or not owned by this admin') as BookingError;
+      const error: BookingError = new Error('Reserva no encontrada o no pertenece a este administrador') as BookingError;
       error.statusCode = 404;
       error.code = BookingErrorCodes.BOOKING_NOT_FOUND;
       throw error;
     }
 
     if (booking.status !== 'CONFIRMED') {
-      const error: BookingError = new Error('Only confirmed bookings can be rescheduled') as BookingError;
+      const error: BookingError = new Error('Solo se pueden reprogramar reservas confirmadas') as BookingError;
       error.statusCode = 400;
       error.code = BookingErrorCodes.CANNOT_CANCEL;
       throw error;
@@ -809,7 +809,7 @@ export const rescheduleBookingByAdmin = async (
     );
 
     if (!isSlotFree) {
-      const error: BookingError = new Error('The new time slot is not available') as BookingError;
+      const error: BookingError = new Error('El nuevo horario no está disponible') as BookingError;
       error.statusCode = 409;
       error.code = BookingErrorCodes.UNAVAILABLE_TIME;
       throw error;
@@ -928,7 +928,7 @@ export const createBookingByAdmin = async (
 
       if (!client) {
         throw buildBookingError(
-          'Client not found',
+          'Cliente no encontrado',
           404,
           BookingErrorCodes.BOOKING_NOT_FOUND
         );
@@ -945,7 +945,7 @@ export const createBookingByAdmin = async (
 
       if (!service || !service.isActive) {
         throw buildBookingError(
-          'Service not found or inactive',
+          'Servicio no encontrado o inactivo',
           404,
           BookingErrorCodes.SERVICE_NOT_FOUND
         );
@@ -953,9 +953,17 @@ export const createBookingByAdmin = async (
 
       if (!service.admin || service.admin.id !== adminId) {
         throw buildBookingError(
-          'Service does not belong to this admin',
+          'El servicio no pertenece a este administrador',
           403,
           BookingErrorCodes.UNAUTHORIZED
+        );
+      }
+
+      if (data.bookingTime <= new Date()) {
+        throw buildBookingError(
+          'La reserva no puede crearse en una fecha u hora pasada',
+          400,
+          BookingErrorCodes.BOOKING_ALREADY_PASSED
         );
       }
 
@@ -969,7 +977,7 @@ export const createBookingByAdmin = async (
 
       if (!isAvailable) {
         throw buildBookingError(
-          'The requested time slot is not available',
+          'El horario solicitado no está disponible',
           409,
           BookingErrorCodes.UNAVAILABLE_TIME
         );

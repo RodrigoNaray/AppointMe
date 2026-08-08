@@ -40,7 +40,7 @@ export const getBookingRules = async (): Promise<BookingRulesDTO> => {
     });
 
     if (!admin) {
-      const error: SettingsError = new Error('No admin configuration found') as SettingsError;
+      const error: SettingsError = new Error('No se encontró configuración del administrador') as SettingsError;
       error.statusCode = 404;
       throw error;
     }
@@ -89,7 +89,7 @@ export const getBusinessHours = async (): Promise<BusinessHoursDTO> => {
     });
 
     if (!admin) {
-      const error: SettingsError = new Error('No admin configuration found') as SettingsError;
+      const error: SettingsError = new Error('No se encontró configuración del administrador') as SettingsError;
       error.statusCode = 404;
       throw error;
     }
@@ -173,14 +173,14 @@ export const updateBookingRules = async (
   try {
     // Validación: minBookingAdvanceMinutes
     if (data.minBookingAdvanceMinutes !== undefined) {
-      if (data.minBookingAdvanceMinutes < 0) {
-        const error: SettingsError = new Error('minBookingAdvanceMinutes must be non-negative') as SettingsError;
+      if (!Number.isInteger(data.minBookingAdvanceMinutes) || data.minBookingAdvanceMinutes < 0) {
+        const error: SettingsError = new Error('minBookingAdvanceMinutes no puede ser negativo') as SettingsError;
         error.statusCode = 400;
         throw error;
       }
 
       if (data.minBookingAdvanceMinutes > 10080) {
-        const error: SettingsError = new Error('minBookingAdvanceMinutes cannot exceed 1 week (10080 minutes)') as SettingsError;
+        const error: SettingsError = new Error('minBookingAdvanceMinutes no puede superar 1 semana (10080 minutos)') as SettingsError;
         error.statusCode = 400;
         throw error;
       }
@@ -188,14 +188,14 @@ export const updateBookingRules = async (
 
     // Validación: minCancellationNoticeMinutes
     if (data.minCancellationNoticeMinutes !== undefined) {
-      if (data.minCancellationNoticeMinutes < 0) {
-        const error: SettingsError = new Error('minCancellationNoticeMinutes must be non-negative') as SettingsError;
+      if (!Number.isInteger(data.minCancellationNoticeMinutes) || data.minCancellationNoticeMinutes < 0) {
+        const error: SettingsError = new Error('minCancellationNoticeMinutes no puede ser negativo') as SettingsError;
         error.statusCode = 400;
         throw error;
       }
 
       if (data.minCancellationNoticeMinutes > 10080) {
-        const error: SettingsError = new Error('minCancellationNoticeMinutes cannot exceed 1 week (10080 minutes)') as SettingsError;
+        const error: SettingsError = new Error('minCancellationNoticeMinutes no puede superar 1 semana (10080 minutos)') as SettingsError;
         error.statusCode = 400;
         throw error;
       }
@@ -268,7 +268,7 @@ export const getContactInfo = async (): Promise<ContactInfoDTO> => {
     });
 
     if (!admin) {
-      const error: SettingsError = new Error('No admin configuration found') as SettingsError;
+      const error: SettingsError = new Error('No se encontró configuración del administrador') as SettingsError;
       error.statusCode = 404;
       throw error;
     }
@@ -310,14 +310,14 @@ export const updateContactInfo = async (
     if (data.businessEmail !== undefined && data.businessEmail !== null && data.businessEmail !== '') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(data.businessEmail)) {
-        const error: SettingsError = new Error('Invalid email format') as SettingsError;
+        const error: SettingsError = new Error('Formato de email inválido') as SettingsError;
         error.statusCode = 400;
         throw error;
       }
 
       // OWASP: Prevenir email muy largo (DoS)
       if (data.businessEmail.length > 254) {
-        const error: SettingsError = new Error('Email too long (max 254 chars)') as SettingsError;
+        const error: SettingsError = new Error('Email demasiado largo (máx 254 caracteres)') as SettingsError;
         error.statusCode = 400;
         throw error;
       }
@@ -328,7 +328,7 @@ export const updateContactInfo = async (
       // E.164 format: + seguido de 1-15 dígitos
       const phoneRegex = /^\+?[1-9]\d{1,14}$/;
       if (!phoneRegex.test(data.businessPhone.replace(/[\s\-()]/g, ''))) {
-        const error: SettingsError = new Error('Invalid phone format (use international format: +XX XXXXXXXXX)') as SettingsError;
+        const error: SettingsError = new Error('Formato de teléfono inválido (usá formato internacional: +XX XXXXXXXXX)') as SettingsError;
         error.statusCode = 400;
         throw error;
       }
@@ -340,14 +340,14 @@ export const updateContactInfo = async (
       
       // Max 500 caracteres
       if (sanitizedAddress.length > 500) {
-        const error: SettingsError = new Error('Address too long (max 500 chars)') as SettingsError;
+        const error: SettingsError = new Error('Dirección demasiado larga (máx 500 caracteres)') as SettingsError;
         error.statusCode = 400;
         throw error;
       }
 
       // OWASP: Prevenir HTML tags (XSS)
       if (/<[^>]*>/g.test(sanitizedAddress)) {
-        const error: SettingsError = new Error('Address cannot contain HTML tags') as SettingsError;
+        const error: SettingsError = new Error('La dirección no puede contener etiquetas HTML') as SettingsError;
         error.statusCode = 400;
         throw error;
       }
@@ -360,7 +360,7 @@ export const updateContactInfo = async (
       if (typeof data.businessLatitude !== 'number' || 
           data.businessLatitude < -90 || 
           data.businessLatitude > 90) {
-        const error: SettingsError = new Error('Invalid latitude (must be between -90 and 90)') as SettingsError;
+        const error: SettingsError = new Error('Latitud inválida (debe estar entre -90 y 90)') as SettingsError;
         error.statusCode = 400;
         throw error;
       }
@@ -371,7 +371,7 @@ export const updateContactInfo = async (
       if (typeof data.businessLongitude !== 'number' || 
           data.businessLongitude < -180 || 
           data.businessLongitude > 180) {
-        const error: SettingsError = new Error('Invalid longitude (must be between -180 and 180)') as SettingsError;
+        const error: SettingsError = new Error('Longitud inválida (debe estar entre -180 y 180)') as SettingsError;
         error.statusCode = 400;
         throw error;
       }

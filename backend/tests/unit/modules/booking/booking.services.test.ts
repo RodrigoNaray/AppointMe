@@ -20,7 +20,7 @@ vi.mock('../../../../src/config/prisma', () => ({
   default: mockPrisma
 }));
 
-import { createBooking, getBookingMetrics, getAdminBookings } from '../../../../src/modules/booking/booking.services';
+import { createBooking, getBookingMetrics, getAdminBookings, createBookingByAdmin } from '../../../../src/modules/booking/booking.services';
 import { cancelBooking } from '../../../../src/modules/booking/booking.services';
 import { cancelBookingByAdmin } from '../../../../src/modules/booking/booking.services';
 import { rescheduleBookingByAdmin } from '../../../../src/modules/booking/booking.services';
@@ -890,6 +890,55 @@ describe('booking.services.rescheduleBookingByAdmin', () => {
     expect(result.oldBookingTime.toISOString()).toBe(baseBooking.bookingTime.toISOString());
     expect(result.newBookingTime.toISOString()).toBe(newTime.toISOString());
     expect(result.clientEmail).toBe('ana@example.com');
+  });
+});
+
+describe('booking.services.createBookingByAdmin', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2030-01-01T00:00:00.000Z'));
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns 400 when the requested time is in the past', async () => {
+    const tx = {
+      client: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'client-1',
+          email: 'ana@example.com',
+          name: 'Ana',
+          emailLanguage: 'es'
+        })
+      },
+      service: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'service-1',
+          name: 'Corte',
+          durationMinutes: 45,
+          price: 500,
+          isActive: true,
+          admin: { id: 'admin-1', schedule: null }
+        })
+      },
+      booking: { create: vi.fn() }
+    };
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+
+    await expect(
+      createBookingByAdmin('admin-1', {
+        clientId: 'client-1',
+        serviceId: 'service-1',
+        bookingTime: new Date('2029-12-31T23:00:00.000Z')
+      })
+    ).rejects.toMatchObject({
+      code: BookingErrorCodes.BOOKING_ALREADY_PASSED,
+      statusCode: 400
+    });
+    expect(tx.booking.create).not.toHaveBeenCalled();
   });
 });
 

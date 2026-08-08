@@ -156,7 +156,7 @@ describe('booking.routes (semi-real)', () => {
       });
 
     expect(response.status).toBe(400);
-    expect(response.body.message).toContain('client timezone');
+    expect(response.body.message).toContain('clientTimezone');
   });
 
   it('creates booking through real service flow and sends confirmation email', async () => {
@@ -199,7 +199,7 @@ describe('booking.routes (semi-real)', () => {
 
     expect(response.status).toBe(409);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toContain('not available');
+    expect(response.body.message).toContain('disponible');
   });
 
   it('returns 403 when client email is not verified', async () => {
@@ -219,7 +219,7 @@ describe('booking.routes (semi-real)', () => {
     expect(response.status).toBe(403);
     expect(response.body.success).toBe(false);
     expect(response.body.message).toContain('email');
-    expect(response.body.message).toContain('verified');
+    expect(response.body.message).toContain('verificado');
     expect(tx.booking.create).not.toHaveBeenCalled();
   });
 
@@ -297,7 +297,7 @@ describe('booking.routes (semi-real)', () => {
 
     expect(response.status).toBe(403);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toContain('Unauthorized');
+    expect(response.body.message).toContain('No autorizado');
     expect(mockPrisma.booking.update).not.toHaveBeenCalled();
   });
 
@@ -450,7 +450,7 @@ describe('booking.routes (semi-real)', () => {
     const response = await request(adminApp).put('/admin/bookings/booking-1/cancel');
 
     expect(response.status).toBe(400);
-    expect(response.body.message).toContain('already cancelled');
+    expect(response.body.message).toContain('cancelada');
     expect(tx.booking.update).not.toHaveBeenCalled();
   });
 
@@ -460,7 +460,7 @@ describe('booking.routes (semi-real)', () => {
     const response = await request(adminApp).put('/admin/bookings/booking-1/cancel');
 
     expect(response.status).toBe(401);
-    expect(response.body.message).toContain('Authentication');
+    expect(response.body.message).toContain('Autenticación');
     authState.adminUser = { id: 'admin-1', email: 'admin@example.com' };
   });
 
@@ -472,7 +472,7 @@ describe('booking.routes (semi-real)', () => {
       .send({ reason: longReason });
 
     expect(response.status).toBe(400);
-    expect(response.body.message).toContain('500 characters');
+    expect(response.body.message).toContain('500 caracteres');
   });
 
   it('admin reschedules a booking and emails the client with old and new times', async () => {
@@ -565,7 +565,7 @@ describe('booking.routes (semi-real)', () => {
       .send({ newBookingTime: 'not-a-date' });
 
     expect(response.status).toBe(400);
-    expect(response.body.message).toContain('Invalid');
+    expect(response.body.message).toContain('inválido');
   });
 
   it('admin reschedule returns 409 when new slot is not available', async () => {

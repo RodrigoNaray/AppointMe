@@ -58,7 +58,7 @@ export const createBooking = async (
       return res.status(401).json({
         success: false,
         booking: undefined,
-        message: 'Authentication required'
+        message: 'Autenticación requerida'
       });
     }
 
@@ -69,7 +69,7 @@ export const createBooking = async (
       return res.status(400).json({
         success: false,
         booking: undefined,
-        message: 'Service ID, booking time, and client timezone are required'
+        message: 'Se requieren serviceId, bookingTime y clientTimezone'
       });
     }
 
@@ -78,7 +78,7 @@ export const createBooking = async (
       return res.status(400).json({
         success: false,
         booking: undefined,
-        message: 'Invalid booking time format'
+        message: 'Formato de fecha y hora de reserva inválido'
       });
     }
 
@@ -113,7 +113,7 @@ export const createBooking = async (
     return res.status(201).json({
       success: true,
       booking,
-      message: 'Booking created successfully'
+      message: 'Reserva creada exitosamente'
     });
 
   } catch (error) {
@@ -131,7 +131,7 @@ export const createBooking = async (
     return res.status(500).json({
       success: false,
       booking: undefined,
-      message: 'Internal server error'
+      message: 'Error interno del servidor'
     });
   }
 };
@@ -203,7 +203,7 @@ export const cancelBooking = async (
     if (!client?.id) {
       return res.status(401).json({
         success: false,
-        message: 'Authentication required'
+        message: 'Autenticación requerida'
       });
     }
 
@@ -247,7 +247,7 @@ export const cancelBooking = async (
 
     return res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Error interno del servidor'
     });
   }
 };
@@ -265,7 +265,7 @@ export const cancelBookingByAdminController = async (
     if (!admin?.id) {
       return res.status(401).json({
         success: false,
-        message: 'Authentication required'
+        message: 'Autenticación requerida'
       });
     }
 
@@ -275,7 +275,7 @@ export const cancelBookingByAdminController = async (
     if (reason !== undefined && (typeof reason !== 'string' || reason.length > 500)) {
       return res.status(400).json({
         success: false,
-        message: 'Reason must be a string of at most 500 characters'
+        message: 'El motivo debe ser un texto de máximo 500 caracteres'
       });
     }
 
@@ -328,7 +328,7 @@ export const cancelBookingByAdminController = async (
 
     return res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Error interno del servidor'
     });
   }
 };
@@ -346,7 +346,7 @@ export const rescheduleBookingByAdminController = async (
     if (!admin?.id) {
       return res.status(401).json({
         success: false,
-        message: 'Authentication required'
+        message: 'Autenticación requerida'
       });
     }
 
@@ -356,7 +356,7 @@ export const rescheduleBookingByAdminController = async (
     if (!newBookingTime) {
       return res.status(400).json({
         success: false,
-        message: 'newBookingTime is required'
+        message: 'newBookingTime es requerido'
       });
     }
 
@@ -364,7 +364,7 @@ export const rescheduleBookingByAdminController = async (
     if (isNaN(newBookingTimeDate.getTime())) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid newBookingTime format'
+        message: 'Formato de newBookingTime inválido'
       });
     }
 
@@ -418,7 +418,7 @@ export const rescheduleBookingByAdminController = async (
 
     return res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Error interno del servidor'
     });
   }
 };
@@ -516,7 +516,7 @@ export const getBookingById = async (
     return res.status(200).json({
       success: true,
       booking,
-      message: 'Booking retrieved successfully'
+      message: 'Reserva obtenida exitosamente'
     });
 
   } catch (error) {
@@ -532,7 +532,7 @@ export const getBookingById = async (
 
     return res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Error interno del servidor'
     });
   }
 };
@@ -544,7 +544,7 @@ export const createBookingByAdminController = async (
   try {
     const admin = req.user as AdminUser;
     if (!admin?.id) {
-      return res.status(401).json({ success: false, message: 'Authentication required' });
+      return res.status(401).json({ success: false, message: 'Autenticación requerida' });
     }
 
     const { clientId, serviceId, bookingTime } = req.body;
@@ -552,7 +552,7 @@ export const createBookingByAdminController = async (
     if (!clientId || !serviceId || !bookingTime) {
       return res.status(400).json({
         success: false,
-        message: 'clientId, serviceId and bookingTime are required',
+        message: 'clientId, serviceId y bookingTime son requeridos',
       });
     }
 
@@ -560,7 +560,7 @@ export const createBookingByAdminController = async (
     if (isNaN(bookingTimeDate.getTime())) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid booking time format',
+        message: 'Formato de fecha y hora de reserva inválido',
       });
     }
 
@@ -594,7 +594,7 @@ export const createBookingByAdminController = async (
     return res.status(201).json({
       success: true,
       booking,
-      message: 'Booking created successfully',
+      message: 'Reserva creada exitosamente',
     });
   } catch (error) {
     logger.error({ error }, 'Error in createBookingByAdminController');
@@ -609,7 +609,7 @@ export const createBookingByAdminController = async (
 
     return res.status(500).json({
       success: false,
-      message: 'Internal server error',
+      message: 'Error interno del servidor',
     });
   }
 };

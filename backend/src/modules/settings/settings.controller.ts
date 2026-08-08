@@ -63,7 +63,7 @@ export const getBookingRules = async (
     return res.status(500).json({
       success: false,
       data: { minBookingAdvanceMinutes: 60, minCancellationNoticeMinutes: 120 }, // Fallback defaults
-      message: 'Internal server error'
+      message: 'Error interno del servidor'
     });
   }
 };
@@ -117,7 +117,7 @@ export const getBusinessHours = async (
     return res.status(500).json({
       success: false,
       data: null,
-      message: 'Internal server error'
+      message: 'Error interno del servidor'
     });
   }
 };
@@ -157,7 +157,7 @@ export const updateBookingRules = async (
       return res.status(401).json({
         success: false,
         data: { minBookingAdvanceMinutes: 60, minCancellationNoticeMinutes: 120 },
-        message: 'Authentication required'
+        message: 'Autenticación requerida'
       });
     }
 
@@ -184,7 +184,7 @@ export const updateBookingRules = async (
     return res.status(500).json({
       success: false,
       data: { minBookingAdvanceMinutes: 60, minCancellationNoticeMinutes: 120 },
-      message: 'Internal server error'
+      message: 'Error interno del servidor'
     });
   }
 };
@@ -239,7 +239,7 @@ export const getContactInfo = async (
     return res.status(500).json({
       success: false,
       data: null,
-      message: 'Internal server error'
+      message: 'Error interno del servidor'
     });
   }
 };
@@ -279,7 +279,7 @@ export const updateContactInfo = async (
       return res.status(401).json({
         success: false,
         data: null,
-        message: 'Authentication required'
+        message: 'Autenticación requerida'
       });
     }
 
@@ -306,7 +306,7 @@ export const updateContactInfo = async (
     return res.status(500).json({
       success: false,
       data: null,
-      message: 'Internal server error'
+      message: 'Error interno del servidor'
     });
   }
 };

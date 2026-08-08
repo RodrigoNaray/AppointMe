@@ -11,16 +11,16 @@ export class ServiceValidationError extends Error {
 }
 
 const validateServicePayload = (data: CreateServiceDto | UpdateServiceDto): void => {
-  if (typeof data.name === 'string' && (data.name.trim().length === 0 || data.name.length > 100)) {
+  if (!data.name || typeof data.name !== 'string' || data.name.trim().length === 0 || data.name.length > 100) {
     throw new ServiceValidationError('El nombre debe tener entre 1 y 100 caracteres.');
   }
 
-  if (typeof data.durationMinutes === 'number' && data.durationMinutes <= 0) {
-    throw new ServiceValidationError('La duración debe ser mayor a 0 minutos.');
+  if (data.durationMinutes !== undefined && (!Number.isInteger(data.durationMinutes) || data.durationMinutes <= 0)) {
+    throw new ServiceValidationError('La duración debe ser un número entero mayor a 0 minutos.');
   }
 
-  if (typeof data.price === 'number' && data.price < 0) {
-    throw new ServiceValidationError('El precio no puede ser negativo.');
+  if (data.price !== undefined && (typeof data.price !== 'number' || !isFinite(data.price) || data.price < 0)) {
+    throw new ServiceValidationError('El precio debe ser un número mayor o igual a 0.');
   }
 };
 
@@ -96,6 +96,10 @@ const validateCategoryExists = async (categoryId: string) => {
 
 export const createService = async (data: CreateServiceDto, adminId: string) => {
   validateServicePayload(data);
+
+  if (!data.categoryId || typeof data.categoryId !== 'string') {
+    throw new ServiceValidationError('categoryId es requerido.');
+  }
 
   // Validar que la categoría existe y está activa
   await validateCategoryExists(data.categoryId);

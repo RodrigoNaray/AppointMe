@@ -95,7 +95,7 @@ describe('availability.public.services', () => {
 
   it('returns current month when it has at least one available day', async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2030-01-15T12:00:00.000Z'));
+    vi.setSystemTime(new Date('2030-01-15T08:00:00.000Z'));
 
     const month = await getFirstMonthAvailable(30, 3);
 
@@ -107,7 +107,7 @@ describe('availability.public.services', () => {
 
   it('skips a fully blocked current month and returns the next available one', async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2030-01-15T12:00:00.000Z'));
+    vi.setSystemTime(new Date('2030-01-15T08:00:00.000Z'));
 
     mockPrisma.availabilityBlock.findMany.mockImplementation(async (args: {
       where: {
@@ -161,5 +161,44 @@ describe('availability.public.services', () => {
     expect(await getFirstMonthAvailable(0, 12)).toBeNull();
     expect(await getFirstMonthAvailable(30, 0)).toBeNull();
     expect(mockPrisma.adminUser.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('does not offer slots already in the past or within the advance notice', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2030-01-07T10:00:00.000Z'));
+
+    const date = new Date('2030-01-07T00:00:00.000Z');
+    const slots = await getAvailableSlots(date, 30);
+
+    expect(slots).toEqual([]);
+
+    vi.useRealTimers();
+  });
+
+  it('offers slots after the configured advance notice', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2030-01-07T10:00:00.000Z'));
+
+    mockPrisma.adminUser.findFirst.mockResolvedValue({
+      id: 'admin-1',
+      schedule: fullSchedule,
+      minBookingAdvanceMinutes: 30
+    });
+
+    const date = new Date('2030-01-07T00:00:00.000Z');
+    const slots = await getAvailableSlots(date, 30);
+
+    expect(slots).toContain('10:30');
+
+    vi.useRealTimers();
+  });
+
+  it('returns no slots for a date that has already passed', async () => {
+    const date = new Date('2020-01-07T00:00:00.000Z');
+
+    const slots = await getAvailableSlots(date, 30);
+
+    expect(slots).toEqual([]);
+    expect(mockPrisma.booking.findMany).not.toHaveBeenCalled();
   });
 });

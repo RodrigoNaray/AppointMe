@@ -32,16 +32,20 @@ export const getAvailableSlots = async (date: Date, durationMinutes: number) => 
     return [];
   }
 
-  const { start: dayStartUTC, endExclusive: dayEndUTCExclusive } = getUtcDayRange(date);
-
   const adminUser = await prisma.adminUser.findFirst({
     select: {
       id: true,
-      schedule: true
+      schedule: true,
+      minBookingAdvanceMinutes: true
     }
   });
 
   if (!adminUser?.id || !adminUser.schedule) {
+    return [];
+  }
+
+  const { start: dayStartUTC, endExclusive: dayEndUTCExclusive } = getUtcDayRange(date);
+  if (dayEndUTCExclusive <= new Date()) {
     return [];
   }
 
@@ -111,14 +115,18 @@ export const getAvailableSlots = async (date: Date, durationMinutes: number) => 
 
   let currentSlotStart = new Date(workingHoursStart);
 
+  // No ofrecer slots que ya pasaron ni dentro del aviso mínimo de reserva
+  const advanceMinutes = adminUser.minBookingAdvanceMinutes ?? 60;
+  const earliestAllowedStart = Date.now() + advanceMinutes * 60 * 1000;
+
   // Generar todos los slots candidatos primero usando la duración solicitada
   const candidateSlots: TimePeriod[] = [];
   while (currentSlotStart < workingHoursEnd) {
     const currentSlotEnd = new Date(currentSlotStart);
     currentSlotEnd.setUTCMinutes(currentSlotEnd.getUTCMinutes() + durationMinutes);
     
-    // Solo agregar si el slot completo cabe en el horario laboral
-    if (currentSlotEnd <= workingHoursEnd) {
+    // Solo agregar si el slot completo cabe en el horario laboral y arranca después del aviso mínimo
+    if (currentSlotEnd <= workingHoursEnd && currentSlotStart.getTime() >= earliestAllowedStart) {
       candidateSlots.push({
         start: new Date(currentSlotStart),
         end: currentSlotEnd
@@ -155,7 +163,8 @@ export const getMonthAvailability = async (month: Date, totalDuration: number) =
   const adminUser = await prisma.adminUser.findFirst({
     select: {
       id: true,
-      schedule: true
+      schedule: true,
+      minBookingAdvanceMinutes: true
     }
   });
 
@@ -246,12 +255,15 @@ export const getMonthAvailability = async (month: Date, totalDuration: number) =
     let hasAvailableSlot = false;
     let currentSlotStart = new Date(workingHoursStart);
 
+    const advanceMinutes = adminUser.minBookingAdvanceMinutes ?? 60;
+    const earliestAllowedStart = Date.now() + advanceMinutes * 60 * 1000;
+
     while (currentSlotStart < workingHoursEnd) {
       const currentSlotEnd = new Date(currentSlotStart);
       currentSlotEnd.setUTCMinutes(currentSlotEnd.getUTCMinutes() + totalDuration);
       
-      // Solo verificar si el slot completo cabe en el horario laboral
-      if (currentSlotEnd <= workingHoursEnd) {
+      // Solo verificar si el slot completo cabe en el horario laboral y arranca después del aviso mínimo
+      if (currentSlotEnd <= workingHoursEnd && currentSlotStart.getTime() >= earliestAllowedStart) {
         const hasConflict = hasTimeConflictOptimized(currentSlotStart, currentSlotEnd, busyPeriods);
         
         if (!hasConflict) {

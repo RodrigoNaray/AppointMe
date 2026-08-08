@@ -1,7 +1,7 @@
 import prisma from '../../config/prisma';
 import logger from '../../utils/logger';
 import { CreateCategoryDto, UpdateCategoryDto } from './category.types';
-import { ConflictError, NotFoundError } from '../../utils/error';
+import { ConflictError, NotFoundError, BadRequestError } from '../../utils/error';
 
 /**
  * Obtiene todas las categorías (globales para toda la plataforma)
@@ -68,10 +68,10 @@ export const getCategoryById = async (id: string) => {
  */
 export const createCategory = async (data: CreateCategoryDto) => {
   if (!data.name || typeof data.name !== 'string' || data.name.trim().length === 0) {
-    throw new Error('El nombre de la categoría es requerido');
+    throw new BadRequestError('El nombre de la categoría es requerido');
   }
   if (data.name.length > 100) {
-    throw new Error('El nombre de la categoría no puede exceder los 100 caracteres');
+    throw new BadRequestError('El nombre de la categoría no puede exceder los 100 caracteres');
   }
 
   const existing = await prisma.category.findUnique({
@@ -95,6 +95,13 @@ export const createCategory = async (data: CreateCategoryDto) => {
  */
 export const updateCategory = async (id: string, data: UpdateCategoryDto) => {
   await getCategoryById(id); // Verificar que existe
+
+  if (data.name !== undefined && (typeof data.name !== 'string' || data.name.trim().length === 0)) {
+    throw new BadRequestError('El nombre de la categoría es requerido');
+  }
+  if (data.name !== undefined && data.name.length > 100) {
+    throw new BadRequestError('El nombre de la categoría no puede exceder los 100 caracteres');
+  }
 
   // Si se actualiza el nombre, validar que no exista otro con ese nombre
   if (data.name) {

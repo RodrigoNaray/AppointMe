@@ -82,7 +82,10 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({ message: 'Ruta no encontrada.' });
 });
 
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+app.use((err: Error & { status?: number; statusCode?: number }, _req: Request, res: Response, _next: NextFunction) => {
+  if (err.status === 401 || err.statusCode === 401) {
+    return res.status(401).json({ message: 'No autenticado' });
+  }
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     if (err.code === 'P2002') {
       return res.status(409).json({ message: 'El recurso ya existe.' });

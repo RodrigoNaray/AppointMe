@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { AdminUser } from '@prisma/client';
 import * as service from './category.services';
 import { CreateCategoryDto, UpdateCategoryDto } from './category.types';
-import { ConflictError, NotFoundError } from '../../utils/error';
+import { ConflictError, NotFoundError, BadRequestError } from '../../utils/error';
 import logger from '../../utils/logger';
 
 /**
@@ -57,6 +57,10 @@ export const create = async (req: Request<{}, {}, CreateCategoryDto>, res: Respo
     const newCategory = await service.createCategory(req.body);
     res.status(201).json(newCategory);
   } catch (error) {
+    if (error instanceof BadRequestError) {
+      logger.warn(error.message);
+      return res.status(400).json({ message: error.message });
+    }
     if (error instanceof ConflictError) {
       logger.warn(error.message);
       return res.status(409).json({ message: error.message });
@@ -77,6 +81,10 @@ export const update = async (req: Request<{ id: string }, {}, UpdateCategoryDto>
     if (error instanceof NotFoundError) {
       logger.warn(error.message);
       return res.status(404).json({ message: error.message });
+    }
+    if (error instanceof BadRequestError) {
+      logger.warn(error.message);
+      return res.status(400).json({ message: error.message });
     }
     if (error instanceof ConflictError) {
       logger.warn(error.message);

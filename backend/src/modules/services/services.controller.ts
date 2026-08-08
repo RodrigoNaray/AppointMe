@@ -39,6 +39,11 @@ export const create = async (req: Request<{}, {}, CreateServiceDto>, res: Respon
       return res.status(400).json({ message: error.message });
     }
 
+    if (error instanceof NotFoundError) {
+      logger.warn(error.message);
+      return res.status(404).json({ message: error.message });
+    }
+
     if (error instanceof ConflictError) {
       logger.warn(error.message);
       return res.status(409).json({ message: error.message });

@@ -21,7 +21,7 @@ export const loginController = async ( req: Request<{},{},LoginAdminDto>, res: R
     if(!user){
 
       logger.warn('Intento de login fallido');
-      return res.status(401).json({message: 'Credenciales incorrecctas'})
+      return res.status(401).json({message: 'Credenciales incorrectas'})
     };
 
     // OWASP A01:2021 - Broken Access Control Prevention:
@@ -56,17 +56,17 @@ export const changePasswordController = async ( req: Request<{}, {}, ChangePassw
   try {
     const admin = req.user as { id: string };
     if (!admin?.id) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ message: 'Autenticación requerida' });
     }
 
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: 'currentPassword and newPassword are required' });
+      return res.status(400).json({ message: 'currentPassword y newPassword son requeridos' });
     }
 
     if (newPassword.length < 8) {
-      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+      return res.status(400).json({ message: 'La contraseña debe tener al menos 8 caracteres' });
     }
 
     await authServices.changeAdminPassword(admin.id, req.body);
@@ -84,12 +84,12 @@ export const updateProfileController = async (req: Request<{}, {}, UpdateAdminPr
   try {
     const admin = req.user as { id: string };
     if (!admin?.id) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ message: 'Autenticación requerida' });
     }
 
     const { name } = req.body;
     if (typeof name !== 'string' || name.length > 100) {
-      return res.status(400).json({ message: 'INVALID_NAME' });
+      return res.status(400).json({ message: 'Nombre inválido' });
     }
 
     const updated = await authServices.updateAdminProfile(admin.id, { name });

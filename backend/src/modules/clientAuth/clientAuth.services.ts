@@ -1,4 +1,5 @@
 import prisma from '../../config/prisma';
+import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import {
@@ -52,18 +53,29 @@ export const registerClient = async (data: RegisterClientDto, acceptLanguage?: s
   // El producto es solo en español: los emails se envían siempre en es
   const emailLanguage = 'es';
 
-  const newClient = await prisma.client.create({
-    data: {
-      email: data.email,
-      name: data.name,
-      phone: data.phone,
-      passwordHash,
-      emailLanguage,
-      emailVerified: false,
-      emailVerificationToken: verificationToken,
-      emailVerificationExpires: verificationExpires,
-    },
-  });
+  let newClient;
+  try {
+    newClient = await prisma.client.create({
+      data: {
+        email: data.email,
+        name: data.name,
+        phone: data.phone,
+        passwordHash,
+        emailLanguage,
+        emailVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires,
+      },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      throw new ConflictError('El correo electrónico ya está en uso.');
+    }
+    throw error;
+  }
 
   // 5. Enviar email de verificación de forma asíncrona
   try {
