@@ -46,6 +46,7 @@ export interface GetBookingsParams {
   limit?: number;
   from?: string; // ISO date
   to?: string;   // ISO date
+  sort?: 'asc' | 'desc';
 }
 
 export interface CreateBookingPayload {

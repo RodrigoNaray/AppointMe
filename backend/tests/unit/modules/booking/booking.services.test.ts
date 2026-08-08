@@ -20,7 +20,7 @@ vi.mock('../../../../src/config/prisma', () => ({
   default: mockPrisma
 }));
 
-import { createBooking, getBookingMetrics } from '../../../../src/modules/booking/booking.services';
+import { createBooking, getBookingMetrics, getAdminBookings } from '../../../../src/modules/booking/booking.services';
 import { cancelBooking } from '../../../../src/modules/booking/booking.services';
 import { cancelBookingByAdmin } from '../../../../src/modules/booking/booking.services';
 import { rescheduleBookingByAdmin } from '../../../../src/modules/booking/booking.services';
@@ -890,6 +890,60 @@ describe('booking.services.rescheduleBookingByAdmin', () => {
     expect(result.oldBookingTime.toISOString()).toBe(baseBooking.bookingTime.toISOString());
     expect(result.newBookingTime.toISOString()).toBe(newTime.toISOString());
     expect(result.clientEmail).toBe('ana@example.com');
+  });
+});
+
+describe('booking.services.getAdminBookings', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockPrisma.booking.findMany.mockResolvedValue([]);
+    mockPrisma.booking.count.mockResolvedValue(0);
+  });
+
+  it('orders bookings from most recent to oldest by default', async () => {
+    await getAdminBookings('admin-1', { page: 1, limit: 20 });
+
+    expect(mockPrisma.booking.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { adminId: 'admin-1' },
+        orderBy: { bookingTime: 'desc' }
+      })
+    );
+  });
+
+  it('orders bookings oldest first when sort is asc', async () => {
+    await getAdminBookings('admin-1', { page: 1, limit: 20, sort: 'asc' });
+
+    expect(mockPrisma.booking.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: { bookingTime: 'asc' }
+      })
+    );
+  });
+
+  it('filters by status and date range when provided', async () => {
+    const from = new Date('2030-01-01T00:00:00.000Z');
+    const to = new Date('2030-01-31T23:59:59.000Z');
+
+    await getAdminBookings('admin-1', {
+      from,
+      to,
+      status: 'CONFIRMED',
+      page: 2,
+      limit: 10
+    });
+
+    expect(mockPrisma.booking.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          adminId: 'admin-1',
+          status: 'CONFIRMED',
+          bookingTime: { gte: from, lte: to }
+        },
+        skip: 10,
+        take: 10
+      })
+    );
   });
 });
 

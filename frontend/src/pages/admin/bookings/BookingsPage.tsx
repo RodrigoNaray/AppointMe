@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import { DataTable } from "@/components/shared/DataTable";
 import { getColumns, BookingActions, Booking } from "./columns";
 import bookingService, { Booking as ApiBooking } from "@/api/modules/bookings";
-import { Loader2, Search, Filter, CalendarOff } from "lucide-react";
+import { Loader2, Search, Filter, CalendarOff, ArrowDownUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -56,6 +56,7 @@ export default function BookingsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const [cancelBookingId, setCancelBookingId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
@@ -67,14 +68,15 @@ export default function BookingsPage() {
 
   useEffect(() => {
     fetchBookings(currentPage);
-  }, [currentPage]);
+  }, [currentPage, sortOrder]);
 
   const fetchBookings = async (page = 1) => {
     try {
       setIsLoading(true);
       const response = await bookingService.getAllBookings({ 
         page, 
-        limit: 20 
+        limit: 20,
+        sort: sortOrder
       });
       
       if (response.success) {
@@ -214,6 +216,19 @@ export default function BookingsPage() {
                   <SelectItem value="Cancelada">Cancelada</SelectItem>
                 </SelectContent>
               </Select>
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+                  setCurrentPage(1);
+                }}
+                className="w-full sm:w-auto"
+                data-testid="sort-toggle"
+              >
+                <ArrowDownUp className="h-4 w-4 mr-2" />
+                {sortOrder === 'desc' ? 'Más recientes primero' : 'Más antiguas primero'}
+              </Button>
             </div>
 
             {(searchTerm || statusFilter !== "all") && (

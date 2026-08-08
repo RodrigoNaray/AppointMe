@@ -445,12 +445,14 @@ export const getAllBookings = async (
     const { page, limit } = parsePagination(req.query.page, req.query.limit);
     const from = req.query.from ? new Date(req.query.from) : undefined;
     const to = req.query.to ? new Date(req.query.to) : undefined;
+    const sort = req.query.sort === 'asc' ? 'asc' : 'desc';
 
     const { bookings, total } = await service.getAdminBookings(adminId, {
       from,
       to,
       page,
-      limit
+      limit,
+      sort
     });
 
     const totalPages = Math.ceil(total / limit);

@@ -20,6 +20,7 @@ export interface GetBookingsRequest extends Request {
     to?: string;
     page?: string;
     limit?: string;
+    sort?: string;
   };
 }
 
@@ -99,12 +100,15 @@ export interface CreateBookingDTO {
   notes?: string;
 }
 
+export type BookingSortOrder = 'asc' | 'desc';
+
 export interface BookingFiltersDTO {
   from?: Date;
   to?: Date;
   status?: BookingStatus; // Filtro opcional por status
   page: number;
   limit: number;
+  sort?: BookingSortOrder;
 }
 
 export interface BookingMetrics {

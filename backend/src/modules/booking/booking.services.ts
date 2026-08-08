@@ -415,7 +415,7 @@ export const getAdminBookings = async (
           }
         },
         orderBy: {
-          bookingTime: 'asc'
+          bookingTime: filters.sort === 'asc' ? 'asc' : 'desc'
         },
         skip: (filters.page - 1) * filters.limit,
         take: filters.limit
