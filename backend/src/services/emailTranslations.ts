@@ -54,81 +54,19 @@ const translations: Record<string, Record<string, string>> = {
     'service': 'Servicio',
     'duration': 'Duración',
   },
-  en: {
-    'app.name': 'AppointMePro',
-    'verification.subject': 'Verify your email - AppointMePro',
-    'verification.greeting': 'Welcome to AppointMePro!',
-    'verification.body': 'Thank you for registering. To complete your registration, please verify your email.',
-    'verification.cta': 'Verify Email',
-    'verification.expiry': 'This verification link expires in 24 hours for security reasons.',
-    'verification.ignore': 'If you did not register, you can safely ignore this email.',
-    'email-change.subject': 'Confirm your new email - AppointMePro',
-    'email-change.greeting': 'Confirm Email Change',
-    'email-change.body': 'You have requested to change your email address to {newEmail}.',
-    'email-change.cta': 'Confirm Email Change',
-    'email-change.expiry': 'This link expires in 24 hours for security reasons.',
-    'email-change.warning': 'If you did not request this change, ignore this email.',
-    'booking-confirmed.subject': 'Booking Confirmation - AppointMePro',
-    'booking-confirmed.greeting': 'Booking Confirmed',
-    'booking-confirmed.hello': 'Hello {clientName},',
-    'booking-confirmed.body': 'Your booking has been confirmed successfully.',
-    'booking-confirmed.details': 'Booking details:',
-    'booking-confirmed.service': 'Service',
-    'booking-confirmed.datetime': 'Date & Time',
-    'booking-confirmed.duration': 'Duration',
-    'booking-confirmed.reminder': 'Please arrive 5 minutes before your first booking.',
-    'booking-confirmed.manage': 'If you need to cancel or reschedule, you can do so from your profile.',
-    'booking-confirmed.cta': 'View My Bookings',
-    'password-reset.subject': 'Password Reset - AppointMePro',
-    'password-reset.greeting': 'Password Reset',
-    'password-reset.body': 'We received a request to reset your password.',
-    'password-reset.cta': 'Reset Password',
-    'password-reset.expiry': 'This link is valid for 24 hours.',
-    'password-reset.security': 'If you did not request this, ignore this email.',
-    'admin-cancellation.subject': 'Booking Cancelled - AppointMePro',
-    'admin-cancellation.greeting': 'Booking Cancelled',
-    'admin-cancellation.body': 'We regret to inform you that your booking has been cancelled by the establishment.',
-    'admin-cancellation.reason': 'Reason',
-    'admin-cancellation.cta': 'View My Bookings',
-    'booking-rescheduled.subject': 'Booking Rescheduled - AppointMePro',
-    'booking-rescheduled.greeting': 'Booking Rescheduled',
-    'booking-rescheduled.body': 'Your booking has been rescheduled. Here are the updated details:',
-    'booking-rescheduled.old-time': 'Previous date & time',
-    'booking-rescheduled.new-time': 'New date & time',
-    'booking-rescheduled.cta': 'View My Bookings',
-    'client-cancellation.subject': 'Cancellation Confirmed - CheckMyPro',
-    'client-cancellation.greeting': 'Cancellation Confirmed',
-    'client-cancellation.body': 'Your booking has been successfully cancelled.',
-    'client-cancellation.cta': 'Book Again',
-    'footer.rights': '© 2025 AppointMePro. All rights reserved.',
-    'footer.contact': 'Have questions? Contact us by replying to this email.',
-    'min': 'min',
-    'minutes': 'minutes',
-    'service': 'Service',
-    'duration': 'Duration',
-  },
 };
 
-const getLangCode = (lang?: string): string => {
-  if (lang === 'en' || lang === 'es') return lang;
-  return 'es';
-};
+const getLangCode = (_lang?: string): string => 'es';
 
-export const t = (key: string, lang?: string, params?: Record<string, string>): string => {
-  const code = getLangCode(lang);
-  let text = translations[code]?.[key] ?? translations['es']?.[key] ?? key;
+export const t = (key: string, _lang?: string, params?: Record<string, string>): string => {
+  const code = getLangCode(_lang);
+  let text = translations[code]?.[key] ?? key;
   if (params) {
     for (const [k, v] of Object.entries(params)) {
       text = text.replace(`{${k}}`, v);
     }
   }
   return text;
-};
-
-export const getLanguageFromHeader = (acceptLanguage?: string): string => {
-  if (!acceptLanguage) return 'es';
-  if (acceptLanguage.startsWith('en')) return 'en';
-  return 'es';
 };
 
 logger.info('Email translations loaded');
