@@ -4,16 +4,16 @@ import toast from "react-hot-toast";
 import { useAuthStore, selectCheckSession } from "@/stores/authStore";
 import { useOAuthStore, selectGetReturnUrl, selectClearReturnUrl } from "@/stores/oauthStore";
 import { Button } from "@/components/ui/button";
-import { Clock, ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight, MapPin } from "lucide-react";
 import type { Service } from "@/types/service";
 import type { BusinessHours, ContactInfo } from "@/api/modules/settings";
 import { getBusinessHours, getContactInfo } from "@/api/modules/settings";
 import { getServices } from "@/api/modules/services";
 import { geocodeAddress, type GeocodingResult } from "@/lib/geocoding";
-import { formatOpenDaysSummary } from "@/lib/businessHoursLabel";
-import { usePageTitle } from "@/hooks/usePageTitle";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { ServicesCarousel } from "@/components/home/ServicesCarousel";
+import { BusinessHoursStrip } from "@/components/home/BusinessHoursStrip";
 
 const AppMap = lazy(() => import("@/components/ui/AppMap").then(module => ({ default: module.AppMap })));
 
@@ -90,8 +90,6 @@ export default function HomePage() {
     if (!todaySchedule) return false;
     return todaySchedule.isOpen === true;
   }, [businessHours]);
-
-  const hoursLabel = useMemo(() => formatOpenDaysSummary(businessHours), [businessHours]);
 
   const businessInitials = useMemo(() => {
     const name = contactInfo?.businessName;
@@ -248,22 +246,15 @@ export default function HomePage() {
                 {contactInfo?.businessDescription || 'Reservá tu turno online'}
               </p>
 
-              {(hoursLabel || locationLabel) && (
-                <div className="mb-4 flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  {hoursLabel && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5" />
-                      {hoursLabel}
-                    </span>
-                  )}
-                  {locationLabel && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {locationLabel}
-                    </span>
-                  )}
-                </div>
-              )}
+              <div className="mb-4 flex flex-col items-center justify-center gap-2 lg:justify-start lg:items-start">
+                {businessHours && <BusinessHoursStrip businessHours={businessHours} />}
+                {locationLabel && (
+                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {locationLabel}
+                  </span>
+                )}
+              </div>
 
               {contactInfo?.businessDescription && (
                 <p className="mb-6 max-w-lg text-sm text-muted-foreground sm:text-base lg:max-w-none">

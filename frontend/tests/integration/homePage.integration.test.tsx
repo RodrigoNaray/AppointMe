@@ -10,7 +10,7 @@ vi.mock('@/api/modules/settings', () => ({
       wednesday: { isOpen: true, openTime: '12:00', closeTime: '21:00' },
       thursday: { isOpen: true, openTime: '12:00', closeTime: '21:00' },
       friday: { isOpen: true, openTime: '12:00', closeTime: '21:00' },
-      saturday: { isOpen: false, openTime: '00:00', closeTime: '00:00' },
+      saturday: { isOpen: true, openTime: '13:00', closeTime: '17:00' },
       sunday: { isOpen: false, openTime: '00:00', closeTime: '00:00' },
     }),
   getContactInfo: () =>
@@ -52,7 +52,11 @@ describe('HomePage', () => {
 
     expect(screen.getAllByText('Barbería Profesional con más de 10 años de experiencia.').length).toBeGreaterThan(0);
     expect(screen.getByText('SC')).toBeTruthy();
-    expect(screen.getByText(/Hoy ·|a ·|Lun|Mar|Mié|Jue|Vie/)).toBeTruthy();
+    expect(screen.getByText('Lun')).toBeTruthy();
+    expect(screen.getByText('Vie')).toBeTruthy();
+    expect(screen.getByText('Sáb')).toBeTruthy();
+    expect(screen.getByText('Cerrado')).toBeTruthy();
+    expect(screen.getAllByText(/\d{2}:\d{2}–\d{2}:\d{2}/).length).toBeGreaterThan(0);
     expect(screen.getByText('Reservar Ahora')).toBeTruthy();
     expect(screen.getByText('Nuestros Servicios')).toBeTruthy();
     expect(screen.getByText('Ubicación')).toBeTruthy();
