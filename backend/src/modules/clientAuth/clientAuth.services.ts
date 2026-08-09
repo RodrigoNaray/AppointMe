@@ -22,7 +22,7 @@ import logger from '../../utils/logger';
  * @param data - Datos del cliente para el registro.
  * @returns El objeto del cliente público (sin contraseña).
  */
-export const registerClient = async (data: RegisterClientDto, acceptLanguage?: string): Promise<PublicClient> => {
+export const registerClient = async (data: RegisterClientDto): Promise<PublicClient> => {
   // 0. Validar nombre
   if (!data.name || typeof data.name !== 'string' || data.name.trim().length === 0) {
     throw new Error('El nombre es requerido');
@@ -670,7 +670,7 @@ export const updateClientProfile = async (
  * - Token generado con crypto.randomBytes (cryptographically secure)
  * - Expiración de 24 horas previene abuso de tokens antiguos
  */
-export const requestPasswordReset = async (email: string, acceptLanguage?: string): Promise<boolean> => {
+export const requestPasswordReset = async (email: string): Promise<boolean> => {
   try {
     // Buscar cliente por email
     const client = await prisma.client.findUnique({
@@ -697,7 +697,7 @@ export const requestPasswordReset = async (email: string, acceptLanguage?: strin
 
     // Importar y enviar email (lazy import para evitar circular dependency)
     const { sendPasswordResetEmail } = await import('../../services/emailService');
-    const emailLang = client.emailLanguage ?? acceptLanguage ?? 'es';
+    const emailLang = client.emailLanguage ?? 'es';
     const emailSent = await sendPasswordResetEmail({
       to: client.email,
       name: client.name,

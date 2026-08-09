@@ -22,7 +22,6 @@ enum BookingStatus {
 enum CancellationReason {
   CANCELLED_BY_CLIENT
   CANCELLED_BY_ADMIN
-  CANCELLED_BY_ADMIN_RESCHEDULE
 }
 
 // Modelo para el Administrador (el profesional que usa la app)

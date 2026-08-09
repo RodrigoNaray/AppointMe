@@ -3,7 +3,16 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 
 vi.mock('@/api/modules/settings', () => ({
-  getBusinessHours: () => Promise.resolve(undefined),
+  getBusinessHours: () =>
+    Promise.resolve({
+      monday: { isOpen: true, openTime: '12:00', closeTime: '21:00' },
+      tuesday: { isOpen: true, openTime: '12:00', closeTime: '21:00' },
+      wednesday: { isOpen: true, openTime: '12:00', closeTime: '21:00' },
+      thursday: { isOpen: true, openTime: '12:00', closeTime: '21:00' },
+      friday: { isOpen: true, openTime: '12:00', closeTime: '21:00' },
+      saturday: { isOpen: false, openTime: '00:00', closeTime: '00:00' },
+      sunday: { isOpen: false, openTime: '00:00', closeTime: '00:00' },
+    }),
   getContactInfo: () =>
     Promise.resolve({
       businessName: 'Studio Carlos Méndez',
@@ -42,6 +51,8 @@ describe('HomePage', () => {
     });
 
     expect(screen.getAllByText('Barbería Profesional con más de 10 años de experiencia.').length).toBeGreaterThan(0);
+    expect(screen.getByText('SC')).toBeTruthy();
+    expect(screen.getByText(/Hoy ·|a ·|Lun|Mar|Mié|Jue|Vie/)).toBeTruthy();
     expect(screen.getByText('Reservar Ahora')).toBeTruthy();
     expect(screen.getByText('Nuestros Servicios')).toBeTruthy();
     expect(screen.getByText('Ubicación')).toBeTruthy();

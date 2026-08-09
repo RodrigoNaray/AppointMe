@@ -69,32 +69,45 @@ const validateTimeSlotAvailability = async (
       return false;
     }
 
-    // 2. Verificar que esté dentro del horario de trabajo
+    // 2. Verificar que esté dentro del horario de trabajo (parsear en UTC explícitamente)
     const dayOfWeekIndex = requestedTime.getUTCDay();
     const dayOfWeek = dayMap[dayOfWeekIndex];
     const schedule = adminUser.schedule as unknown as WeeklySchedule;
     const daySchedule = schedule[dayOfWeek];
 
-    if (!daySchedule || !daySchedule.isActive) {
-      return false;
-    }
-
-    // 3. Verificar que la hora esté dentro del rango de trabajo (parsear en UTC explícitamente)
     const requestedDateUTC = new Date(requestedTime);
-
-    // Parsear horarios laborales en UTC (evitar parse() que usa timezone local)
-    const [startHour, startMinute] = daySchedule.start.split(':').map(Number);
-    const [endHour, endMinute] = daySchedule.end.split(':').map(Number);
-
-    const workingHoursStart = new Date(requestedDateUTC);
-    workingHoursStart.setUTCHours(startHour, startMinute, 0, 0);
-
-    const workingHoursEnd = new Date(requestedDateUTC);
-    workingHoursEnd.setUTCHours(endHour, endMinute, 0, 0);
-
     const serviceEndTime = addMinutes(requestedTime, serviceDuration);
 
-    if (requestedTime < workingHoursStart || serviceEndTime > workingHoursEnd) {
+    const isInsideWindow = (
+      dayData: { start: string; end: string; isActive: boolean } | undefined,
+      windowDate: Date
+    ): boolean => {
+      if (!dayData?.isActive) return false;
+      const [startHour, startMinute] = dayData.start.split(':').map(Number);
+      const [endHour, endMinute] = dayData.end.split(':').map(Number);
+
+      const windowStart = new Date(windowDate);
+      windowStart.setUTCHours(startHour, startMinute, 0, 0);
+
+      const windowEnd = new Date(windowDate);
+      windowEnd.setUTCHours(endHour, endMinute, 0, 0);
+
+      // Ventanas que cruzan medianoche (ej: 20:00-02:00): el final pertenece al día siguiente
+      if (windowEnd <= windowStart) {
+        windowEnd.setUTCDate(windowEnd.getUTCDate() + 1);
+      }
+
+      return requestedTime >= windowStart && serviceEndTime <= windowEnd;
+    };
+
+    const inOwnWindow = isInsideWindow(daySchedule, requestedDateUTC);
+
+    // Madrugada: el slot puede pertenecer a la ventana del día anterior si esta cruza medianoche
+    const previousDay = new Date(requestedDateUTC);
+    previousDay.setUTCDate(previousDay.getUTCDate() - 1);
+    const inPreviousWindow = isInsideWindow(schedule[dayMap[previousDay.getUTCDay()]], previousDay);
+
+    if (!inOwnWindow && !inPreviousWindow) {
       return false;
     }
 

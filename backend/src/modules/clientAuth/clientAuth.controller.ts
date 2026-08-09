@@ -13,8 +13,7 @@ const getErrorMessage = (error: unknown): string => {
 export const registerClientController = async (req: Request, res: Response) => {
   try {
     const clientData: RegisterClientDto = req.body;
-    const acceptLanguage = req.headers['accept-language'] as string | undefined;
-    const newClient = await service.registerClient(clientData, acceptLanguage);
+    const newClient = await service.registerClient(clientData);
     logger.info({ clientId: newClient.id, emailLanguage: newClient.emailLanguage }, "Nuevo cliente registrado");
     res.status(201).json({ message: 'Cliente registrado exitosamente', client: newClient });
   } catch (error: unknown) {
@@ -381,8 +380,7 @@ export const forgotPasswordController = async (req: Request, res: Response) => {
     }
 
     // Procesar solicitud (siempre retorna true por seguridad)
-    const acceptLanguage = req.headers['accept-language'] as string | undefined;
-    await service.requestPasswordReset(email, acceptLanguage);
+    await service.requestPasswordReset(email);
 
     // Mensaje genérico (no revelar si email existe)
     logger.info({ email: email.replace(/(.{2}).*(@.*)/, '$1***$2') }, 'Password reset requested');

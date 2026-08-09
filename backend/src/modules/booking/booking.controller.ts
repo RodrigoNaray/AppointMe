@@ -433,8 +433,7 @@ export const getAllBookings = async (
   res: Response<GetBookingsResponse>
 ) => {
   try {
-    // @ts-ignore - adminId viene del middleware de autenticación admin
-    const adminId = req.user?.id;
+    const adminId = (req.user as { id?: string } | undefined)?.id;
     if (!adminId) {
       return res.status(401).json({
         success: false,

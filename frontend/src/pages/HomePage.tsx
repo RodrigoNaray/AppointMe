@@ -10,6 +10,7 @@ import type { BusinessHours, ContactInfo } from "@/api/modules/settings";
 import { getBusinessHours, getContactInfo } from "@/api/modules/settings";
 import { getServices } from "@/api/modules/services";
 import { geocodeAddress, type GeocodingResult } from "@/lib/geocoding";
+import { formatOpenDaysSummary } from "@/lib/businessHoursLabel";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { ServicesCarousel } from "@/components/home/ServicesCarousel";
@@ -90,19 +91,18 @@ export default function HomePage() {
     return todaySchedule.isOpen === true;
   }, [businessHours]);
 
-  const hoursLabel = useMemo(() => {
-    if (!businessHours) return null;
-    const todayKey = DAY_KEYS[new Date().getDay()];
-    const todaySchedule = businessHours[todayKey];
-    if (todaySchedule?.isOpen) return `Hoy ${todaySchedule.openTime} - ${todaySchedule.closeTime}`;
-    const weekdays = DAY_KEYS.slice(1, 6).filter(k => businessHours[k]?.isOpen);
-    if (weekdays.length === 0) return null;
-    const first = weekdays[0];
-    const last = weekdays[weekdays.length - 1];
-    const firstLabel = first.charAt(0).toUpperCase() + first.slice(1, 3);
-    const lastLabel = last.charAt(0).toUpperCase() + last.slice(1, 3);
-    return `${firstLabel} a ${lastLabel}`;
-  }, [businessHours]);
+  const hoursLabel = useMemo(() => formatOpenDaysSummary(businessHours), [businessHours]);
+
+  const businessInitials = useMemo(() => {
+    const name = contactInfo?.businessName;
+    if (!name) return 'AP';
+    return name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word[0]?.toUpperCase() ?? '')
+      .join('') || 'AP';
+  }, [contactInfo]);
 
   const locationLabel = useMemo(() => {
     if (!contactInfo?.address || contactInfo.address === 'Dirección no disponible') return null;
@@ -230,7 +230,7 @@ export default function HomePage() {
             <div className="relative shrink-0">
               <div className="h-24 w-24 overflow-hidden rounded-full bg-primary sm:h-28 sm:w-28 lg:h-32 lg:w-32 shadow-lg ring-4 ring-background">
                 <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-white sm:text-5xl">
-                  CM
+                  {businessInitials}
                 </div>
               </div>
               {isOpenToday && (

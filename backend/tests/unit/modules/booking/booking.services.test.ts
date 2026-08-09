@@ -363,6 +363,90 @@ describe('booking.services.createBooking', () => {
     });
   });
 
+  it('allows a booking in the early morning covered by the previous day cross-midnight window', async () => {
+    const wrapSchedule = {
+      monday: { isActive: true, start: '20:00', end: '02:00' },
+      tuesday: { isActive: false, start: '09:00', end: '18:00' },
+      wednesday: { isActive: false, start: '09:00', end: '18:00' },
+      thursday: { isActive: false, start: '09:00', end: '18:00' },
+      friday: { isActive: false, start: '09:00', end: '18:00' },
+      saturday: { isActive: false, start: '09:00', end: '18:00' },
+      sunday: { isActive: false, start: '09:00', end: '18:00' }
+    };
+    const tx = buildTransactionContext({
+      service: {
+        admin: { id: 'admin-1', minBookingAdvanceMinutes: 60, schedule: wrapSchedule }
+      }
+    });
+    tx.adminUser.findUnique.mockResolvedValue({ schedule: wrapSchedule });
+
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+
+    const booking = await createBooking('client-1', {
+      serviceId: 'service-1',
+      bookingTime: new Date('2030-01-01T01:00:00.000Z')
+    });
+
+    expect(booking.id).toBe('booking-1');
+  });
+
+  it('rejects a booking after the cross-midnight window has ended', async () => {
+    const wrapSchedule = {
+      monday: { isActive: true, start: '20:00', end: '02:00' },
+      tuesday: { isActive: false, start: '09:00', end: '18:00' },
+      wednesday: { isActive: false, start: '09:00', end: '18:00' },
+      thursday: { isActive: false, start: '09:00', end: '18:00' },
+      friday: { isActive: false, start: '09:00', end: '18:00' },
+      saturday: { isActive: false, start: '09:00', end: '18:00' },
+      sunday: { isActive: false, start: '09:00', end: '18:00' }
+    };
+    const tx = buildTransactionContext({
+      service: {
+        admin: { id: 'admin-1', minBookingAdvanceMinutes: 60, schedule: wrapSchedule }
+      }
+    });
+    tx.adminUser.findUnique.mockResolvedValue({ schedule: wrapSchedule });
+
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+
+    await expect(
+      createBooking('client-1', {
+        serviceId: 'service-1',
+        bookingTime: new Date('2030-01-01T03:00:00.000Z')
+      })
+    ).rejects.toMatchObject({
+      code: BookingErrorCodes.UNAVAILABLE_TIME,
+      statusCode: 409
+    });
+  });
+
+  it('allows a booking inside its own cross-midnight window day', async () => {
+    const wrapSchedule = {
+      monday: { isActive: true, start: '20:00', end: '02:00' },
+      tuesday: { isActive: false, start: '09:00', end: '18:00' },
+      wednesday: { isActive: false, start: '09:00', end: '18:00' },
+      thursday: { isActive: false, start: '09:00', end: '18:00' },
+      friday: { isActive: false, start: '09:00', end: '18:00' },
+      saturday: { isActive: false, start: '09:00', end: '18:00' },
+      sunday: { isActive: false, start: '09:00', end: '18:00' }
+    };
+    const tx = buildTransactionContext({
+      service: {
+        admin: { id: 'admin-1', minBookingAdvanceMinutes: 60, schedule: wrapSchedule }
+      }
+    });
+    tx.adminUser.findUnique.mockResolvedValue({ schedule: wrapSchedule });
+
+    mockPrisma.$transaction.mockImplementation(async (callback: TxCallback<typeof tx>) => callback(tx));
+
+    const booking = await createBooking('client-1', {
+      serviceId: 'service-1',
+      bookingTime: new Date('2030-01-07T21:00:00.000Z')
+    });
+
+    expect(booking.id).toBe('booking-1');
+  });
+
   it('allows re-booking the same slot after a cancellation', async () => {
     const tx = buildTransactionContext({
       bookings: []
